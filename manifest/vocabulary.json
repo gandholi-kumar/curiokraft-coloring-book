@@ -1,0 +1,53 @@
+{
+  "alphabet_section": {
+    "pages": [1, 2],
+    "page_1_A_to_M": [
+      {"letter": "A", "word": "ANT", "canonical": "ant", "display_name": "ANT", "description": "Large simple friendly ant"},
+      {"letter": "B", "word": "BELL", "canonical": "bell", "display_name": "BELL", "description": "Simple ringing bell"},
+      {"letter": "C", "word": "CROWN", "canonical": "crown", "display_name": "CROWN", "description": "Simple royal crown with gems"},
+      {"letter": "D", "word": "DRUM", "canonical": "drum", "display_name": "DRUM", "description": "Simple drum with drumsticks"},
+      {"letter": "E", "word": "EGG", "canonical": "egg", "display_name": "EGG", "description": "Smooth oval egg"},
+      {"letter": "F", "word": "FISH", "canonical": "fish", "display_name": "FISH", "description": "Cute friendly fish swimming"},
+      {"letter": "G", "word": "GLOBE", "canonical": "globe", "display_name": "GLOBE", "description": "Simple round world globe on stand"},
+      {"letter": "H", "word": "HAT", "canonical": "hat", "display_name": "HAT", "description": "Simple sun hat or party hat"},
+      {"letter": "I", "word": "IGLOO", "canonical": "igloo", "display_name": "IGLOO", "description": "Simple dome igloo with doorway"},
+      {"letter": "J", "word": "JELLYFISH", "canonical": "jellyfish", "display_name": "JELLYFISH", "description": "Cute round jellyfish with wavy tentacles"},
+      {"letter": "K", "word": "KITE", "canonical": "kite", "display_name": "KITE", "description": "Diamond kite with simple string tail"},
+      {"letter": "L", "word": "LEAF", "canonical": "leaf", "display_name": "LEAF", "description": "Simple broad tree leaf"},
+      {"letter": "M", "word": "MOON", "canonical": "moon", "display_name": "MOON", "description": "Smiling crescent moon"}
+    ],
+    "page_2_N_to_Z": [
+      {"letter": "N", "word": "NEST", "canonical": "nest", "display_name": "NEST", "description": "Twig bird nest with two eggs"},
+      {"letter": "O", "word": "OCTOPUS", "canonical": "octopus", "display_name": "OCTOPUS", "description": "Cute friendly 8-legged octopus"},
+      {"letter": "P", "word": "PARROT", "canonical": "parrot", "display_name": "PARROT", "description": "Friendly parrot perched on branch"},
+      {"letter": "Q", "word": "QUEEN", "canonical": "queen", "display_name": "QUEEN", "description": "Cute cartoon queen wearing crown"},
+      {"letter": "R", "word": "RAINBOW", "canonical": "rainbow", "display_name": "RAINBOW", "description": "Curving rainbow arc with small clouds"},
+      {"letter": "S", "word": "SUN", "canonical": "sun", "display_name": "SUN", "description": "Bright smiling sun with simple rays"},
+      {"letter": "T", "word": "TURTLE", "canonical": "turtle", "display_name": "TURTLE", "description": "Cute slow turtle with patterned shell"},
+      {"letter": "U", "word": "UMBRELLA", "canonical": "umbrella", "display_name": "UMBRELLA", "description": "Open umbrella with curved handle"},
+      {"letter": "V", "word": "VASE", "canonical": "vase", "display_name": "VASE", "description": "Simple flower vase"},
+      {"letter": "W", "word": "WHALE", "canonical": "whale", "display_name": "WHALE", "description": "Friendly whale with water spout"},
+      {"letter": "X", "word": "XYLOPHONE", "canonical": "xylophone", "display_name": "XYLOPHONE", "description": "Simple toddler xylophone with mallets"},
+      {"letter": "Y", "word": "YO-YO", "canonical": "yo_yo", "display_name": "YO-YO", "description": "Round yo-yo on coiled string"},
+      {"letter": "Z", "word": "ZEBRA", "canonical": "zebra", "display_name": "ZEBRA", "description": "Cute cartoon zebra with bold stripes"}
+    ]
+  },
+  "numbers_section": {
+    "pages": [3, 4],
+    "page_3_zero_to_five": [
+      {"numeral": 0, "word": "ZERO", "concept": "empty_box", "symbol": "none", "count": 0, "description": "Large 0 numeral with empty designated circle"},
+      {"numeral": 1, "word": "ONE", "concept": "balloon", "symbol": "balloon", "count": 1, "description": "Large numeral 1 with 1 bold balloon"},
+      {"numeral": 2, "word": "TWO", "concept": "bubbles", "symbol": "bubble", "count": 2, "description": "Large numeral 2 with 2 floating bubbles"},
+      {"numeral": 3, "word": "THREE", "concept": "stars", "symbol": "star", "count": 3, "description": "Large numeral 3 with 3 smiling stars"},
+      {"numeral": 4, "word": "FOUR", "concept": "hearts", "symbol": "heart", "count": 4, "description": "Large numeral 4 with 4 clean hearts"},
+      {"numeral": 5, "word": "FIVE", "concept": "buttons", "symbol": "button", "count": 5, "description": "Large numeral 5 with 5 round buttons"}
+    ],
+    "page_4_six_to_ten": [
+      {"numeral": 6, "word": "SIX", "concept": "circles", "symbol": "circle", "count": 6, "description": "Large numeral 6 with 6 bold circles"},
+      {"numeral": 7, "word": "SEVEN", "concept": "squares", "symbol": "square", "count": 7, "description": "Large numeral 7 with 7 clean squares"},
+      {"numeral": 8, "word": "EIGHT", "concept": "triangles", "symbol": "triangle", "count": 8, "description": "Large numeral 8 with 8 simple triangles"},
+      {"numeral": 9, "word": "NINE", "concept": "dots", "symbol": "dot", "count": 9, "description": "Large numeral 9 with 9 polka dots"},
+      {"numeral": 10, "word": "TEN", "concept": "flowers", "symbol": "flower_shape", "count": 10, "description": "Large numeral 10 with 10 simple 5-petal flower outlines"}
+    ]
+  }
+}

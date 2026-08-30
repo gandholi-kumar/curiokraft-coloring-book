@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "curiokraft-coloring-book"
+version = "1.0.0"
+description = "Multi-Agent AI & Deterministic Production Engine for Amazon KDP Coloring Books"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "CurioKraft Publications", email = "publishing@curiokraft.com" }
+]
+keywords = ["kdp", "coloring-book", "publishing", "multi-agent", "image-generation"]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "rich>=13.7.0",
+    "pydantic>=2.6.0",
+    "pyyaml>=6.0.1",
+    "Pillow>=10.2.0",
+    "opencv-python-headless>=4.9.0",
+    "numpy>=1.26.0",
+    "reportlab>=4.1.0",
+    "pymupdf>=1.23.0",
+    "openai>=1.12.0",
+    "anthropic>=0.18.0",
+    "google-generativeai>=0.4.0",
+    "google-genai>=0.1.0",
+    "requests>=2.31.0",
+    "pytest>=8.0.0"
+]
+
+[project.scripts]
+curiokraft-book = "curiokraft_book.cli:app"
+ck-publish = "curiokraft_book.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]

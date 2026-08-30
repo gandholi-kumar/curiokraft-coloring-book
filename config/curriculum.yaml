@@ -1,0 +1,238 @@
+spread_style:
+  numeral_fill_mandate: 'NUMERAL STYLE MANDATE: Every numeral and letter in every
+    card MUST be a LARGE BOLD HOLLOW BUBBLE OUTLINE with PURE WHITE INTERIOR FILL
+    and thick black 5pt closed contour stroke — bubbly rounded preschool font style,
+    white inside the numeral/letter, strictly NOT solid black filled, NOT dark filled.'
+  container_uniformity: 'CONTAINER UNIFORMITY: All flashcard containers have 100%
+    identical width and height. Strictly prohibit unequal box heights, tall bottom
+    boxes, or distorted last-row cards.'
+  vertical_centering: 'VERTICAL CENTERING: Inside each card, the hollow bubble numeral/letter
+    on the left and the line art on the right are vertically centered at Y=50% of
+    the card, filling 75% of card height with equal balanced top and bottom padding.
+    Strictly NO empty top voids, NO content sagging to bottom.'
+  base_style: Thick bold black vector outlines, 6pt stroke, wide white spacing between
+    individual cards, perfectly centered on vertical portrait 3:4 canvas, pure stark
+    white background (#FFFFFF), zero shading, zero grayscale, zero gradients, strictly
+    NO full-page intersecting grid lines, NO connected table borders, NO empty blank
+    boxes.
+  common_negative_tokens:
+  - unequal card sizes
+  - unequal box heights
+  - tall bottom boxes
+  - short top boxes
+  - empty space at top of boxes
+  - content pushed to bottom
+  - empty voids
+  - intersecting grid lines
+  - full page table grid
+  - connected lines
+  - table borders
+  - empty boxes
+  - blank cards
+  - overlapping numbers
+  - shading
+  - shadows
+  - grayscale
+  - gradients
+  - colors
+  - textures
+  - 3d
+  - photorealistic
+  - complex patterns
+  - widescreen
+  - '16:9'
+  - landscape orientation
+  - horizontal crop
+  - cut-off edges
+  - background scenery
+  - solid filled numerals
+  - solid black numbers
+  - filled-in numerals
+  - dark interior numerals
+  - non-hollow numbers
+layout_templates:
+  alphabet_a_m:
+    row_structure: '4 centered balanced rows (Row 1: 4 cards; Row 2: 4 cards; Row
+      3: 3 cards centered; Row 4: 2 cards centered)'
+    total_cards: 13
+    layout_description: '{total_cards} identical uniform rounded-corner square flashcard
+      boxes of equal dimensions arranged in {row_structure}.'
+    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly
+      facial features. ALL inanimate objects are pure physical inanimate objects with
+      strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
+    shared_negative_tokens:
+    - face on non-living objects
+    - cartoon faces on inanimate items
+    - anthropomorphic food
+    - anthropomorphic objects
+    - overlapping letters
+    - letters trapped inside objects
+  alphabet_n_z:
+    row_structure: '4 centered balanced rows (Row 1: 4 cards; Row 2: 4 cards; Row
+      3: 3 cards centered; Row 4: 2 cards centered)'
+    total_cards: 13
+    layout_description: '{total_cards} identical uniform rounded-corner square flashcard
+      boxes of equal dimensions arranged in {row_structure}.'
+    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly
+      facial features. ALL inanimate objects are pure physical inanimate objects with
+      strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
+    shared_negative_tokens:
+    - face on non-living objects
+    - cartoon faces on inanimate items
+    - anthropomorphic food
+    - anthropomorphic objects
+    - overlapping letters
+    - letters trapped inside objects
+  numbers_0_5:
+    row_structure: '2-column by 3-row grid (Row 1: Card 0 on left, Card 1 on right;
+      Row 2: Card 2 on left, Card 3 on right; Row 3: Card 4 on left, Card 5 on right)'
+    total_cards: 6
+    layout_description: Exactly {total_cards} identical uniform rounded-corner square
+      flashcard boxes of equal width and equal height arranged in a perfectly aligned
+      {row_structure}. Total exactly {total_cards} cards on canvas, strictly 3 uniform
+      rows only, strictly NO 4th row, strictly NO 8 cards.
+    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral
+      order with no gaps, no repeated numerals, and no extra cards.'
+    shared_negative_tokens:
+    - repeated numbers
+    - duplicate numerals
+    - extra cards
+    - wrong count
+    - wrong number of items
+    - scattered uncounted items
+    - random dots
+    - cartoon faces on counting objects
+  numbers_6_10:
+    row_structure: 'centered 2+2+1 layout across 3 rows (Row 1: 2 equal-sized cards;
+      Row 2: 2 equal-sized cards matching Row 1; Row 3: 1 single wide centered hero
+      card spanning full width)'
+    total_cards: 5
+    layout_description: Exactly {total_cards} individual discrete rounded-corner flashcard
+      boxes arranged in a {row_structure}. Total exactly {total_cards} cards on canvas,
+      strictly NO extra box, strictly NO duplicate numerals.
+    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral
+      order with no gaps, no repeated numerals, and no extra cards.'
+    shared_negative_tokens:
+    - repeated numbers
+    - duplicate numerals
+    - extra cards
+    - 6th box
+    - wrong count of objects
+    - wrong number of items
+    - scattered uncounted dots
+    - messy random dots
+    - cartoon faces on counting objects
+object_purity_rules:
+  rejections:
+  - pattern: alphabet_blocks
+    reason: Contains A-B-C letters on block faces — violates zero-text rule
+    substitute: plain wooden cubes with single dot face
+    negative_tokens:
+    - alphabet blocks
+    - ABC blocks
+    - A B C on cubes
+    - letters on blocks
+    - letters on cubes
+    - text on cubes
+    - labeled blocks
+  - pattern: textbook
+    reason: Has text on pages
+    substitute: closed blank-covered book
+    negative_tokens:
+    - text in book
+    - words on pages
+    - open book with text
+  - pattern: sign
+    reason: Displays words
+    substitute: plain colored shape
+    negative_tokens:
+    - text on sign
+    - words on sign
+  - pattern: newspaper
+    reason: Displays printed text
+    substitute: plain rolled paper cylinder
+    negative_tokens:
+    - text on newspaper
+    - printed words
+  - pattern: chalkboard
+    reason: Displays written text
+    substitute: plain blank rectangle
+    negative_tokens:
+    - text on chalkboard
+    - written words on board
+cover_styling:
+  gradient:
+    top_color_rgb:
+    - 255
+    - 224
+    - 102
+    bottom_color_rgb:
+    - 34
+    - 211
+    - 238
+    spine_top_color_rgb:
+    - 255
+    - 215
+    - 80
+    spine_bottom_color_rgb:
+    - 250
+    - 190
+    - 60
+    watermarks:
+      bubble_count: 36
+      star_count: 48
+      sparkle_count: 32
+  title_styling:
+    palette:
+    - '#E74C3C'
+    - '#E67E22'
+    - '#F1C40F'
+    - '#2ECC71'
+    - '#3498DB'
+    - '#9B59B6'
+    - '#E91E63'
+    - '#FF9800'
+    - '#00BCD4'
+    color_and_learn_color: '#FFFFFF'
+    stroke_color: '#2C1810'
+    shadow_color: '#1A0C06'
+  badges:
+    subtitle_pill:
+      bg_color: '#FFFFFF'
+      border_color: '#22D3EE'
+      text_color: '#1E3A8A'
+    bottom_banner:
+      bg_color: '#FFFFFF'
+      border_color: '#E2E8F0'
+      text_color: '#1E3A8A'
+      badge_bg_color: '#FFFFFF'
+      badge_border_color: '#1E3A8A'
+  back_cover:
+    headline: LITTLE HANDS, BIG DISCOVERIES!
+    bullets:
+    - icon: 🍎
+      text: 100+ Everyday Objects, First Words, Letters & Numbers
+    - icon: ✏️
+      text: Extra-Thick Bold Outlines for Tiny Hands & Motor Skills
+    - icon: ⭐
+      text: Simple Wax-Crayon Color Guides on Every Page
+    preview_grid:
+      rows: 2
+      cols: 3
+      card_bg: '#FFFFFF'
+      card_border: '#1E293B'
+      card_radius_px: 28
+      crayon_colors:
+      - '#E74C3C'
+      - '#F1C40F'
+      - '#3498DB'
+      - '#E67E22'
+      - '#E67E22'
+      - '#3498DB'
+  barcode_box:
+    width_px: 700
+    height_px: 430
+    margin_from_spine_px: 42
+    margin_from_bottom_px: 95
+    fill_color: '#FFFFFF'
+    border_color: '#CBD5E1'

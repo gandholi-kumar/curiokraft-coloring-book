@@ -1,0 +1,391 @@
+﻿# =============================================================================
+# CurioKraft Kids — Taxonomy Configuration
+# =============================================================================
+# ALL category keyword sets and visual prompt templates live here.
+# The debate engine reads this file at startup — ZERO hardcoded keywords in code.
+# To support a new Volume or new object category: edit this file, touch no code.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# LIVING TAXONOMY
+# ---------------------------------------------------------------------------
+
+# Objects whose canonical_object name LOOKS like a living being but is NOT.
+# These are checked FIRST — if matched, is_living = False regardless of name.
+inanimate_exceptions:
+  - rocking_horse
+  - toy_robot
+  - horse_shoe
+  - butterfly_net
+  - piggy_bank
+  - dragonfly_kite
+  - hobby_horse
+  - stuffed_animal
+  - rubber_duck
+  - wind_up_toy
+
+# Any token in canonical_object or section that signals a living being.
+# The engine tokenizes the string and checks for intersection with this list.
+living_keywords:
+  - animal
+  - creature
+  - pet
+  - insect
+  - bug
+  - bird
+  - fish
+  - dinosaur
+  - reptile
+  - mammal
+  - dog
+  - puppy
+  - cat
+  - kitten
+  - rabbit
+  - bunny
+  - elephant
+  - bear
+  - teddy
+  - doll
+  - lion
+  - tiger
+  - monkey
+  - duck
+  - frog
+  - butterfly
+  - bee
+  - whale
+  - dolphin
+  - turtle
+  - giraffe
+  - zebra
+  - sheep
+  - cow
+  - horse
+  - pig
+  - chicken
+  - hen
+  - penguin
+  - owl
+  - koala
+  - panda
+  - kangaroo
+  - snail
+  - octopus
+  - crab
+  - deer
+  - fox
+  - squirrel
+  - goat
+  - donkey
+  - parrot
+  - peacock
+  - swan
+  - human
+  - character
+  - queen
+  - king
+  - boy
+  - girl
+  - baby
+
+# ---------------------------------------------------------------------------
+# OBJECT CATEGORY DETECTION
+# Each category has:
+#   keywords    — tokens that match canonical_object or section
+#   section_hints — section-level strings that also match
+#   visual_template — f-string with {readable} placeholder
+# ---------------------------------------------------------------------------
+
+categories:
+
+  vehicles:
+    keywords:
+      - car
+      - bus
+      - truck
+      - train
+      - plane
+      - airplane
+      - boat
+      - yacht
+      - sailboat
+      - bicycle
+      - bike
+      - motorcycle
+      - scooter
+      - taxi
+      - ambulance
+      - fire_truck
+      - police_car
+      - helicopter
+      - rocket
+      - tractor
+      - wagon
+    section_hints:
+      - vehicle
+      - transport
+    visual_template: >-
+      a cute classic {readable}, three-quarter side profile view displaying the complete
+      vehicle body, large chunky round wheels, big clear colorable windows,
+      and friendly preschool proportions
+
+  paired_items:
+    keywords:
+      - shoes
+      - socks
+      - boots
+      - gloves
+      - mittens
+      - maracas
+      - chopsticks
+      - slippers
+      - earrings
+      - flip_flops
+    section_hints: []
+    visual_template: >-
+      a cute matching pair of toddler {readable} placed neatly side-by-side
+      with wide open coloring surfaces
+
+  # State-dependent items are resolved by the engine before category matching.
+  # They are listed here for documentation and future extension.
+  state_dependent:
+    items:
+      book:
+        visual_template: >-
+          a wide open toddler storybook with large clean blank colorable pages
+          and a simple bookmark ribbon
+      umbrella:
+        visual_template: >-
+          an open round canopy umbrella with distinct colorable stripe sections
+          and a clean curved J-handle
+      sunglasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+      glasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+
+  clothing:
+    keywords:
+      - shirt
+      - pants
+      - dress
+      - jacket
+      - coat
+      - sweater
+      - hat
+      - cap
+      - backpack
+      - bag
+      - scarf
+      - skirt
+      - shorts
+      - vest
+      - apron
+      - hoodie
+      - raincoat
+    section_hints:
+      - cloth
+      - wear
+      - fashion
+      - apparel
+    visual_template: >-
+      a classic toddler {readable}, clean 2D flat-lay presentation with neat smooth seams,
+      rounded collar and cuffs, large uncluttered coloring surfaces
+
+  household:
+    keywords:
+      - bed
+      - chair
+      - table
+      - lamp
+      - clock
+      - couch
+      - sofa
+      - bath
+      - bathtub
+      - toothbrush
+      - toothpaste
+      - soap
+      - comb
+      - brush
+      - towel
+      - mirror
+      - vase
+      - kettle
+      - pot
+      - pan
+      - mug
+      - cup
+      - bowl
+      - plate
+      - fork
+      - spoon
+      - knife
+      - scissors
+      - broom
+      - bucket
+    section_hints:
+      - house
+      - home
+      - furniture
+      - kitchen
+      - bathroom
+    visual_template: >-
+      a classic toddler {readable}, clear three-quarter isometric perspective view displaying
+      its iconic simplified physical structure (sturdy legs, smooth surface,
+      cozy preschool proportions), wide open coloring areas
+
+  music:
+    keywords:
+      - drum
+      - guitar
+      - piano
+      - trumpet
+      - flute
+      - xylophone
+      - violin
+      - tambourine
+      - bell
+      - harp
+      - accordion
+      - recorder
+      - saxophone
+      - tuba
+      - banjo
+      - ukulele
+      - cello
+      - clarinet
+    section_hints:
+      - music
+      - instrument
+      - musical
+    visual_template: >-
+      a classic toddler {readable} musical instrument, three-quarter angle view displaying
+      its simplified musical body (bold drum skin and drumsticks, large keys, or clear strings),
+      wide open coloring zones
+
+  toys:
+    keywords:
+      - pinwheel
+      - kaleidoscope
+      - blocks
+      - building_blocks
+      - puzzle
+      - sand_bucket
+      - top
+      - spinning_top
+      - marbles
+      - jump_rope
+      - beach_ball
+      - ball
+      - yo_yo
+      - frisbee
+      - doll_house
+      - train_set
+      - lego
+      - kite
+      - balloon
+    section_hints:
+      - toy
+      - play
+      - game
+    visual_template: >-
+      a classic retro toddler {readable} toy, chunky physical contours with
+      large bold colorable geometric badges and surfaces
+
+  nature:
+    keywords:
+      - tree
+      - flower
+      - cactus
+      - mushroom
+      - cloud
+      - raindrop
+      - snowflake
+      - mountain
+      - pond
+      - waterfall
+      - river
+      - sun
+      - moon
+      - star
+      - rainbow
+      - leaf
+      - grass
+      - rock
+      - stone
+      - wave
+      - volcano
+      - island
+    section_hints:
+      - nature
+      - sky
+      - outdoor
+      - weather
+    visual_template: >-
+      a single majestic {readable}, standalone isolated central vignette with clean rounded
+      contours, strictly zero horizon, zero sky, zero landscape background
+
+  food:
+    keywords:
+      - banana
+      - orange
+      - strawberry
+      - watermelon
+      - grape
+      - pineapple
+      - mango
+      - pear
+      - peach
+      - lemon
+      - carrot
+      - tomato
+      - potato
+      - corn
+      - broccoli
+      - pumpkin
+      - pizza
+      - sandwich
+      - burger
+      - pancake
+      - cookie
+      - donut
+      - cake
+      - ice_cream
+      - popcorn
+      - milk
+      - juice
+      - apple
+      - cherry
+      - coconut
+      - avocado
+      - cucumber
+      - onion
+      - pepper
+      - eggplant
+      - taco
+      - sushi
+      - hotdog
+      - pretzel
+      - waffle
+      - croissant
+      - muffin
+      - cupcake
+    section_hints:
+      - fruit
+      - food
+      - vegetable
+      - snack
+      - dessert
+    visual_template: >-
+      a single delicious {readable}, authentic simplified physical shape with 4 to 6 large
+      chunky distinct coloring segments (chunky seeds, big toppings, or smooth rind curves),
+      zero micro-textures
+
+  # Fallback — used when nothing else matches
+  fallback:
+    visual_template: >-
+      a single {readable}, clear three-quarter or frontal view displaying its most iconic,
+      authentic simplified physical silhouette with wide open coloring zones

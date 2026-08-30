@@ -1,0 +1,1439 @@
+{
+    "manifest_version": "1.0",
+    "book_title": "TINY HANDS COLOR & LEARN",
+    "subtitle": "FUN & EASY FIRST WORDS",
+    "publisher_brand": "CURIOKRAFT-KIDS",
+    "total_pages": 110,
+    "pages": [
+        {
+            "page_id": "P001",
+            "page_number": 1,
+            "section": "Front Matter",
+            "canonical_object": "welcome_belongs_to",
+            "display_label": "THIS BOOK BELONGS TO",
+            "type": "welcome_page",
+            "composition": "title_and_nameplate",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P002",
+            "page_number": 2,
+            "section": "A-Z Alphabet",
+            "canonical_object": "alphabet_a_to_m",
+            "display_label": "A - M FIRST WORDS",
+            "type": "educational_spread",
+            "items_count": 13,
+            "cards": [
+                {
+                    "description": "pure physical Apple",
+                    "object": "apple",
+                    "negative_tokens": [
+                        "face on apple",
+                        "eyes on apple"
+                    ],
+                    "is_living": false,
+                    "positive_description": "pure physical Apple",
+                    "letter": "A"
+                },
+                {
+                    "description": "clean Soccer Ball",
+                    "object": "soccer_ball",
+                    "negative_tokens": [
+                        "face on ball"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Soccer Ball",
+                    "letter": "B"
+                },
+                {
+                    "description": "cute friendly Cat with smiling face and round eyes",
+                    "object": "cat",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly Cat with smiling face and round eyes",
+                    "letter": "C"
+                },
+                {
+                    "description": "cute friendly Puppy Dog with smiling face",
+                    "object": "dog",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly Puppy Dog with smiling face",
+                    "letter": "D"
+                },
+                {
+                    "description": "cute friendly baby Elephant with smiling face",
+                    "object": "elephant",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly baby Elephant with smiling face",
+                    "letter": "E"
+                },
+                {
+                    "description": "cute friendly Fish with smiling eye",
+                    "object": "fish",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly Fish with smiling eye",
+                    "letter": "F"
+                },
+                {
+                    "description": "clean bunch of Grapes",
+                    "object": "grapes",
+                    "negative_tokens": [
+                        "face on grapes"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean bunch of Grapes",
+                    "letter": "G"
+                },
+                {
+                    "description": "clean physical Hat",
+                    "object": "hat",
+                    "negative_tokens": [
+                        "face on hat",
+                        "letter H wearing a hat"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean physical Hat",
+                    "letter": "H"
+                },
+                {
+                    "description": "clean Ice Cream Cone",
+                    "object": "ice_cream",
+                    "negative_tokens": [
+                        "face on ice cream"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Ice Cream Cone",
+                    "letter": "I"
+                },
+                {
+                    "description": "clean Jam Jar",
+                    "object": "jam_jar",
+                    "negative_tokens": [
+                        "face on jar",
+                        "letter J inside jar"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Jam Jar",
+                    "letter": "J"
+                },
+                {
+                    "description": "clean flying Kite",
+                    "object": "kite",
+                    "negative_tokens": [
+                        "face on kite"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean flying Kite",
+                    "letter": "K"
+                },
+                {
+                    "description": "cute friendly Lion with smiling face",
+                    "object": "lion",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly Lion with smiling face",
+                    "letter": "L"
+                },
+                {
+                    "description": "clean Crescent Moon and stars",
+                    "object": "moon",
+                    "negative_tokens": [
+                        "face on moon"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Crescent Moon and stars",
+                    "letter": "M"
+                }
+            ]
+        },
+        {
+            "page_id": "P003",
+            "page_number": 3,
+            "section": "A-Z Alphabet",
+            "canonical_object": "alphabet_n_to_z",
+            "display_label": "N - Z FIRST WORDS",
+            "type": "educational_spread",
+            "items_count": 13,
+            "cards": [
+                {
+                    "description": "clean physical acorn Nut",
+                    "object": "nut",
+                    "negative_tokens": [
+                        "face on nut"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean physical acorn Nut",
+                    "letter": "N"
+                },
+                {
+                    "description": "clean round Orange fruit",
+                    "object": "orange",
+                    "negative_tokens": [
+                        "eyes on orange",
+                        "face on orange"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean round Orange fruit",
+                    "letter": "O"
+                },
+                {
+                    "description": "clean physical Pencil",
+                    "object": "pencil",
+                    "negative_tokens": [
+                        "face on pencil"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean physical Pencil",
+                    "letter": "P"
+                },
+                {
+                    "description": "cute friendly smiling Queen character",
+                    "object": "queen",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly smiling Queen character",
+                    "letter": "Q"
+                },
+                {
+                    "description": "cute friendly smiling Rabbit bunny",
+                    "object": "rabbit",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly smiling Rabbit bunny",
+                    "letter": "R"
+                },
+                {
+                    "description": "clean radiant Sun",
+                    "object": "sun",
+                    "negative_tokens": [
+                        "face on sun",
+                        "eyes on sun"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean radiant Sun",
+                    "letter": "S"
+                },
+                {
+                    "description": "clean oak Tree",
+                    "object": "tree",
+                    "negative_tokens": [
+                        "face on tree"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean oak Tree",
+                    "letter": "T"
+                },
+                {
+                    "description": "clean open Umbrella",
+                    "object": "umbrella",
+                    "negative_tokens": [
+                        "eyes on umbrella"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean open Umbrella",
+                    "letter": "U"
+                },
+                {
+                    "description": "clean flower Vase",
+                    "object": "vase",
+                    "negative_tokens": [
+                        "face on vase"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean flower Vase",
+                    "letter": "V"
+                },
+                {
+                    "description": "clean Wristwatch",
+                    "object": "watch",
+                    "negative_tokens": [
+                        "face on watch"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Wristwatch",
+                    "letter": "W"
+                },
+                {
+                    "description": "clean musical Xylophone",
+                    "object": "xylophone",
+                    "negative_tokens": [
+                        "face on xylophone"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean musical Xylophone",
+                    "letter": "X"
+                },
+                {
+                    "description": "clean Sailboat Yacht",
+                    "object": "yacht",
+                    "negative_tokens": [
+                        "face on boat",
+                        "face on yacht"
+                    ],
+                    "is_living": false,
+                    "positive_description": "clean Sailboat Yacht",
+                    "letter": "Y"
+                },
+                {
+                    "description": "cute friendly smiling Zebra animal",
+                    "object": "zebra",
+                    "negative_tokens": [],
+                    "is_living": true,
+                    "positive_description": "cute friendly smiling Zebra animal",
+                    "letter": "Z"
+                }
+            ]
+        },
+        {
+            "page_id": "P004",
+            "page_number": 4,
+            "section": "Numbers 0-10",
+            "canonical_object": "numbers_0_to_5",
+            "display_label": "NUMBERS 0 - 5",
+            "type": "counting_spread",
+            "items_count": 6,
+            "cards": [
+                {
+                    "negative_tokens": [
+                        "face on ring"
+                    ],
+                    "count": 0,
+                    "spatial_anchor": "1 ring centered",
+                    "object_is_text_free": true,
+                    "object": "hollow ring",
+                    "numeral": 0,
+                    "layout_geometry": "single centered hollow circular ring (representing zero objects)",
+                    "positive_description": "paired with a single clean hollow circular ring on right (representing zero objects)"
+                },
+                {
+                    "negative_tokens": [
+                        "2 stars",
+                        "multiple stars"
+                    ],
+                    "count": 1,
+                    "spatial_anchor": "1 star centered",
+                    "object_is_text_free": true,
+                    "object": "star",
+                    "numeral": 1,
+                    "layout_geometry": "1 single centered 5-point star outline",
+                    "positive_description": "paired with exactly 1 single centered 5-point star outline on right"
+                },
+                {
+                    "negative_tokens": [
+                        "3 apples on card 2",
+                        "third apple",
+                        "extra apple"
+                    ],
+                    "count": 2,
+                    "spatial_anchor": "2 apples side by side in a strict horizontal line",
+                    "object_is_text_free": true,
+                    "object": "apple",
+                    "numeral": 2,
+                    "layout_geometry": "horizontal pair: 1 left apple, 1 right apple",
+                    "positive_description": "paired with strictly two large apples placed in a single horizontal line side-by-side (1 left apple, 1 right apple), strictly NO third apple, strictly two apples only"
+                },
+                {
+                    "negative_tokens": [
+                        "4 balls",
+                        "extra ball"
+                    ],
+                    "count": 3,
+                    "spatial_anchor": "3 balls in triangle (1 top, 2 bottom)",
+                    "object_is_text_free": true,
+                    "object": "ball",
+                    "numeral": 3,
+                    "layout_geometry": "triangle formation: 1 top, 2 bottom",
+                    "positive_description": "paired with exactly three balls in a neat triangle formation (1 top ball, 2 bottom balls)"
+                },
+                {
+                    "negative_tokens": [
+                        "5 flowers",
+                        "extra flower"
+                    ],
+                    "count": 4,
+                    "spatial_anchor": "4 flowers in 2x2 grid (2 top, 2 bottom)",
+                    "object_is_text_free": true,
+                    "object": "flower",
+                    "numeral": 4,
+                    "layout_geometry": "2x2 square grid: 2 top, 2 bottom",
+                    "positive_description": "paired with a neat 2x2 square formation of exactly four flowers (2 top flowers, 2 bottom flowers)"
+                },
+                {
+                    "negative_tokens": [
+                        "6 balloons on card 5",
+                        "7 balloons",
+                        "extra balloon"
+                    ],
+                    "count": 5,
+                    "spatial_anchor": "5 balloons in arch (2 left + 1 center top + 2 right)",
+                    "object_is_text_free": true,
+                    "object": "balloon",
+                    "numeral": 5,
+                    "layout_geometry": "arch formation: 2 left, 1 center top, 2 right = 5 total",
+                    "positive_description": "paired with exactly five round balloon circles in an arch formation (2 balloons on left, 1 balloon at center top, 2 balloons on right), all five balloons tied together with a single ribbon at base, strictly five balloons only, strictly NO 6th balloon"
+                }
+            ]
+        },
+        {
+            "page_id": "P005",
+            "page_number": 5,
+            "section": "Numbers 0-10",
+            "canonical_object": "numbers_6_to_10",
+            "display_label": "NUMBERS 6 - 10",
+            "type": "counting_spread",
+            "items_count": 5,
+            "cards": [
+                {
+                    "negative_tokens": [
+                        "7 leaves",
+                        "extra leaf"
+                    ],
+                    "count": 6,
+                    "spatial_anchor": "6 leaves in 2-col x 3-row grid (3 left, 3 right)",
+                    "object_is_text_free": true,
+                    "object": "leaf",
+                    "numeral": 6,
+                    "layout_geometry": "2-column grid: 3 left, 3 right = 6 total",
+                    "positive_description": "paired with a neat 2-column grid of exactly six leaves (3 left leaves, 3 right leaves)"
+                },
+                {
+                    "negative_tokens": [
+                        "6 candies on card 7",
+                        "8 candies",
+                        "extra candy"
+                    ],
+                    "count": 7,
+                    "spatial_anchor": "7 candies in 2 rows (4 top, 3 bottom)",
+                    "object_is_text_free": true,
+                    "object": "candy",
+                    "numeral": 7,
+                    "layout_geometry": "2-row arrangement: 4 top, 3 bottom = 7 total",
+                    "positive_description": "paired with a neat two-row arrangement of exactly seven wrapped candies (4 top candies, 3 bottom candies), strictly seven candies only"
+                },
+                {
+                    "negative_tokens": [
+                        "6 cubes on card 8",
+                        "7 cubes on card 8",
+                        "11 cubes",
+                        "alphabet blocks",
+                        "ABC blocks",
+                        "A B C on cubes",
+                        "letters on blocks",
+                        "letters on cubes",
+                        "text on cubes",
+                        "labeled blocks",
+                        "face on cubes"
+                    ],
+                    "count": 8,
+                    "spatial_anchor": "8 plain wooden cubes in 2x4 grid (4 top, 4 bottom)",
+                    "object_is_text_free": true,
+                    "object": "plain wooden cube",
+                    "numeral": 8,
+                    "layout_geometry": "2x4 matrix: 4 top row, 4 bottom row = 8 total",
+                    "positive_description": "paired with a neat 2x4 matrix of exactly eight plain wooden cubes with NO letters and NO text on their faces (each cube has only a single small round dot on its face), 4 cubes on the top row and 4 cubes on the bottom row, strictly eight cubes only"
+                },
+                {
+                    "negative_tokens": [
+                        "6 buttons on card 9",
+                        "10 buttons",
+                        "extra button"
+                    ],
+                    "count": 9,
+                    "spatial_anchor": "9 buttons in 3x3 grid (3 top, 3 middle, 3 bottom)",
+                    "object_is_text_free": true,
+                    "object": "button",
+                    "numeral": 9,
+                    "layout_geometry": "3x3 matrix: 3 top, 3 middle, 3 bottom = 9 total",
+                    "positive_description": "paired with a neat 3x3 square matrix of exactly nine large round buttons with 4 sewing holes each (3 top buttons, 3 middle buttons, 3 bottom buttons), strictly nine buttons only"
+                },
+                {
+                    "negative_tokens": [
+                        "11 stars on card 10",
+                        "9 stars",
+                        "extra star"
+                    ],
+                    "count": 10,
+                    "spatial_anchor": "10 stars in 2 rows (5 top, 5 bottom)",
+                    "object_is_text_free": true,
+                    "object": "star",
+                    "numeral": 10,
+                    "layout_geometry": "2-row arrangement: 5 top, 5 bottom = 10 total",
+                    "positive_description": "paired with a neat two-row arrangement of exactly ten 5-point stars (5 top stars, 5 bottom stars), strictly ten stars only"
+                }
+            ]
+        },
+        {
+            "page_id": "P006",
+            "page_number": 6,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "banana",
+            "display_label": "BANANA",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P007",
+            "page_number": 7,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "orange",
+            "display_label": "ORANGE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P008",
+            "page_number": 8,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "strawberry",
+            "display_label": "STRAWBERRY",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P009",
+            "page_number": 9,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "watermelon",
+            "display_label": "WATERMELON",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P010",
+            "page_number": 10,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "grape",
+            "display_label": "GRAPE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P011",
+            "page_number": 11,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "pineapple",
+            "display_label": "PINEAPPLE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P012",
+            "page_number": 12,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "mango",
+            "display_label": "MANGO",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P013",
+            "page_number": 13,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "pear",
+            "display_label": "PEAR",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P014",
+            "page_number": 14,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "peach",
+            "display_label": "PEACH",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P015",
+            "page_number": 15,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "lemon",
+            "display_label": "LEMON",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P016",
+            "page_number": 16,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "carrot",
+            "display_label": "CARROT",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P017",
+            "page_number": 17,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "tomato",
+            "display_label": "TOMATO",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P018",
+            "page_number": 18,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "potato",
+            "display_label": "POTATO",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P019",
+            "page_number": 19,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "corn",
+            "display_label": "CORN",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P020",
+            "page_number": 20,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "broccoli",
+            "display_label": "BROCCOLI",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P021",
+            "page_number": 21,
+            "section": "Fruits & Vegetables",
+            "canonical_object": "pumpkin",
+            "display_label": "PUMPKIN",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P022",
+            "page_number": 22,
+            "section": "Food & Drinks",
+            "canonical_object": "pizza",
+            "display_label": "PIZZA",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P023",
+            "page_number": 23,
+            "section": "Food & Drinks",
+            "canonical_object": "sandwich",
+            "display_label": "SANDWICH",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P024",
+            "page_number": 24,
+            "section": "Food & Drinks",
+            "canonical_object": "burger",
+            "display_label": "BURGER",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P025",
+            "page_number": 25,
+            "section": "Food & Drinks",
+            "canonical_object": "pancake",
+            "display_label": "PANCAKE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P026",
+            "page_number": 26,
+            "section": "Food & Drinks",
+            "canonical_object": "cookie",
+            "display_label": "COOKIE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P027",
+            "page_number": 27,
+            "section": "Food & Drinks",
+            "canonical_object": "donut",
+            "display_label": "DONUT",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P028",
+            "page_number": 28,
+            "section": "Food & Drinks",
+            "canonical_object": "cake",
+            "display_label": "CAKE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P029",
+            "page_number": 29,
+            "section": "Food & Drinks",
+            "canonical_object": "ice_cream",
+            "display_label": "ICE CREAM",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P030",
+            "page_number": 30,
+            "section": "Food & Drinks",
+            "canonical_object": "popcorn",
+            "display_label": "POPCORN",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P031",
+            "page_number": 31,
+            "section": "Food & Drinks",
+            "canonical_object": "milk",
+            "display_label": "MILK",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P032",
+            "page_number": 32,
+            "section": "Food & Drinks",
+            "canonical_object": "juice",
+            "display_label": "JUICE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P033",
+            "page_number": 33,
+            "section": "Food & Drinks",
+            "canonical_object": "cup",
+            "display_label": "CUP",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P034",
+            "page_number": 34,
+            "section": "Toys & Playtime",
+            "canonical_object": "teddy_bear",
+            "display_label": "TEDDY BEAR",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P035",
+            "page_number": 35,
+            "section": "Toys & Playtime",
+            "canonical_object": "doll",
+            "display_label": "DOLL",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P036",
+            "page_number": 36,
+            "section": "Toys & Playtime",
+            "canonical_object": "wagon",
+            "display_label": "WAGON",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P037",
+            "page_number": 37,
+            "section": "Toys & Playtime",
+            "canonical_object": "kaleidoscope",
+            "display_label": "KALEIDOSCOPE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P038",
+            "page_number": 38,
+            "section": "Toys & Playtime",
+            "canonical_object": "building_blocks",
+            "display_label": "BUILDING BLOCKS",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P039",
+            "page_number": 39,
+            "section": "Toys & Playtime",
+            "canonical_object": "puzzle",
+            "display_label": "PUZZLE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P040",
+            "page_number": 40,
+            "section": "Toys & Playtime",
+            "canonical_object": "toy_robot",
+            "display_label": "TOY ROBOT",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P041",
+            "page_number": 41,
+            "section": "Toys & Playtime",
+            "canonical_object": "pinwheel",
+            "display_label": "PINWHEEL",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P042",
+            "page_number": 42,
+            "section": "Toys & Playtime",
+            "canonical_object": "sand_bucket",
+            "display_label": "SAND BUCKET",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P043",
+            "page_number": 43,
+            "section": "Toys & Playtime",
+            "canonical_object": "spinning_top",
+            "display_label": "SPINNING TOP",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P044",
+            "page_number": 44,
+            "section": "Toys & Playtime",
+            "canonical_object": "marbles",
+            "display_label": "MARBLES",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P045",
+            "page_number": 45,
+            "section": "Toys & Playtime",
+            "canonical_object": "jump_rope",
+            "display_label": "JUMP ROPE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P046",
+            "page_number": 46,
+            "section": "Toys & Playtime",
+            "canonical_object": "rocking_horse",
+            "display_label": "ROCKING HORSE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P047",
+            "page_number": 47,
+            "section": "Toys & Playtime",
+            "canonical_object": "beach_ball",
+            "display_label": "BEACH BALL",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P048",
+            "page_number": 48,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "dog",
+            "display_label": "DOG",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P049",
+            "page_number": 49,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "cat",
+            "display_label": "CAT",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P050",
+            "page_number": 50,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "rabbit",
+            "display_label": "RABBIT",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P051",
+            "page_number": 51,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "lion",
+            "display_label": "LION",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P052",
+            "page_number": 52,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "elephant",
+            "display_label": "ELEPHANT",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P053",
+            "page_number": 53,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "giraffe",
+            "display_label": "GIRAFFE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P054",
+            "page_number": 54,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "monkey",
+            "display_label": "MONKEY",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P055",
+            "page_number": 55,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "bear",
+            "display_label": "BEAR",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P056",
+            "page_number": 56,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "tiger",
+            "display_label": "TIGER",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P057",
+            "page_number": 57,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "horse",
+            "display_label": "HORSE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P058",
+            "page_number": 58,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "cow",
+            "display_label": "COW",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P059",
+            "page_number": 59,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "sheep",
+            "display_label": "SHEEP",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P060",
+            "page_number": 60,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "chicken",
+            "display_label": "CHICKEN",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P061",
+            "page_number": 61,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "duck",
+            "display_label": "DUCK",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P062",
+            "page_number": 62,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "frog",
+            "display_label": "FROG",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P063",
+            "page_number": 63,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "butterfly",
+            "display_label": "BUTTERFLY",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P064",
+            "page_number": 64,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "snail",
+            "display_label": "SNAIL",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P065",
+            "page_number": 65,
+            "section": "Animals & Nature Creatures",
+            "canonical_object": "bee",
+            "display_label": "BEE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P066",
+            "page_number": 66,
+            "section": "Clothing & Accessories",
+            "canonical_object": "shirt",
+            "display_label": "SHIRT",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P067",
+            "page_number": 67,
+            "section": "Clothing & Accessories",
+            "canonical_object": "pants",
+            "display_label": "PANTS",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P068",
+            "page_number": 68,
+            "section": "Clothing & Accessories",
+            "canonical_object": "dress",
+            "display_label": "DRESS",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P069",
+            "page_number": 69,
+            "section": "Clothing & Accessories",
+            "canonical_object": "socks",
+            "display_label": "SOCKS",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P070",
+            "page_number": 70,
+            "section": "Clothing & Accessories",
+            "canonical_object": "shoes",
+            "display_label": "SHOES",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P071",
+            "page_number": 71,
+            "section": "Clothing & Accessories",
+            "canonical_object": "jacket",
+            "display_label": "JACKET",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P072",
+            "page_number": 72,
+            "section": "Clothing & Accessories",
+            "canonical_object": "backpack",
+            "display_label": "BACKPACK",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P073",
+            "page_number": 73,
+            "section": "Clothing & Accessories",
+            "canonical_object": "sunglasses",
+            "display_label": "SUNGLASSES",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P074",
+            "page_number": 74,
+            "section": "Household & Daily Living",
+            "canonical_object": "bed",
+            "display_label": "BED",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P075",
+            "page_number": 75,
+            "section": "Household & Daily Living",
+            "canonical_object": "chair",
+            "display_label": "CHAIR",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P076",
+            "page_number": 76,
+            "section": "Household & Daily Living",
+            "canonical_object": "table",
+            "display_label": "TABLE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P077",
+            "page_number": 77,
+            "section": "Household & Daily Living",
+            "canonical_object": "lamp",
+            "display_label": "LAMP",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P078",
+            "page_number": 78,
+            "section": "Household & Daily Living",
+            "canonical_object": "clock",
+            "display_label": "CLOCK",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P079",
+            "page_number": 79,
+            "section": "Household & Daily Living",
+            "canonical_object": "toothbrush",
+            "display_label": "TOOTHBRUSH",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P080",
+            "page_number": 80,
+            "section": "Household & Daily Living",
+            "canonical_object": "comb",
+            "display_label": "COMB",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P081",
+            "page_number": 81,
+            "section": "Household & Daily Living",
+            "canonical_object": "soap",
+            "display_label": "SOAP",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P082",
+            "page_number": 82,
+            "section": "Household & Daily Living",
+            "canonical_object": "towel",
+            "display_label": "TOWEL",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P083",
+            "page_number": 83,
+            "section": "Household & Daily Living",
+            "canonical_object": "pillow",
+            "display_label": "PILLOW",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P084",
+            "page_number": 84,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "car",
+            "display_label": "CAR",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P085",
+            "page_number": 85,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "bus",
+            "display_label": "BUS",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P086",
+            "page_number": 86,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "truck",
+            "display_label": "TRUCK",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P087",
+            "page_number": 87,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "bicycle",
+            "display_label": "BICYCLE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P088",
+            "page_number": 88,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "motorcycle",
+            "display_label": "MOTORCYCLE",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P089",
+            "page_number": 89,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "taxi",
+            "display_label": "TAXI",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P090",
+            "page_number": 90,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "ambulance",
+            "display_label": "AMBULANCE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P091",
+            "page_number": 91,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "fire_truck",
+            "display_label": "FIRE TRUCK",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P092",
+            "page_number": 92,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "police_car",
+            "display_label": "POLICE CAR",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P093",
+            "page_number": 93,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "helicopter",
+            "display_label": "HELICOPTER",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P094",
+            "page_number": 94,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "sailboat",
+            "display_label": "SAILBOAT",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P095",
+            "page_number": 95,
+            "section": "Vehicles & Transportation",
+            "canonical_object": "rocket",
+            "display_label": "ROCKET",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P096",
+            "page_number": 96,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "tree",
+            "display_label": "TREE",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P097",
+            "page_number": 97,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "flower",
+            "display_label": "FLOWER",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P098",
+            "page_number": 98,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "cactus",
+            "display_label": "CACTUS",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P099",
+            "page_number": 99,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "mushroom",
+            "display_label": "MUSHROOM",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P100",
+            "page_number": 100,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "cloud",
+            "display_label": "CLOUD",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P101",
+            "page_number": 101,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "raindrop",
+            "display_label": "RAINDROP",
+            "composition": "single_centered_object",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P102",
+            "page_number": 102,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "snowflake",
+            "display_label": "SNOWFLAKE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P103",
+            "page_number": 103,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "mountain",
+            "display_label": "MOUNTAIN",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P104",
+            "page_number": 104,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "pond",
+            "display_label": "POND",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P105",
+            "page_number": 105,
+            "section": "Nature, Sky & Garden",
+            "canonical_object": "waterfall",
+            "display_label": "WATERFALL",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P106",
+            "page_number": 106,
+            "section": "Musical Instruments & Sound Toys",
+            "canonical_object": "piano",
+            "display_label": "PIANO",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P107",
+            "page_number": 107,
+            "section": "Musical Instruments & Sound Toys",
+            "canonical_object": "trumpet",
+            "display_label": "TRUMPET",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P108",
+            "page_number": 108,
+            "section": "Musical Instruments & Sound Toys",
+            "canonical_object": "violin",
+            "display_label": "VIOLIN",
+            "composition": "single_centered_object",
+            "difficulty": 3
+        },
+        {
+            "page_id": "P109",
+            "page_number": 109,
+            "section": "Musical Instruments & Sound Toys",
+            "canonical_object": "tambourine",
+            "display_label": "TAMBOURINE",
+            "composition": "single_centered_object",
+            "difficulty": 2
+        },
+        {
+            "page_id": "P110",
+            "page_number": 110,
+            "section": "Back Matter",
+            "canonical_object": "completion_certificate",
+            "display_label": "SUPER COLORIST AWARD",
+            "type": "certificate_page",
+            "composition": "certificate_award_medal",
+            "difficulty": 1
+        }
+    ],
+    "global_page_rules": {
+        "dimensions_px": {
+            "width": 2550,
+            "height": 3300
+        },
+        "dpi": 300,
+        "trim_in": {
+            "width": 8.5,
+            "height": 11.0
+        },
+        "bleed": false,
+        "color_mode": "black_and_white",
+        "safe_margin_in": {
+            "inside_gutter": 0.5,
+            "outside": 0.5,
+            "top": 0.5,
+            "bottom": 0.5
+        },
+        "typography": {
+            "case": "UPPERCASE",
+            "style": "bubbly_child_friendly",
+            "position": "top_center"
+        }
+    }
+}

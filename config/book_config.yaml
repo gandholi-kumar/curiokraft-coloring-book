@@ -1,0 +1,111 @@
+book:
+  title: "TINY HANDS COLOR & LEARN"
+  subtitle: "FUN & EASY FIRST WORDS"
+  brand: "CURIOKRAFT-KIDS"
+  target_audience:
+    age_min: 1
+    age_max: 4
+    description: "Entire 1-4 toddler range"
+  
+  interior:
+    page_count: 110
+    color_mode: "black_and_white"
+    paper_type: "white"
+    trim_size:
+      width_in: 8.5
+      height_in: 11.0
+    bleed: false
+    target_dpi: 300
+    master_canvas_px:
+      width: 2550
+      height: 3300
+    safe_margins_in:
+      inside_gutter: 0.50
+      outside: 0.50
+      top: 0.50
+      bottom: 0.50
+    kdp_minimum_margins_in:
+      inside_gutter: 0.375
+      outside: 0.250
+      top: 0.250
+      bottom: 0.250
+
+  cover:
+    type: "paperback"
+    overall_dimensions_in:
+      width: 17.498
+      height: 11.250
+    spine_width_in: 0.248
+    front_cover_in:
+      width: 8.5
+      height: 11.0
+    back_cover_in:
+      width: 8.5
+      height: 11.0
+    barcode_exclusion_in:
+      width: 2.000
+      height: 1.200
+      location: "back_cover_bottom_right"
+    color_profile: "CMYK"
+    finish: "glossy_or_matte_commercial"
+
+  visual_style:
+    illustration: "cute_bold_2d_vector_line_art"
+    primary_object_per_page: 1
+    background: "none"
+    shading: "prohibited"
+    grayscale: "prohibited"
+    color: "prohibited"
+    three_d: "prohibited"
+    photographic: "prohibited"
+    micro_details: "prohibited"
+
+  typography:
+    position: "top_of_image"
+    case: "UPPERCASE"
+    style: "bubbly_child_friendly"
+    spelling_enforcement: "strict_manifest"
+
+  sections:
+    - name: "A-Z Alphabet"
+      pages: [1, 2]
+      count: 2
+    - name: "Numbers 0-10"
+      pages: [3, 4]
+      count: 2
+    - name: "Fruits & Vegetables"
+      pages: [5, 20]
+      count: 16
+    - name: "Food & Drinks"
+      pages: [21, 32]
+      count: 12
+    - name: "Toys & Playtime"
+      pages: [33, 46]
+      count: 14
+    - name: "Animals & Nature Creatures"
+      pages: [47, 64]
+      count: 18
+    - name: "Clothing & Accessories"
+      pages: [65, 72]
+      count: 8
+    - name: "Household & Daily Living"
+      pages: [73, 82]
+      count: 10
+    - name: "Vehicles & Transportation"
+      pages: [83, 94]
+      count: 12
+    - name: "Nature, Sky & Garden"
+      pages: [95, 104]
+      count: 10
+    - name: "Musical Instruments & Sound Toys"
+      pages: [105, 110]
+      count: 6
+
+  pipeline_policy:
+    confidence_threshold: 0.90
+    max_regeneration_attempts: 3
+    human_checkpoints:
+      - "Gate 1: Blueprint Approval (Approved)"
+      - "Gate 2: Sample Pages Approval"
+      - "Gate 3: Cover Master Approval"
+      - "Gate 4: Final 110-Page Book & Preflight Approval"
