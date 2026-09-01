@@ -46,20 +46,42 @@ pip install -e .
 *(This automatically installs all dependencies: Typer, Rich, Pillow, OpenCV, NumPy, PyMuPDF, ReportLab, Pydantic, etc.)*
 
 ### Step 5: Configure Your API Key (or Use Mock Mode)
-Choose one of the following options in PowerShell:
+
+You can set your API keys either in a local **`.env`** file (recommended for persistence) or directly in your PowerShell terminal:
+
+#### Method 1: Create a `.env` file in the project root (Recommended)
+Create a file named `.env` in the root folder with your preferred provider's key:
+```env
+# Google Gemini (Default recommended)
+GEMINI_API_KEY=AIzaSy...
+
+# Or OpenAI
+# OPENAI_API_KEY=sk-proj-...
+
+# Or Anthropic Claude
+# ANTHROPIC_API_KEY=sk-ant-api03-...
+
+# Or Force Offline Simulation Mode (Zero API cost)
+# CK_DEFAULT_PROVIDER=mock
+```
+
+#### Method 2: Set in PowerShell Session
 ```powershell
-# Option A: OpenAI (Recommended for DALL-E / GPT-4o)
-$env:OPENAI_API_KEY = "sk-proj-..."
-
-# Option B: Anthropic Claude
-$env:ANTHROPIC_API_KEY = "sk-ant-api03-..."
-
-# Option C: Google Gemini
+# Option A: Google Gemini
 $env:GEMINI_API_KEY = "AIzaSy..."
 
+# Option B: OpenAI
+$env:OPENAI_API_KEY = "sk-proj-..."
+
+# Option C: Anthropic Claude
+$env:ANTHROPIC_API_KEY = "sk-ant-api03-..."
+
 # Option D: Offline Simulation Mode (Zero API cost, zero quota usage)
-$env:CK_DEFAULT_PROVIDER = "mock"
-```
+#### Method 3: Free Web UI Workflow (Zero API Cost)
+If you prefer not to use paid API keys or want to generate illustrations using Google's free web interface with saved presets:
+- See the dedicated setup guide: [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) for the exact **3:4 Aspect Ratio**, **Images only** output mode, and copy-paste **System Instruction presets**.
+- Run `curiokraft-book prompt export` to export prompts into Markdown.
+- Drop generated `.jpg` or `.png` illustrations into `inbox/raw_pages/` and run `curiokraft-book ingest`.
 
 ### Step 6: Verify Workspace Health or Scaffold New Laptop
 If you ever clone the project to a **new laptop**, or if any local folders were accidentally deleted, run:

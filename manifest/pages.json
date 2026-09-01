@@ -323,17 +323,19 @@
                 },
                 {
                     "negative_tokens": [
-                        "3 apples on card 2",
-                        "third apple",
-                        "extra apple"
+                        "3 ducks on card 2",
+                        "third duck",
+                        "extra duck",
+                        "apples for 2",
+                        "separate box for ducks"
                     ],
                     "count": 2,
-                    "spatial_anchor": "2 apples side by side in a strict horizontal line",
+                    "spatial_anchor": "2 ducks stacked vertically (1 top, 1 bottom)",
                     "object_is_text_free": true,
-                    "object": "apple",
+                    "object": "duck",
                     "numeral": 2,
-                    "layout_geometry": "horizontal pair: 1 left apple, 1 right apple",
-                    "positive_description": "paired with strictly two large apples placed in a single horizontal line side-by-side (1 left apple, 1 right apple), strictly NO third apple, strictly two apples only"
+                    "layout_geometry": "vertical stack: 1 top duck, 1 bottom duck",
+                    "positive_description": "paired with exactly 2 cute little cartoon ducks stacked vertically inside the right half of the card (1 duck on top, 1 duck on bottom), strictly only 2 ducks, strictly NO 3rd duck, strictly NO separate box"
                 },
                 {
                     "negative_tokens": [
@@ -363,17 +365,19 @@
                 },
                 {
                     "negative_tokens": [
-                        "6 balloons on card 5",
-                        "7 balloons",
-                        "extra balloon"
+                        "6 fish on card 5",
+                        "extra fish",
+                        "4 fish",
+                        "balloons for 5",
+                        "separate box for fish"
                     ],
                     "count": 5,
-                    "spatial_anchor": "5 balloons in arch (2 left + 1 center top + 2 right)",
+                    "spatial_anchor": "5 fish in compact group (2 top, 2 middle, 1 bottom center)",
                     "object_is_text_free": true,
-                    "object": "balloon",
+                    "object": "fish",
                     "numeral": 5,
-                    "layout_geometry": "arch formation: 2 left, 1 center top, 2 right = 5 total",
-                    "positive_description": "paired with exactly five round balloon circles in an arch formation (2 balloons on left, 1 balloon at center top, 2 balloons on right), all five balloons tied together with a single ribbon at base, strictly five balloons only, strictly NO 6th balloon"
+                    "layout_geometry": "compact group: 2 top row, 2 middle row, 1 bottom center = 5 total",
+                    "positive_description": "paired with exactly 5 small cute fish arranged compactly inside the right half of the card (2 fish on top row, 2 fish on middle row, 1 fish centered on bottom row), strictly only 5 fish, strictly NO 6th fish, strictly NO separate box"
                 }
             ]
         },
@@ -415,25 +419,22 @@
                 },
                 {
                     "negative_tokens": [
-                        "6 cubes on card 8",
-                        "7 cubes on card 8",
-                        "11 cubes",
-                        "alphabet blocks",
-                        "ABC blocks",
-                        "A B C on cubes",
-                        "letters on blocks",
-                        "letters on cubes",
-                        "text on cubes",
-                        "labeled blocks",
-                        "face on cubes"
+                        "6 butterflies on card 8",
+                        "7 butterflies",
+                        "9 butterflies",
+                        "cookies for 8",
+                        "circles for 8",
+                        "cubes",
+                        "wooden blocks",
+                        "boxes"
                     ],
                     "count": 8,
-                    "spatial_anchor": "8 plain wooden cubes in 2x4 grid (4 top, 4 bottom)",
+                    "spatial_anchor": "8 butterflies in 2 rows of 4 (4 top, 4 bottom)",
                     "object_is_text_free": true,
-                    "object": "plain wooden cube",
+                    "object": "butterfly",
                     "numeral": 8,
-                    "layout_geometry": "2x4 matrix: 4 top row, 4 bottom row = 8 total",
-                    "positive_description": "paired with a neat 2x4 matrix of exactly eight plain wooden cubes with NO letters and NO text on their faces (each cube has only a single small round dot on its face), 4 cubes on the top row and 4 cubes on the bottom row, strictly eight cubes only"
+                    "layout_geometry": "2x4 matrix: 4 butterflies top row, 4 butterflies bottom row = 8 total",
+                    "positive_description": "paired with exactly 8 small simple butterflies arranged in 2 rows of 4 (butterfly 1, 2, 3, 4 on top row; butterfly 5, 6, 7, 8 on bottom row), strictly exactly eight butterflies only, strictly NO cookies, strictly NO circles"
                 },
                 {
                     "negative_tokens": [

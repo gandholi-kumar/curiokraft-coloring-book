@@ -49,6 +49,113 @@ _CURRICULUM: dict = _load_yaml("config/curriculum.yaml")
 
 
 # =============================================================================
+# Custom Spread Prompt Loader
+# Reads config/alphabet_spreads.yaml + config/A-Z.md template.
+# Returns the filled prompt verbatim — no AI generation involved.
+# For Vol 2/3: swap in a different alphabet_spreads.yaml with new words.
+# =============================================================================
+
+def _find_config_file(name: str) -> Path | None:
+    """Locate a config file relative to cwd or package root."""
+    candidates = [
+        Path.cwd() / name,
+        Path(__file__).parent.parent.parent.parent / name,
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return None
+
+
+def _build_alphabet_spread_prompt(section_key: str) -> str | None:
+    """Build a filled prompt from the A-Z.md template + alphabet_spreads.yaml data.
+
+    Args:
+        section_key: 'a_to_m' for P002 or 'n_to_z' for P003
+
+    Returns:
+        The fully-filled prompt string, or None if config files are missing.
+    """
+    template_path = _find_config_file("config/A-Z.md")
+    data_path = _find_config_file("config/alphabet_spreads.yaml")
+
+    if template_path is None or data_path is None:
+        logger.warning(
+            "Custom alphabet spread files missing (config/A-Z.md and/or "
+            "config/alphabet_spreads.yaml). Falling back to generated prompt."
+        )
+        return None
+
+    template = template_path.read_text(encoding="utf-8")
+
+    with open(data_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    section = data.get(section_key)
+    if not section:
+        logger.warning(f"Section '{section_key}' not found in alphabet_spreads.yaml.")
+        return None
+
+    letters: list[dict] = section.get("letters", [])
+    if len(letters) != 13:
+        logger.warning(
+            f"Expected 13 letters in '{section_key}', found {len(letters)}. Skipping custom prompt."
+        )
+        return None
+
+    # Fill placeholder variables 1–13
+    substitutions: dict[str, str] = {}
+    for i, card in enumerate(letters, start=1):
+        substitutions[f"{{{{LETTER_{i}}}}}"] = card.get("letter", "")
+        substitutions[f"{{{{WORD_{i}}}}}"] = card.get("word", "")
+        substitutions[f"{{{{ILLUSTRATION_{i}}}}}"] = card.get("illustration", "")
+
+    # Derive START/END letters from data
+    substitutions["{{START_LETTER}}"] = letters[0].get("letter", "")
+    substitutions["{{END_LETTER}}"] = letters[-1].get("letter", "")
+
+    # Bonus tiles
+    bonus14 = section.get("bonus_tile_14", {}).get("description", "decorative bonus tile")
+    bonus15 = section.get("bonus_tile_15", {}).get("description", "decorative bonus tile")
+    substitutions["{{BONUS_TILE_14}}"] = bonus14
+    substitutions["{{BONUS_TILE_15}}"] = bonus15
+
+    prompt = template
+    for placeholder, value in substitutions.items():
+        prompt = prompt.replace(placeholder, value)
+
+    return prompt.strip()
+
+
+def get_custom_alphabet_spread_prompt(page_record: dict) -> tuple[str, str] | None:
+    """Return (positive_prompt, negative_prompt) from the custom A-Z template if available.
+
+    The negative prompt is a fixed, strong universal set for coloring-book line art.
+    Returns None if custom config files are missing (falls back to generated prompt).
+    """
+    canonical = page_record.get("canonical_object", "")
+    if "a_to_m" in canonical:
+        section_key = "a_to_m"
+    elif "n_to_z" in canonical:
+        section_key = "n_to_z"
+    else:
+        return None
+
+    pos = _build_alphabet_spread_prompt(section_key)
+    if pos is None:
+        return None
+
+    neg = (
+        "No color, no gray shading, no gradients, no extra rows, no missing tiles, "
+        "no dividing lines inside cards, no page title or header, no solid-filled letters, "
+        "no solid-filled text, no background fill, no decorative borders outside the grid, "
+        "no gray tones, no shadows, no 3D effects, no photorealistic textures, "
+        "no landscape orientation, no 16:9, no cut-off edges"
+    )
+    return pos, neg
+
+
+# =============================================================================
 # Pydantic models
 # =============================================================================
 
@@ -228,41 +335,79 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
     card_descriptions: list[str] = []
     per_card_neg: list[str] = []
 
+    # Letter I disambiguation map — prevent the model confusing I with H
+    _LETTER_DISAMBIGUATION = {
+        "I": "letter I (the 9th letter of the alphabet, a single tall vertical stroke — NOT the letter H)"
+    }
+
     for card in cards:
         if is_alphabet:
             letter = card.get("letter", "")
             desc = card.get("description", card.get("positive_description", ""))
-            card_descriptions.append(f"{letter} with {desc}")
+            obj_name = card.get("object", "").replace("_", " ").title()
+            # Use disambiguation for visually confusable letters
+            letter_label = _LETTER_DISAMBIGUATION.get(letter, f"letter {letter}")
+            card_descriptions.append(
+                f"Box {letter}: large uppercase bubble {letter_label} on left, {desc} on right, label '{obj_name}' below drawing"
+            )
         else:
             numeral = card.get("numeral", "")
             pos_desc = str(card.get("positive_description", "")).strip()
+            clean_desc = pos_desc.replace("HOLLOW BUBBLE", "bubble").replace("hollow bubble", "bubble")
             card_descriptions.append(
-                f"Card {numeral}: Large bold HOLLOW BUBBLE {numeral_type} {numeral} "
-                f"(white interior) on left, {pos_desc}"
+                f"Card {numeral}: large bubble numeral {numeral} on left, {clean_desc} (numeral and objects MUST be in the SAME Card {numeral} box)"
             )
         per_card_neg.extend(card.get("negative_tokens", []))
 
     cards_str = "; ".join(card_descriptions) + "."
 
+    # Detect if this is A-M or N-Z for page-specific layout rules
+    is_a_m = "a_m" in layout_key or "a_to_m" in layout_key
+    is_n_z = "n_z" in layout_key or "n_to_z" in layout_key
+    total_cards_count = len(cards)
+
     # Assemble positive prompt
     if is_alphabet:
+        # Row structure: 4+4+3+2 = 13 cards for both A-M and N-Z
+        if is_a_m:
+            row_layout_rule = (
+                "Layout: strict 4-COLUMN grid in 4 rows. "
+                "Row 1: Box A, Box B, Box C, Box D — 4 cards side by side. "
+                "Row 2: Box E, Box F, Box G, Box H — 4 cards side by side. "
+                "Row 3: Box I, Box J, Box K, Box L — 4 cards side by side. "
+                "Row 4: ONLY Box M centered — exactly 1 card, strictly NO empty box beside M, strictly NO blank filler box, strictly NO 14th box."
+            )
+        elif is_n_z:
+            row_layout_rule = (
+                "Layout: strict 4-COLUMN grid in 4 rows. "
+                "Row 1: Box N, Box O, Box P, Box Q — 4 SQUARE cards side by side. "
+                "Row 2: Box R, Box S, Box T, Box U — 4 SQUARE cards side by side. "
+                "Row 3: Box V, Box W, Box X — 3 SQUARE cards centered. "
+                "Row 4: Box Y, Box Z — 2 SQUARE cards centered, strictly NO empty box beside them, strictly NO 14th box."
+            )
+        else:
+            row_layout_rule = layout_desc
+
         pos_parts = [
-            f"Educational preschool toddler alphabet coloring poster. {layout_desc}",
-            numeral_mandate,
+            f"Educational preschool toddler alphabet flashcard coloring poster. {row_layout_rule}",
+            "CRITICAL: Every single flashcard box must be a SQUARE shape (height equals width). Strictly NO wide landscape-orientation rectangular boxes. Strictly NO boxes that are wider than they are tall.",
             f"{container_rule} {centering_rule}",
-            (f"Inside each rounded card, the large bold HOLLOW BUBBLE uppercase {numeral_type} "
-             f"on the left and the simple preschool illustration on the right are vertically "
-             f"centered with balanced top and bottom padding: {cards_str}"),
+            (f"Inside each of the {total_cards_count} square rounded flashcard boxes, render the large single bubble uppercase letter "
+             f"on the left (clean black outline with white center), its cute line art drawing on the right, and the object label word centered below the drawing: {cards_str}"),
+            "STRICT ONE-OBJECT-PER-BOX RULE: Each box contains EXACTLY ONE letter and EXACTLY ONE drawing. Strictly NO two drawings in one box, strictly NO drawing bleeding into the adjacent box, strictly NO content overflow between boxes.",
+            "Strictly DO NOT write 'HOLLOW' or any header text at the top of any box.",
             taxonomy_rule,
             base_style,
         ]
     else:
         pos_parts = [
             f"Educational preschool toddler counting coloring poster. {layout_desc}",
-            numeral_mandate,
             f"{container_rule} {centering_rule}",
-            (f"Inside each card, the HOLLOW BUBBLE numeral on the left and countable items "
-             f"on the right are vertically centered: {cards_str}"),
+            (f"Inside each discrete flashcard box, strictly render the large single bubble numeral "
+             f"on the left (clean black outline with white center) and its countable items on the right: {cards_str}"),
+            "CRITICAL: The numeral digit AND its countable objects MUST be inside the SAME single card. Never place objects in a separate standalone box. Never create an extra card for objects.",
+            "Strictly DO NOT create extra empty boxes, DO NOT split numerals and items into separate boxes.",
+            "Strictly DO NOT write 'HOLLOW' or any header text at the top of any box.",
             sequence_rule,
             base_style,
         ]
@@ -567,56 +712,167 @@ class DebateEngine:
 
 
 # =============================================================================
-# Dynamic Cover Hero Prompt Generator (with Immutable Anchors)
+# Dynamic Cover Artwork Prompt Generators (Manifest-Driven Agent Synthesis)
 # =============================================================================
 
-def generate_dynamic_cover_prompt(book_config_path: str = "config/book_config.yaml") -> tuple[str, str]:
-    """Construct the Front Cover Hero Illustration prompt with locked immutable anchors.
-    
-    Layer 1: Immutable Foundation Anchors (Alpha transparency, zero-text, stroke physics)
-    Layer 2: Dynamic Volume Theme Variables (from book_config.yaml and manifest)
-    Layer 3: Adversarial Negative Lock
-    """
+def _get_crayon_color_for_object(obj_name: str) -> str:
+    """Helper to determine preschool crayon color guide based on object semantics."""
+    obj = obj_name.lower()
+    if any(k in obj for k in ["apple", "strawberry", "cherry", "tomato", "heart", "rose"]):
+        return "red"
+    if any(k in obj for k in ["banana", "sun", "lemon", "duck", "cheese", "corn", "star"]):
+        return "yellow"
+    if any(k in obj for k in ["car", "boat", "ship", "train", "plane", "whale", "dolphin", "milk", "water"]):
+        return "blue"
+    if any(k in obj for k in ["carrot", "guitar", "orange", "fox", "tiger", "lion", "basketball"]):
+        return "orange"
+    if any(k in obj for k in ["frog", "turtle", "tree", "leaf", "caterpillar", "dinosaur", "grass"]):
+        return "green"
+    if any(k in obj for k in ["grape", "eggplant", "plum", "butterfly", "octopus"]):
+        return "purple"
+    return "bright colorful"
+
+
+def generate_front_cover_prompt(
+    book_config_path: str = "config/book_config.yaml",
+    manifest_path: str = "manifest/pages.json"
+) -> tuple[str, str]:
+    """Construct dynamic Front Cover Master Illustration prompt synthesized from manifest contents."""
     b_cfg = _load_yaml(book_config_path).get("book", {})
     title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
     subtitle = b_cfg.get("subtitle", "FUN & EASY FIRST WORDS")
+    brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
     age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
-    age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
+    age_max = b_cfg.get("target_audience", {}).get("age_max", 3)
+
+    hero_char = "cute chubby baby cartoon teddy bear"
+    hero_obj = "happy smiling cartoon red apple"
+    page_count = 100
     
-    # Layer 1: Immutable Prefix
-    prefix = (
-        "Ultra-clean 2D preschool toddler coloring book hero illustration, "
-        "isolated on a 100% pure transparent background (alpha PNG). "
+    m_p = Path(manifest_path)
+    if m_p.exists():
+        try:
+            with open(m_p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                pages = data.get("pages", [])
+                page_count = len(pages)
+                
+                # Discover primary hero animal from manifest
+                for p in pages:
+                    canon = p.get("canonical_object", "").lower()
+                    sec = p.get("section", "").lower()
+                    if "animal" in sec or "pet" in sec or canon in ["bear", "teddy_bear", "cat", "dog", "lion", "elephant"]:
+                        label = p.get("display_label", canon.replace("_", " ")).title()
+                        hero_char = f"cute chubby cartoon {label}"
+                        break
+                        
+                # Discover primary hero fruit/toy from manifest
+                for p in pages:
+                    canon = p.get("canonical_object", "").lower()
+                    sec = p.get("section", "").lower()
+                    if ("fruit" in sec or "toy" in sec or "food" in sec) and canon not in ["teddy_bear", "cat", "dog", "lion", "elephant"]:
+                        label = p.get("display_label", canon.replace("_", " ")).title()
+                        hero_obj = f"adorable smiling cartoon {label}"
+                        break
+        except Exception:
+            pass
+
+    pos = (
+        f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
+        f"Top banner with small dark blue publisher credit '{brand} Presents' and clean white rounded pill badge '{subtitle}'. "
+        f"Main title '{title}' rendered in large, chunky 3D multi-colored bubbly glossy letters: 'TINY HANDS' with colorful pastel-saturated letter faces (red, orange, yellow, green, blue, brown) with dark bold outline and soft 3D extrusion shadow, followed below by 'COLOR & LEARN' in large white bubbly letters with dark outline. "
+        f"Central joyful illustration: an {hero_char} sitting joyfully on a colorful rainbow-striped fringed play mat. "
+        "The character is creatively half-colored in warm pastel hues and half clean black-and-white coloring book line art with bold contours, holding a bright wax crayon. "
+        f"Beside it sits an {hero_obj} with big sweet round eyes, rosy cheeks, and tiny cartoon feet (half colored with crayon gloss, half coloring line art). "
+        "Three chunky floating/tilted wax crayons surround them in the air. "
+        "Background: cheerful smooth gradient from warm sunny golden-yellow at the top softly blending down to vibrant bright sky-turquoise blue at the bottom, decorated with subtle translucent floating bubbles, sparkles, and starbursts. "
+        f"Bottom layout: wide white rounded pill banner with navy bold text '{page_count}+ EVERYDAY OBJECTS' / 'FIRST WORDS • LETTERS & NUMBERS', and a circular white roundel badge on the right reading 'AGES {age_min}-{age_max} YEARS'. "
+        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
     )
-    
-    # Layer 2: Dynamic Theme Scene
-    scene = (
-        f"An adorable, charming cover illustration for '{title}'. "
-        "A cute chubby baby cartoon teddy bear sitting joyfully on a colorful pastel striped play mat. "
-        "The teddy bear is creatively half-colored in warm honey-brown and half clean black-and-white coloring book line art "
-        "with thick bold 5pt outlines, joyfully holding a bright yellow wax crayon in its paws. "
-        "Beside the teddy bear sits an adorable cute happy smiling cartoon red apple with big sweet round eyes, rosy cheeks, "
-        "and tiny cartoon feet (half colored red with gloss, half coloring line art). "
-        "Around them on the rug lie two scattered chunky wax crayons (one bright red, one sunny orange). "
-        f"Joyful, warm, Fisher-Price and Disney Junior toddler aesthetic for ages {age_min}-{age_max}, "
-        "thick bold clean black closed contours, bright vibrant saturated colors. "
-    )
-    
-    # Layer 1: Immutable Suffix
-    suffix = (
-        "Perfectly centered on vertical 3:4 portrait framing, isolated on pure transparent background, "
-        "zero background scenery, strictly NO text, NO letters, NO words, NO titles, NO logos, NO barcode."
-    )
-    
-    pos = prefix + scene + suffix
-    
-    # Layer 3: Adversarial Negative Lock
+
     neg = (
-        "opaque background, white background box, solid backdrop, text, letters, words, alphabet, "
-        "typography, writing, titles, fonts, watermarks, signature, logos, barcode, price tag, "
-        "spine lines, realistic textures, dark shadows, scary expressions, sharp teeth, thin scratchy lines, "
-        "complex cluttered background, furniture, room, walls, floor patterns, photorealistic, 3d render noise, "
-        "widescreen, 16:9, landscape orientation, cut off edges"
+        "blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
+        "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, "
+        "distorted anatomy, barcode on front cover, spine lines across front cover"
     )
-    
     return pos, neg
+
+
+def generate_back_cover_prompt(
+    book_config_path: str = "config/book_config.yaml",
+    manifest_path: str = "manifest/pages.json"
+) -> tuple[str, str]:
+    """Construct dynamic Back Cover Master Illustration prompt synthesized from manifest contents."""
+    b_cfg = _load_yaml(book_config_path).get("book", {})
+    title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
+    brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
+    age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
+    age_max = b_cfg.get("target_audience", {}).get("age_max", 3)
+
+    preview_cards = [
+        ("APPLE", "red"),
+        ("BANANA", "yellow"),
+        ("TOY CAR", "blue"),
+        ("GUITAR", "orange"),
+        ("CARROT", "orange"),
+        ("MILK", "blue")
+    ]
+    
+    m_p = Path(manifest_path)
+    if m_p.exists():
+        try:
+            with open(m_p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                pages = [p for p in data.get("pages", []) if p.get("type") in ["coloring_page", None] or p.get("page_number", 0) > 5]
+                
+                # Group pages by section to sample across 6 distinct sections
+                sections_dict: dict[str, list[dict]] = {}
+                for p in pages:
+                    sec = p.get("section", "General")
+                    sections_dict.setdefault(sec, []).append(p)
+                    
+                selected_samples = []
+                for sec, sec_pages in sections_dict.items():
+                    if len(selected_samples) >= 6:
+                        break
+                    p_sample = sec_pages[0]
+                    lbl = p_sample.get("display_label", p_sample.get("canonical_object", "")).upper()
+                    canon = p_sample.get("canonical_object", "")
+                    color = _get_crayon_color_for_object(canon)
+                    selected_samples.append((lbl, color))
+                    
+                if len(selected_samples) >= 6:
+                    preview_cards = selected_samples[:6]
+        except Exception:
+            pass
+
+    cards_text_parts = []
+    for idx, (lbl, color) in enumerate(preview_cards, 1):
+        cards_text_parts.append(f"Card {idx}: clean line-art {lbl} ({color} crayon corner)")
+    cards_desc = "; ".join(cards_text_parts)
+
+    pos = (
+        f"Professional cohesive 2D preschool coloring book back cover illustration for '{title}'. "
+        "Background: smooth vertical gradient from warm soft sunny golden-yellow at the top softly blending down to vibrant bright sky-turquoise blue at the bottom, with subtle translucent floating bubbles and twinkling stars, matching the front cover. "
+        "Top section: large clean white rounded card containing header in bold navy 'LITTLE HANDS, BIG DISCOVERIES!', yellow roundel badge in upper right 'AGES 1-3', and 3 bullet points with cute preschool icons: "
+        f"🍎 '100+ Everyday Objects, First Words, Letters & Numbers', 🖍️ 'Extra-Thick Bold Outlines for Tiny Hands & Motor Skills', ⭐ 'Simple Wax-Crayon Color Guides on Every Page'. "
+        f"Middle section: 6 clean rounded white flashcard preview boxes arranged in a neat 2-row by 3-column grid, showcasing sample toddler coloring pages with small colored crayon icons in their top-left corners: "
+        f"{cards_desc}. Every card has its bold uppercase label below the drawing. "
+        f"Bottom section: rounded white publisher badge on bottom-left with cute logo and text '{brand} / COLOR BOOKS & CREATIVE KITS'. "
+        "Continuous clean turquoise background on bottom-right (DO NOT draw any barcode, barcode space will be stamped programmatically by compositor). "
+        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly aligned balanced typography and cards."
+    )
+
+    neg = (
+        "blurry, low resolution, dark moody colors, photographic, realistic textures, jagged lines, "
+        "distorted cards, uneven grid, messy text, printed barcode, fake barcode, cut-off cards, "
+        "horizontal landscape, 16:9, cut off edges"
+    )
+    return pos, neg
+
+
+def generate_dynamic_cover_prompt(book_config_path: str = "config/book_config.yaml") -> tuple[str, str]:
+    """Backward-compatible alias for Front Cover Master Prompt."""
+    return generate_front_cover_prompt(book_config_path)
+
+

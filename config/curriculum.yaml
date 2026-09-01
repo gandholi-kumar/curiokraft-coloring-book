@@ -1,12 +1,9 @@
 spread_style:
-  numeral_fill_mandate: 'NUMERAL STYLE MANDATE: Every numeral and letter in every
-    card MUST be a LARGE BOLD HOLLOW BUBBLE OUTLINE with PURE WHITE INTERIOR FILL
-    and thick black 5pt closed contour stroke — bubbly rounded preschool font style,
-    white inside the numeral/letter, strictly NOT solid black filled, NOT dark filled.'
+  numeral_fill_mandate: 'CHARACTER OUTLINE MANDATE: Each card box contains strictly TWO visual elements side-by-side: a large single bubble character on the left (clean black outline with white center) and its paired coloring drawing on the right. Strictly NO header text, NO words, NO title labels, DO NOT write "HOLLOW" or any text inside or above the boxes.'
   container_uniformity: 'CONTAINER UNIFORMITY: All flashcard containers have 100%
     identical width and height. Strictly prohibit unequal box heights, tall bottom
     boxes, or distorted last-row cards.'
-  vertical_centering: 'VERTICAL CENTERING: Inside each card, the hollow bubble numeral/letter
+  vertical_centering: 'VERTICAL CENTERING: Inside each card, the bubble character
     on the left and the line art on the right are vertically centered at Y=50% of
     the card, filling 75% of card height with equal balanced top and bottom padding.
     Strictly NO empty top voids, NO content sagging to bottom.'
@@ -16,6 +13,16 @@ spread_style:
     NO full-page intersecting grid lines, NO connected table borders, NO empty blank
     boxes.
   common_negative_tokens:
+  - word HOLLOW
+  - word BUBBLE
+  - text headers
+  - words at top of cards
+  - card labels
+  - word titles
+  - text inside boxes
+  - letters spelling words
+  - captions
+  - vocabulary words
   - unequal card sizes
   - unequal box heights
   - tall bottom boxes
@@ -49,18 +56,23 @@ spread_style:
   - solid black numbers
   - filled-in numerals
   - dark interior numerals
-  - non-hollow numbers
 layout_templates:
   alphabet_a_m:
-    row_structure: '4 centered balanced rows (Row 1: 4 cards; Row 2: 4 cards; Row
-      3: 3 cards centered; Row 4: 2 cards centered)'
+    row_structure: '4 evenly-spaced rows distributed from top to bottom of canvas (Row 1: 4 cards; Row 2: 4 cards; Row 3: 3 cards centered; Row 4: 2 cards centered)'
     total_cards: 13
-    layout_description: '{total_cards} identical uniform rounded-corner square flashcard
-      boxes of equal dimensions arranged in {row_structure}.'
-    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly
-      facial features. ALL inanimate objects are pure physical inanimate objects with
-      strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
+    layout_description: 'Exactly {total_cards} uniform rounded-corner rectangular flashcard boxes evenly distributed vertically and horizontally across the canvas with equal spacing between all rows (strictly NO large vertical gaps, NO blank voids). Inside each box, render the large bubble uppercase letter on the left, its clean coloring drawing on the right, and the simple title label centered below the drawing.'
+    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly facial features. ALL inanimate objects are pure physical inanimate objects with strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
     shared_negative_tokens:
+    - duplicate letters
+    - repeated E
+    - extra boxes
+    - blank empty boxes
+    - letter and drawing in separate boxes
+    - letter outside box
+    - drawing outside box
+    - uneven row spacing
+    - large vertical gaps
+    - distorted layout
     - face on non-living objects
     - cartoon faces on inanimate items
     - anthropomorphic food
@@ -68,15 +80,20 @@ layout_templates:
     - overlapping letters
     - letters trapped inside objects
   alphabet_n_z:
-    row_structure: '4 centered balanced rows (Row 1: 4 cards; Row 2: 4 cards; Row
-      3: 3 cards centered; Row 4: 2 cards centered)'
+    row_structure: '4 evenly-spaced rows distributed from top to bottom of canvas (Row 1: 4 cards; Row 2: 4 cards; Row 3: 3 cards centered; Row 4: 2 cards centered)'
     total_cards: 13
-    layout_description: '{total_cards} identical uniform rounded-corner square flashcard
-      boxes of equal dimensions arranged in {row_structure}.'
-    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly
-      facial features. ALL inanimate objects are pure physical inanimate objects with
-      strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
+    layout_description: 'Exactly {total_cards} uniform rounded-corner rectangular flashcard boxes evenly distributed vertically and horizontally across the canvas with equal spacing between all rows (strictly NO large vertical gaps, NO blank voids). Inside each box, render the large bubble uppercase letter on the left, its clean coloring drawing on the right, and the simple title label centered below the drawing.'
+    taxonomy_rule: 'STRICT TAXONOMY: ONLY living animals and characters have friendly facial features. ALL inanimate objects are pure physical inanimate objects with strictly NO eyes, NO mouth, NO face, NO facial features, non-anthropomorphic.'
     shared_negative_tokens:
+    - duplicate letters
+    - extra boxes
+    - blank empty boxes
+    - letter and drawing in separate boxes
+    - letter outside box
+    - drawing outside box
+    - uneven row spacing
+    - large vertical gaps
+    - distorted layout
     - face on non-living objects
     - cartoon faces on inanimate items
     - anthropomorphic food
@@ -84,16 +101,18 @@ layout_templates:
     - overlapping letters
     - letters trapped inside objects
   numbers_0_5:
-    row_structure: '2-column by 3-row grid (Row 1: Card 0 on left, Card 1 on right;
-      Row 2: Card 2 on left, Card 3 on right; Row 3: Card 4 on left, Card 5 on right)'
+    row_structure: 'strictly 2-column by 3-row grid filling the canvas (Row 1: Card 0 on left, Card 1 on right; Row 2: Card 2 on left, Card 3 on right; Row 3: Card 4 on left, Card 5 on right)'
     total_cards: 6
-    layout_description: Exactly {total_cards} identical uniform rounded-corner square
-      flashcard boxes of equal width and equal height arranged in a perfectly aligned
-      {row_structure}. Total exactly {total_cards} cards on canvas, strictly 3 uniform
-      rows only, strictly NO 4th row, strictly NO 8 cards.
-    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral
-      order with no gaps, no repeated numerals, and no extra cards.'
+    layout_description: 'Exactly {total_cards} identical uniform rounded-corner rectangular flashcard boxes of equal width and height arranged in a clean, perfectly aligned {row_structure}. Total EXACTLY {total_cards} cards on canvas, strictly 3 uniform rows only, strictly 2 columns only, strictly NO 4th row, strictly NO 7th card, strictly NO 8 cards.'
+    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral order from 0 to 5. Inside each card, the numeral character on the left and its countable objects on the right must be in the SAME box.'
     shared_negative_tokens:
+    - 8 cards
+    - 7 cards
+    - 4th row
+    - extra boxes
+    - separate box for drawing
+    - number without drawing
+    - drawing without number
     - repeated numbers
     - duplicate numerals
     - extra cards
@@ -103,16 +122,17 @@ layout_templates:
     - random dots
     - cartoon faces on counting objects
   numbers_6_10:
-    row_structure: 'centered 2+2+1 layout across 3 rows (Row 1: 2 equal-sized cards;
-      Row 2: 2 equal-sized cards matching Row 1; Row 3: 1 single wide centered hero
-      card spanning full width)'
+    row_structure: 'centered 2+2+1 layout across 3 rows (Row 1: 2 equal-sized cards for 6 and 7; Row 2: 2 equal-sized cards matching Row 1 for 8 and 9; Row 3: 1 single wide centered hero card spanning full width for 10)'
     total_cards: 5
-    layout_description: Exactly {total_cards} individual discrete rounded-corner flashcard
-      boxes arranged in a {row_structure}. Total exactly {total_cards} cards on canvas,
-      strictly NO extra box, strictly NO duplicate numerals.
-    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral
-      order with no gaps, no repeated numerals, and no extra cards.'
+    layout_description: 'Exactly {total_cards} individual discrete rounded-corner flashcard boxes arranged in a {row_structure}. Total exactly {total_cards} cards on canvas, strictly NO extra box, strictly NO duplicate numerals.'
+    sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral order with no gaps, no repeated numerals, and no extra cards.'
     shared_negative_tokens:
+    - cubes
+    - boxes on card 8
+    - wooden blocks
+    - 6 cookies on card 8
+    - 7 cookies on card 8
+    - 9 cookies
     - repeated numbers
     - duplicate numerals
     - extra cards

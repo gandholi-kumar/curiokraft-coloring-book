@@ -10,6 +10,39 @@ from pydantic import BaseModel
 logger = logging.getLogger("curiokraft.model_client")
 
 
+def load_env_file(env_filename: str = ".env") -> None:
+    """Auto-load environment variables from .env file if present."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except Exception:
+        pass
+
+    # Built-in fallback parser for zero-dependency .env support
+    search_dirs = [Path.cwd(), Path(__file__).resolve().parents[3], Path(__file__).resolve().parent]
+    for d in search_dirs:
+        env_file = d / env_filename
+        if env_file.is_file():
+            try:
+                for line in env_file.read_text(encoding="utf-8", errors="ignore").splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+                break
+            except Exception:
+                pass
+
+
+# Auto-load on import
+load_env_file()
+
+
+
 class ModelResponse(BaseModel):
     """Standardized response from an LLM model call."""
     content: str
@@ -181,21 +214,24 @@ class DiskInboxProvider(BaseImageProvider):
     def find_image(self, page_id: Optional[str] = None, page_number: Optional[int] = None, canonical_label: str = "") -> Optional[Path]:
         canon = canonical_label.lower().strip()
         candidates = []
+        extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"]
 
         if page_number is not None:
-            candidates.append(self.inbox_dir / f"raw_p{page_number:03d}_{canon}.png")
-            candidates.append(self.inbox_dir / f"p{page_number:03d}_{canon}.png")
-            candidates.append(self.inbox_dir / f"raw_p{page_number:03d}.png")
-            candidates.append(self.inbox_dir / f"p{page_number:03d}.png")
+            for ext in extensions:
+                candidates.append(self.inbox_dir / f"raw_p{page_number:03d}_{canon}{ext}")
+                candidates.append(self.inbox_dir / f"p{page_number:03d}_{canon}{ext}")
+                candidates.append(self.inbox_dir / f"raw_p{page_number:03d}{ext}")
+                candidates.append(self.inbox_dir / f"p{page_number:03d}{ext}")
         if page_id:
-            candidates.append(self.inbox_dir / f"{page_id}_{canon}.png")
-            candidates.append(self.inbox_dir / f"{page_id}.png")
+            for ext in extensions:
+                candidates.append(self.inbox_dir / f"{page_id}_{canon}{ext}")
+                candidates.append(self.inbox_dir / f"{page_id}{ext}")
         if canon:
-            candidates.append(self.inbox_dir / f"{canon}.png")
-            candidates.append(self.inbox_dir / f"{canon}.jpg")
+            for ext in extensions:
+                candidates.append(self.inbox_dir / f"{canon}{ext}")
 
         for c in candidates:
-            if c.exists() and c.stat().st_size > 500:
+            if c.exists() and c.is_file() and c.stat().st_size > 500:
                 return c
         return None
 
@@ -287,6 +323,7 @@ class ModelClient:
             provider: 'openai' | 'anthropic' | 'gemini' | 'mock' | 'auto'.
             model_name: Specific model ID (e.g. 'gpt-4o', 'claude-3-5-sonnet', 'gemini-1.5-pro').
         """
+        load_env_file()
         env_provider = os.environ.get("CK_DEFAULT_PROVIDER")
         if env_provider:
             self.provider = env_provider.lower()

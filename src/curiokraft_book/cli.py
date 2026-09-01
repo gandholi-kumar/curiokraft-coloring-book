@@ -512,18 +512,29 @@ def build_cover():
 
 @cover_app.command("prompt")
 def show_cover_prompt():
-    """[Stage 3: Production] Display the optimized Front Cover Hero Illustration Prompt with immutable anchors."""
-    from curiokraft_book.orchestrator.debate_engine import generate_dynamic_cover_prompt
-    pos, neg = generate_dynamic_cover_prompt()
+    """[Stage 3: Production] Display the optimized Front & Back Cover Master Artwork Prompts."""
+    from curiokraft_book.orchestrator.debate_engine import generate_front_cover_prompt, generate_back_cover_prompt
+    f_pos, f_neg = generate_front_cover_prompt()
+    b_pos, b_neg = generate_back_cover_prompt()
+
     console.print(Panel(
-        f"[bold yellow]{pos}[/bold yellow]\n\n"
-        f"[dim]Negative Prompt:[/dim] [white]{neg}[/white]",
-        title="[bold green]Optimized Front Cover Hero Illustration Prompt (Ready to Copy)[/bold green]",
+        f"[bold yellow]{f_pos}[/bold yellow]\n\n"
+        f"[dim]Negative Prompt:[/dim] [white]{f_neg}[/white]",
+        title="[bold green]1. FRONT COVER MASTER PROMPT (Ready to Copy)[/bold green]",
         border_style="green"
     ))
-    console.print("\n[dim]1. Copy the prompt above and paste into Google AI Studio / Gemini Web UI.[/dim]")
-    console.print("[dim]2. Save the downloaded PNG as: [bold cyan]inbox/cover_hero.png[/bold cyan][/dim]")
-    console.print("[dim]3. Run: [bold yellow]curiokraft-book cover build[/bold yellow] to composite the full print-ready cover![/dim]\n")
+    console.print("[dim]• Drop Target:[/dim] [bold cyan]inbox/front_cover.png[/bold cyan] (or .jpg)\n")
+
+    console.print(Panel(
+        f"[bold yellow]{b_pos}[/bold yellow]\n\n"
+        f"[dim]Negative Prompt:[/dim] [white]{b_neg}[/white]",
+        title="[bold green]2. BACK COVER MASTER PROMPT (Ready to Copy)[/bold green]",
+        border_style="green"
+    ))
+    console.print("[dim]• Drop Target:[/dim] [bold cyan]inbox/back_cover.png[/bold cyan] (or .jpg)\n")
+
+    console.print("[dim]Run: [bold yellow]curiokraft-book cover build[/bold yellow] to composite the complete 17.498x11.250\" KDP wrap cover![/dim]\n")
+
 
 
 @cover_app.command("validate")
@@ -726,48 +737,79 @@ def export_prompts(
     lines = [
         "# CurioKraft Preschool Coloring Book — Master Prompt Export",
         "",
-        "Use these prompts in the free **Google AI Studio Web UI** or **Gemini Chat** to generate illustrations at zero API cost.",
-        "Save each downloaded image to `inbox/raw_pages/` (or `generated/raw_pages/`) with the indicated filename, then run `curiokraft-book ingest`.",
+        "Use these prompts in the free **Google AI Studio Web UI** (or Gemini Chat) to generate illustrations at zero API cost.",
+        "Save each downloaded image (`.jpg` or `.png`) to `inbox/raw_pages/` (or `inbox/` for covers), then run `curiokraft-book ingest`.",
         "",
         "> [!TIP]",
-        "> 🧠 **Multi-Agent Pre-Generation Debate Audit:** For the complete specialist proposals, adversarial red-team stress tests, and Judge scoring for every single page, see [logs/agent_debates_log.md](../logs/agent_debates_log.md).",
+        "> ⚙️ **Optimal Google AI Studio Configuration:**",
+        "> - **Aspect Ratio:** `3:4` (Vertical Portrait) | **Output Format:** `Images only` | **Temperature:** `0.5` (Interior) / `0.9` (Covers)",
+        "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
+        "> - 🧠 **Multi-Agent Pre-Generation Debate Audit:** See [logs/agent_debates_log.md](../logs/agent_debates_log.md) for full specialist proposals and Judge scoring.",
         "",
         "---",
         ""
     ]
 
-    # Prepend Cover Hero Prompt
-    from curiokraft_book.orchestrator.debate_engine import generate_dynamic_cover_prompt
-    c_pos, c_neg = generate_dynamic_cover_prompt()
-    lines.append("## 🎨 FRONT COVER HERO ARTWORK (Cover Hero Scene)")
-    lines.append("- **Drop Target:** `inbox/cover_hero.png`")
-    lines.append("- **Orientation:** Vertical Portrait (3:4)")
-    lines.append("- **Format:** Pure Transparent Background (Alpha PNG)")
+    # Prepend Front and Back Cover Prompts
+    from curiokraft_book.orchestrator.debate_engine import (
+        generate_front_cover_prompt, generate_back_cover_prompt,
+        get_custom_alphabet_spread_prompt,
+    )
+    f_pos, f_neg = generate_front_cover_prompt()
+    b_pos, b_neg = generate_back_cover_prompt()
+
+    lines.append("## 🎨 FRONT COVER MASTER ARTWORK")
+    lines.append("- **Drop Target:** `inbox/front_cover.png` (or `inbox/front_cover.jpg`)")
+    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
+    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
     lines.append("- **Positive Prompt (Copy & Paste):**")
-    lines.append(f"  ```text\n  {c_pos}\n  ```")
+    lines.append(f"  ```text\n  {f_pos}\n  ```")
     lines.append("- **Negative Prompt:**")
-    lines.append(f"  ```text\n  {c_neg}\n  ```")
+    lines.append(f"  ```text\n  {f_neg}\n  ```")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    lines.append("## 📄 BACK COVER MASTER ARTWORK")
+    lines.append("- **Drop Target:** `inbox/back_cover.png` (or `inbox/back_cover.jpg`)")
+    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
+    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
+    lines.append("- **Positive Prompt (Copy & Paste):**")
+    lines.append(f"  ```text\n  {b_pos}\n  ```")
+    lines.append("- **Negative Prompt:**")
+    lines.append(f"  ```text\n  {b_neg}\n  ```")
     lines.append("")
     lines.append("---")
     lines.append("")
 
     console.print(f"[cyan]Synthesizing prompts for {len(target_pages)} pages...[/cyan]")
     for p in target_pages:
-        res = debate.run_page_debate(p)
         num = p["page_number"]
         p_id = p["page_id"]
         canon = p["canonical_object"]
         label = p.get("display_label", canon.upper())
         save_name = f"raw_p{num:03d}_{canon}.png"
 
+        # Use custom hand-crafted alphabet spread prompts if available (P002, P003)
+        custom = get_custom_alphabet_spread_prompt(p)
+        if custom is not None:
+            pos_prompt, neg_prompt = custom
+            prompt_source = "📖 Custom Template (config/A-Z.md + config/alphabet_spreads.yaml)"
+        else:
+            res = debate.run_page_debate(p)
+            pos_prompt = res.positive_prompt
+            neg_prompt = res.negative_prompt
+            prompt_source = "🤖 Multi-Agent Debate Engine"
+
         lines.append(f"## Page {num:03d} ({p_id}): {label}")
         lines.append(f"- **Drop Target:** `inbox/raw_pages/{save_name}` (or `inbox/raw_pages/{canon}.png`)")
         lines.append(f"- **Section:** {p.get('section', 'General')}")
+        lines.append(f"- **Prompt Source:** {prompt_source}")
         lines.append(f"- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
         lines.append(f"- **Positive Prompt (Copy & Paste):**")
-        lines.append(f"  ```text\n  {res.positive_prompt}\n  ```")
+        lines.append(f"  ```text\n  {pos_prompt}\n  ```")
         lines.append(f"- **Negative Prompt:**")
-        lines.append(f"  ```text\n  {res.negative_prompt}\n  ```")
+        lines.append(f"  ```text\n  {neg_prompt}\n  ```")
         lines.append("")
 
     out_p.write_text("\n".join(lines), encoding="utf-8")
@@ -875,22 +917,21 @@ def ingest_raw_images(
         p_id = p["page_id"]
         canon = p["canonical_object"]
         
-        candidates = [
-            inbox_p / f"raw_p{num:03d}_{canon}.png",
-            inbox_p / f"p{num:03d}_{canon}.png",
-            inbox_p / f"{p_id}_{canon}.png",
-            inbox_p / f"{p_id}.png",
-            inbox_p / f"{canon}.png",
-            inbox_p / f"{canon}.jpg",
-            # Fallback to generated directory if explicitly run
-            generated_dir / f"raw_p{num:03d}_{canon}.png",
-            generated_dir / f"{p_id}_{canon}.png",
-            generated_dir / f"{canon}.png"
-        ]
+        candidates = []
+        extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"]
+        for ext in extensions:
+            candidates.append(inbox_p / f"raw_p{num:03d}_{canon}{ext}")
+            candidates.append(inbox_p / f"p{num:03d}_{canon}{ext}")
+            candidates.append(inbox_p / f"{p_id}_{canon}{ext}")
+            candidates.append(inbox_p / f"{p_id}{ext}")
+            candidates.append(inbox_p / f"{canon}{ext}")
+            candidates.append(generated_dir / f"raw_p{num:03d}_{canon}{ext}")
+            candidates.append(generated_dir / f"{p_id}_{canon}{ext}")
+            candidates.append(generated_dir / f"{canon}{ext}")
         
         matched = None
         for c in candidates:
-            if c.exists() and c.stat().st_size > 500:
+            if c.exists() and c.is_file() and c.stat().st_size > 500:
                 matched = c
                 break
 
@@ -901,13 +942,24 @@ def ingest_raw_images(
             
             # Archive from inbox to generated/raw_pages to keep inbox clean
             if clear_inbox and matched.parent == inbox_p:
-                target_dest = generated_dir / f"raw_p{num:03d}_{canon}.png"
+                target_dest = generated_dir / f"raw_p{num:03d}_{canon}{matched.suffix}"
                 import shutil
                 shutil.move(str(matched), str(target_dest))
                 console.print(f"    [dim]-> Archived to: {target_dest}[/dim]")
             
+    # Check for cover artwork in inbox
+    cover_inbox = Path("inbox")
+    front_found = any((cover_inbox / f).exists() for f in ["front_cover.png", "front_cover.jpg", "cover_front.png", "cover_front.jpg"])
+    back_found = any((cover_inbox / f).exists() for f in ["back_cover.png", "back_cover.jpg", "cover_back.png", "cover_back.jpg"])
+    if front_found or back_found:
+        console.print("\n[bold cyan]Detected new Cover Artwork in inbox/ — Rebuilding KDP Full-Wrap Cover...[/bold cyan]")
+        c_res = composite_kdp_cover()
+        if c_res.success:
+            console.print(f"[bold green][PASS] Cover Rebuilt Successfully:[/] {c_res.output_png_path}")
+            found_count += 1
+
     if found_count > 0:
-        console.print(f"\n[bold green][PASS] Successfully ingested & certified {found_count} illustrations![/bold green]")
+        console.print(f"\n[bold green][PASS] Successfully ingested & certified {found_count} items![/bold green]")
         print_hint(
             "Inbox Ingestion",
             "curiokraft-book preflight run",

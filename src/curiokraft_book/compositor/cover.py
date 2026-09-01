@@ -358,311 +358,197 @@ def composite_kdp_cover(
     age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
     age_str = f"{age_min}-{age_max}"
     
-    # Calculate exact pixel geometry at 300 DPI
-    total_w_px = int(round(overall_w_in * dpi))  # 5249 px
-    total_h_px = int(round(overall_h_in * dpi))  # 3375 px
-    spine_w_px = int(round(spine_w_in * dpi))    # 74 px
+    # Compute exact pixel geometry dynamically based on KDP paperback formula
+    dim_dict = calculate_kdp_cover_dimensions(page_count=page_count, trim_w_in=8.500, trim_h_in=11.000, dpi=dpi)
+    total_w_px = dim_dict["total_width_px"]      # 5249 px
+    total_h_px = dim_dict["total_height_px"]     # 3375 px
+    spine_w_px = dim_dict["spine_width_px"]      # 74 px
+    overall_w_in = dim_dict["overall_width_in"]  # 17.498 in
+    overall_h_in = dim_dict["overall_height_in"] # 11.250 in
+    spine_w_in = dim_dict["spine_width_in"]      # 0.248 in
     
     spine_center_x = total_w_px // 2
     spine_left_x = spine_center_x - (spine_w_px // 2)
     spine_right_x = spine_left_x + spine_w_px
+    half_panel_w = spine_left_x
     
-    front_center_x = (spine_right_x + total_w_px) // 2
-    back_center_x = spine_left_x // 2
-    
+    # Search for Front Cover Art Candidates
+    front_candidates = [
+        Path("inbox/front_cover.png"),
+        Path("inbox/front_cover.jpg"),
+        Path("inbox/cover_front.png"),
+        Path("inbox/cover_front.jpg"),
+        Path("assets/cover/front_cover_master.png"),
+        Path("assets/cover/front_cover.png"),
+        Path("dont-delete-alter/bkp/front cover 110.png")
+    ]
+    if front_hero_art_path:
+        front_candidates.insert(0, Path(front_hero_art_path))
+        
+    front_art_path = None
+    for fc in front_candidates:
+        if fc.exists() and fc.is_file() and fc.stat().st_size > 1000:
+            front_art_path = fc
+            break
+            
+    # Search for Back Cover Art Candidates
+    back_candidates = [
+        Path("inbox/back_cover.png"),
+        Path("inbox/back_cover.jpg"),
+        Path("inbox/cover_back.png"),
+        Path("inbox/cover_back.jpg"),
+        Path("assets/cover/back_cover_master.png"),
+        Path("assets/cover/back_cover.png"),
+        Path("dont-delete-alter/bkp/back cover 110.png")
+    ]
+    back_art_path = None
+    for bc in back_candidates:
+        if bc.exists() and bc.is_file() and bc.stat().st_size > 1000:
+            back_art_path = bc
+            break
+
+    # Check if full front & back artwork are available
+    use_full_artwork = (front_art_path is not None and back_art_path is not None)
+
     # Create master RGBA canvas
     cover = Image.new("RGBA", (total_w_px, total_h_px), (255, 255, 255, 255))
     draw = ImageDraw.Draw(cover)
-    
-    # =========================================================================
-    # LAYER 1: Background Vertical Gradient (Sunny Golden-Yellow to Vibrant Sky Cyan)
-    # =========================================================================
-    grad_cfg = c_cfg.get("gradient", {})
-    top_rgb = grad_cfg.get("top_color_rgb", [255, 224, 102])
-    bot_rgb = grad_cfg.get("bottom_color_rgb", [34, 211, 238])
-    
-    for y in range(total_h_px):
-        ratio = y / total_h_px
-        r = int(top_rgb[0] + ratio * (bot_rgb[0] - top_rgb[0]))
-        g = int(top_rgb[1] + ratio * (bot_rgb[1] - top_rgb[1]))
-        b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
-        draw.line([(0, y), (total_w_px, y)], fill=(r, g, b, 255))
-        
-    # Spine gradient overlay (Warm golden spine)
-    sp_top = grad_cfg.get("spine_top_color_rgb", [255, 215, 80])
-    sp_bot = grad_cfg.get("spine_bottom_color_rgb", [250, 190, 60])
-    for y in range(total_h_px):
-        ratio = y / total_h_px
-        r = int(sp_top[0] + ratio * (sp_bot[0] - sp_top[0]))
-        g = int(sp_top[1] + ratio * (sp_bot[1] - sp_top[1]))
-        b = int(sp_top[2] + ratio * (sp_bot[2] - sp_top[2]))
-        draw.line([(spine_left_x, y), (spine_right_x, y)], fill=(r, g, b, 255))
-        
-    draw.line([(spine_left_x, 0), (spine_left_x, total_h_px)], fill=(220, 160, 40, 200), width=2)
-    draw.line([(spine_right_x, 0), (spine_right_x, total_h_px)], fill=(220, 160, 40, 200), width=2)
 
-    # =========================================================================
-    # LAYER 2: Procedural Atmosphere (Floating Bubbles & Sparkling Stars)
-    # =========================================================================
-    watermark_layer = Image.new("RGBA", (total_w_px, total_h_px), (0, 0, 0, 0))
-    wdraw = ImageDraw.Draw(watermark_layer)
-    
-    rng = random.Random(42)
-    for _ in range(36):
-        bx = rng.randint(100, total_w_px - 100)
-        if spine_left_x - 50 < bx < spine_right_x + 50:
-            continue
-        by = rng.randint(100, total_h_px - 100)
-        br = rng.randint(25, 90)
-        _draw_bubble(wdraw, bx, by, br)
-        
-    for _ in range(48):
-        sx = rng.randint(80, total_w_px - 80)
-        if spine_left_x - 50 < sx < spine_right_x + 50:
-            continue
-        sy = rng.randint(80, total_h_px - 80)
-        ss = rng.randint(12, 32)
-        _draw_starburst(wdraw, sx, sy, ss)
-        
-    cover.paste(watermark_layer, (0, 0), watermark_layer)
-
-    # =========================================================================
-    # LAYER 3: Front Cover Components
-    # =========================================================================
-    
-    # 1. Top Subtitle Pill Badge ("FUN & EASY FIRST WORDS")
-    sub_pill_font = get_typography_font(font_size_pt=36)
-    sub_text = subtitle.upper()
-    sub_bbox = draw.textbbox((0, 0), sub_text, font=sub_pill_font)
-    sub_w = sub_bbox[2] - sub_bbox[0]
-    sub_h = sub_bbox[3] - sub_bbox[1]
-    
-    pill_w = sub_w + 90
-    pill_h = sub_h + 36
-    pill_x1 = front_center_x - (pill_w // 2)
-    pill_y1 = 260
-    pill_x2 = pill_x1 + pill_w
-    pill_y2 = pill_y1 + pill_h
-    
-    draw.rounded_rectangle([pill_x1, pill_y1, pill_x2, pill_y2], radius=pill_h // 2, fill=(255, 255, 255), outline=(34, 211, 238), width=6)
-    draw.text((pill_x1 + 45, pill_y1 + 16), sub_text, fill=(30, 58, 138), font=sub_pill_font)
-    
-    # 2. Main Title Line 1 ("TINY HANDS") in 3D Multi-Color Bubbly Letters
-    title_palette = c_cfg.get("title_styling", {}).get("palette", [
-        "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#3498DB", "#9B59B6", "#E91E63", "#FF9800", "#00BCD4"
-    ])
-    
-    title_font_large = get_typography_font(font_size_pt=145)
-    _draw_3d_multicolor_title(
-        canvas=cover,
-        text="TINY HANDS",
-        font=title_font_large,
-        center_x=front_center_x,
-        y=pill_y2 + 45,
-        palette=title_palette,
-        stroke_color="#2C1810",
-        shadow_color="#1A0C06",
-        stroke_width=14,
-        shadow_offset=16
-    )
-    
-    # 3. Main Title Line 2 ("COLOR & LEARN") in White Bubbly Letters with 3D Shadow
-    title_font_sub = get_typography_font(font_size_pt=105)
-    _draw_3d_multicolor_title(
-        canvas=cover,
-        text="COLOR & LEARN",
-        font=title_font_sub,
-        center_x=front_center_x,
-        y=pill_y2 + 300,
-        palette=["#FFFFFF"],
-        stroke_color="#2C1810",
-        shadow_color="#1A0C06",
-        stroke_width=12,
-        shadow_offset=14
-    )
-    
-    # 4. Front Cover Hero Artwork Inlay
-    hero_inlaid = False
-    if front_hero_art_path and Path(front_hero_art_path).exists():
-        try:
-            with Image.open(front_hero_art_path) as hero:
-                hero_rgba = hero.convert("RGBA")
-                hero_fitted = _scale_aspect_fit(hero_rgba, max_w=2000, max_h=1500)
-                hx = front_center_x - (hero_fitted.width // 2)
-                hy = 1150
-                cover.paste(hero_fitted, (hx, hy), hero_fitted)
-                hero_inlaid = True
-        except Exception:
-            pass
+    if use_full_artwork:
+        # =====================================================================
+        # PRODUCTION MODE: Precision Compositing of Full Front & Back Artwork
+        # =====================================================================
+        with Image.open(back_art_path) as b_img, Image.open(front_art_path) as f_img:
+            back_rgba = b_img.convert("RGBA")
+            front_rgba = f_img.convert("RGBA")
             
-    if not hero_inlaid:
-        _draw_procedural_hero_placeholder(cover, front_center_x, 1850)
-        
-    # 5. Bottom Callout Banner ("100+ EVERYDAY OBJECTS") + Age Badge
-    banner_w = 1750
-    banner_h = 210
-    banner_x1 = front_center_x - (banner_w // 2) - 80
-    banner_y1 = total_h_px - banner_h - 180
-    banner_x2 = banner_x1 + banner_w
-    banner_y2 = banner_y1 + banner_h
-    
-    draw.rounded_rectangle([banner_x1, banner_y1, banner_x2, banner_y2], radius=50, fill=(255, 255, 255), outline=(226, 232, 240), width=4)
-    
-    b_font_top = get_typography_font(font_size_pt=48)
-    b_font_sub = get_typography_font(font_size_pt=34)
-    
-    b_txt_top = "100+ EVERYDAY OBJECTS"
-    b_txt_sub = "FIRST WORDS • LETTERS & NUMBERS"
-    
-    draw.text((banner_x1 + 60, banner_y1 + 35), b_txt_top, fill=(30, 58, 138), font=b_font_top)
-    draw.text((banner_x1 + 60, banner_y1 + 120), b_txt_sub, fill=(30, 58, 138), font=b_font_sub)
-    
-    # Age Roundel Badge ("AGES 1-3 YEARS")
-    badge_r = 135
-    badge_cx = banner_x2 + 50
-    badge_cy = banner_y1 + (banner_h // 2)
-    
-    draw.ellipse([badge_cx - badge_r, badge_cy - badge_r, badge_cx + badge_r, badge_cy + badge_r], fill=(255, 255, 255), outline=(30, 58, 138), width=8)
-    
-    age_font_lbl = get_typography_font(font_size_pt=26)
-    age_font_num = get_typography_font(font_size_pt=62)
-    
-    draw.text((badge_cx - 52, badge_cy - 90), "AGES", fill=(30, 58, 138), font=age_font_lbl)
-    draw.text((badge_cx - 82, badge_cy - 48), age_str, fill=(20, 20, 20), font=age_font_num)
-    draw.text((badge_cx - 62, badge_cy + 42), "YEARS", fill=(30, 58, 138), font=age_font_lbl)
+            back_panel = back_rgba.resize((half_panel_w, total_h_px), Image.Resampling.LANCZOS)
+            front_panel = front_rgba.resize((half_panel_w, total_h_px), Image.Resampling.LANCZOS)
+            
+            # Paste Left (Back Cover) and Right (Front Cover)
+            cover.paste(back_panel, (0, 0))
+            cover.paste(front_panel, (spine_right_x, 0))
 
-    # =========================================================================
-    # LAYER 4: Back Cover Components
-    # =========================================================================
-    
-    # 1. Top Age Callout Pill (Upper Right of Back Cover)
-    top_age_pill_w = 260
-    top_age_pill_h = 75
-    top_age_x1 = spine_left_x - top_age_pill_w - 200
-    top_age_y1 = 180
-    top_age_x2 = top_age_x1 + top_age_pill_w
-    top_age_y2 = top_age_y1 + top_age_pill_h
-    
-    draw.rounded_rectangle([top_age_x1, top_age_y1, top_age_x2, top_age_y2], radius=top_age_pill_h // 2, fill=(255, 215, 0), outline=(230, 180, 0), width=3)
-    age_pill_font = get_typography_font(font_size_pt=34)
-    draw.text((top_age_x1 + 35, top_age_y1 + 14), f"AGES {age_str}", fill=(30, 30, 30), font=age_pill_font)
-    
-    # 2. Back Cover Main Header ("LITTLE HANDS, BIG DISCOVERIES!")
-    back_hdr_font = get_typography_font(font_size_pt=58)
-    back_hdr = c_cfg.get("back_cover", {}).get("headline", "LITTLE HANDS, BIG DISCOVERIES!")
-    draw.text((back_center_x - 900, 300), back_hdr, fill=(30, 58, 138), font=back_hdr_font)
-    
-    # 3. Feature Highlights Panel with Bullet Points
-    bullets = c_cfg.get("back_cover", {}).get("bullets", [
-        {"icon": "🍎", "text": "100+ Everyday Objects, First Words, Letters & Numbers"},
-        {"icon": "✏️", "text": "Extra-Thick Bold Outlines for Tiny Hands & Motor Skills"},
-        {"icon": "⭐", "text": "Simple Wax-Crayon Color Guides on Every Page"}
-    ])
-    
-    bullet_font = get_typography_font(font_size_pt=36)
-    b_start_y = 420
-    for item in bullets:
-        b_text = f"{item.get('icon', '•')}  {item.get('text', '')}"
-        draw.text((back_center_x - 900, b_start_y), b_text, fill=(30, 41, 59), font=bullet_font)
-        b_start_y += 75
+        # Dynamic Spine Panel with Seamless Vertical Gradient
+        spine_img = Image.new("RGBA", (spine_w_px, total_h_px), (0, 0, 0, 0))
+        sdraw = ImageDraw.Draw(spine_img)
         
-    # 4. Interior 6-Card Preview Showcase (2 rows x 3 columns)
-    preview_sample_objs = [
-        ("apple", "APPLE", (231, 76, 60)),
-        ("banana", "BANANA", (241, 196, 15)),
-        ("car", "TOY CAR", (52, 152, 219)),
-        ("guitar", "GUITAR", (230, 126, 34)),
-        ("carrot", "CARROT", (230, 126, 34)),
-        ("milk", "MILK", (52, 152, 219))
-    ]
-    
-    grid_start_x = back_center_x - 920
-    grid_start_y = b_start_y + 60
-    card_w = 580
-    card_h = 680
-    gap_x = 40
-    gap_y = 40
-    
-    card_lbl_font = get_typography_font(font_size_pt=42)
-    
-    for idx, (obj_key, obj_label, crayon_col) in enumerate(preview_sample_objs):
-        row = idx // 3
-        col = idx % 3
-        cx1 = grid_start_x + col * (card_w + gap_x)
-        cy1 = grid_start_y + row * (card_h + gap_y)
-        cx2 = cx1 + card_w
-        cy2 = cy1 + card_h
+        grad_cfg = c_cfg.get("gradient", {})
+        top_rgb = grad_cfg.get("top_color_rgb", [255, 224, 102])
+        bot_rgb = grad_cfg.get("bottom_color_rgb", [34, 211, 238])
         
-        draw.rounded_rectangle([cx1, cy1, cx2, cy2], radius=32, fill=(255, 255, 255), outline=(30, 41, 59), width=7)
-        _draw_mini_crayon(cover, cx1 + 25, cy1 + 25, length=65, color_rgb=crayon_col, angle=45)
-        
-        card_cx = cx1 + (card_w // 2)
-        card_cy = cy1 + (card_h // 2) - 40
-        _draw_preview_card_icon(draw, obj_key, card_cx, card_cy, size=240)
-        
-        lbl_bbox = draw.textbbox((0, 0), obj_label, font=card_lbl_font)
-        lw = lbl_bbox[2] - lbl_bbox[0]
-        draw.text((card_cx - (lw // 2), cy2 - 95), obj_label, fill=(30, 41, 59), font=card_lbl_font)
-        
-    # 5. Brand Logo (Lower Left of Back Cover) — Aspect fit, NO white box
-    logo_img = get_brand_logo(target_width_px=850)
-    logo_fitted = _scale_aspect_fit(logo_img, max_w=850, max_h=320)
-    logo_x = grid_start_x
-    logo_y = total_h_px - logo_fitted.height - 180
-    cover.paste(logo_fitted, (logo_x, logo_y), logo_fitted)
-    
-    # 6. Barcode Box (Lower Right of Back Cover) — Aligned to exact Amazon KDP Previewer stamp
-    bc_cfg = c_cfg.get("barcode_box", {})
-    barcode_w_px = bc_cfg.get("width_px", 700)
-    barcode_h_px = bc_cfg.get("height_px", 430)
-    margin_from_spine = bc_cfg.get("margin_from_spine_px", 42)
-    margin_from_bottom = bc_cfg.get("margin_from_bottom_px", 95)
-    
-    barcode_x2 = spine_left_x - margin_from_spine
-    barcode_x1 = barcode_x2 - barcode_w_px
-    barcode_y2 = total_h_px - margin_from_bottom
-    barcode_y1 = barcode_y2 - barcode_h_px
-    
-    draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255), outline=(203, 213, 225), width=2)
+        for y in range(total_h_px):
+            ratio = y / total_h_px
+            r = int(top_rgb[0] + ratio * (bot_rgb[0] - top_rgb[0]))
+            g = int(top_rgb[1] + ratio * (bot_rgb[1] - top_rgb[1]))
+            b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
+            sdraw.line([(0, y), (spine_w_px, y)], fill=(r, g, b, 255))
 
-    # =========================================================================
-    # LAYER 5: Spine Formatting & Unadorned Emblem
-    # =========================================================================
-    
-    # 1. Vertical Spine Title in Color
-    spine_font = get_typography_font(font_size_pt=38)
-    spine_text = f"{title.upper()}"
-    
-    spine_strip = Image.new("RGBA", (2200, 68), (0, 0, 0, 0))
-    sdraw = ImageDraw.Draw(spine_strip)
-    
-    _draw_3d_multicolor_title(
-        canvas=spine_strip,
-        text=spine_text,
-        font=spine_font,
-        center_x=1100,
-        y=10,
-        palette=title_palette,
-        stroke_color="#2C1810",
-        shadow_color="#1A0C06",
-        stroke_width=6,
-        shadow_offset=4,
-        letter_spacing=8
-    )
-    
-    rotated_spine_txt = spine_strip.rotate(270, expand=True, resample=Image.Resampling.BICUBIC)
-    
-    sp_txt_x = spine_left_x + (spine_w_px - rotated_spine_txt.width) // 2
-    sp_txt_y = (total_h_px - rotated_spine_txt.height) // 2 - 120
-    cover.paste(rotated_spine_txt, (sp_txt_x, sp_txt_y), rotated_spine_txt)
-    
-    # 2. Brand Emblem at Spine Base — Aspect fit, NO surrounding circle
-    emblem_img = get_brand_emblem(target_size_px=220)
-    emblem_fitted = _scale_aspect_fit(emblem_img, max_w=44, max_h=55)
-    
-    emblem_x = spine_left_x + (spine_w_px - emblem_fitted.width) // 2
-    emblem_y = total_h_px - emblem_fitted.height - 200
-    cover.paste(emblem_fitted, (emblem_x, emblem_y), emblem_fitted)
+        # Vertical Rotated Spine Title
+        spine_font = get_typography_font(font_size_pt=38)
+        spine_text = title.upper()
+        
+        spine_strip = Image.new("RGBA", (2200, max(68, spine_w_px - 8)), (0, 0, 0, 0))
+        st_draw = ImageDraw.Draw(spine_strip)
+        
+        title_palette = c_cfg.get("title_styling", {}).get("palette", [
+            "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#3498DB", "#9B59B6"
+        ])
+        
+        _draw_3d_multicolor_title(
+            canvas=spine_strip,
+            text=spine_text,
+            font=spine_font,
+            center_x=1100,
+            y=10,
+            palette=title_palette,
+            stroke_color="#2C1810",
+            shadow_color="#1A0C06",
+            stroke_width=6,
+            shadow_offset=4,
+            letter_spacing=8
+        )
+        
+        rotated_spine_txt = spine_strip.rotate(270, expand=True, resample=Image.Resampling.BICUBIC)
+        sp_txt_x = (spine_w_px - rotated_spine_txt.width) // 2
+        sp_txt_y = (total_h_px - rotated_spine_txt.height) // 2 - 120
+        spine_img.paste(rotated_spine_txt, (sp_txt_x, sp_txt_y), rotated_spine_txt)
+        
+        # Paste Spine onto Cover Canvas
+        cover.paste(spine_img, (spine_left_x, 0), spine_img)
+
+        # Barcode Box (Exact Amazon KDP Specification: 2.0 x 1.2 in = 600 x 360 px)
+        barcode_w_px = 600
+        barcode_h_px = 360
+        margin_from_spine = 150
+        margin_from_bottom = 150
+        
+        barcode_x2 = spine_left_x - margin_from_spine
+        barcode_x1 = barcode_x2 - barcode_w_px
+        barcode_y2 = total_h_px - margin_from_bottom
+        barcode_y1 = barcode_y2 - barcode_h_px
+        
+        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255), outline=(220, 220, 220, 255), width=2)
+        
+        f_bc = get_typography_font(font_size_pt=20)
+        draw.text(((barcode_x1 + barcode_x2) // 2, (barcode_y1 + barcode_y2) // 2), "BARCODE EXCLUSION ZONE", font=f_bc, fill=(200, 200, 200), anchor="mm")
+
+    else:
+        # =====================================================================
+        # PROCEDURAL FALLBACK MODE (Used only when master assets are missing)
+        # =====================================================================
+        grad_cfg = c_cfg.get("gradient", {})
+        top_rgb = grad_cfg.get("top_color_rgb", [255, 224, 102])
+        bot_rgb = grad_cfg.get("bottom_color_rgb", [34, 211, 238])
+        
+        for y in range(total_h_px):
+            ratio = y / total_h_px
+            r = int(top_rgb[0] + ratio * (bot_rgb[0] - top_rgb[0]))
+            g = int(top_rgb[1] + ratio * (bot_rgb[1] - top_rgb[1]))
+            b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
+            draw.line([(0, y), (total_w_px, y)], fill=(r, g, b, 255))
+            
+        sp_top = grad_cfg.get("spine_top_color_rgb", [255, 215, 80])
+        sp_bot = grad_cfg.get("spine_bottom_color_rgb", [250, 190, 60])
+        for y in range(total_h_px):
+            ratio = y / total_h_px
+            r = int(sp_top[0] + ratio * (sp_bot[0] - sp_top[0]))
+            g = int(sp_top[1] + ratio * (sp_bot[1] - sp_top[1]))
+            b = int(sp_top[2] + ratio * (sp_bot[2] - sp_top[2]))
+            draw.line([(spine_left_x, y), (spine_right_x, y)], fill=(r, g, b, 255))
+
+        # Floating Bubbles & Sparkling Stars
+        watermark_layer = Image.new("RGBA", (total_w_px, total_h_px), (0, 0, 0, 0))
+        wdraw = ImageDraw.Draw(watermark_layer)
+        rng = random.Random(42)
+        for _ in range(36):
+            bx = rng.randint(100, total_w_px - 100)
+            if spine_left_x - 50 < bx < spine_right_x + 50:
+                continue
+            by = rng.randint(100, total_h_px - 100)
+            br = rng.randint(25, 90)
+            _draw_bubble(wdraw, bx, by, br)
+            
+        for _ in range(48):
+            sx = rng.randint(80, total_w_px - 80)
+            if spine_left_x - 50 < sx < spine_right_x + 50:
+                continue
+            sy = rng.randint(80, total_h_px - 80)
+            ss = rng.randint(12, 32)
+            _draw_starburst(wdraw, sx, sy, ss)
+        cover.paste(watermark_layer, (0, 0), watermark_layer)
+
+        # Procedural Hero Illustration
+        _draw_procedural_hero_placeholder(cover, (spine_right_x + total_w_px) // 2, 1850)
+        
+        # Barcode Box
+        barcode_w_px = 600
+        barcode_h_px = 360
+        barcode_x2 = spine_left_x - 150
+        barcode_x1 = barcode_x2 - barcode_w_px
+        barcode_y2 = total_h_px - 150
+        barcode_y1 = barcode_y2 - barcode_h_px
+        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255), outline=(203, 213, 225), width=2)
 
     # =========================================================================
     # Final Export (Lossless RGB PNG & Press-Quality CMYK PDF)
@@ -694,3 +580,4 @@ def composite_kdp_cover(
         spine_center_x_px=spine_center_x,
         barcode_box_px=(barcode_x1, barcode_y1, barcode_x2, barcode_y2)
     )
+

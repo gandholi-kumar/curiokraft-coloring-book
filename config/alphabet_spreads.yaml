@@ -1,0 +1,104 @@
+# CurioKraft Alphabet Spread Data
+# This file drives the A-Z.md template for prompt generation.
+# Each entry maps a letter to its display word and illustration description.
+# For Vol 2 / Vol 3: change any word/illustration below — the prompt is rebuilt on next `curiokraft-book prompt export`.
+#
+# Template file: config/A-Z.md
+# Used for: Page P002 (A-M) and Page P003 (N-Z)
+# Grid format: 3 columns x 5 rows = 15 tiles (13 letter cards + 2 bonus tiles per page)
+
+volume: 1
+
+# ── A to M spread (P002) ─────────────────────────────────────────────────────
+a_to_m:
+  letters:
+    - letter: A
+      word: APPLE
+      illustration: Apple fruit outline
+    - letter: B
+      word: BALL
+      illustration: Soccer ball outline
+    - letter: C
+      word: CAT
+      illustration: Cute cat outline
+    - letter: D
+      word: DOG
+      illustration: Puppy dog outline
+    - letter: E
+      word: ELEPHANT
+      illustration: Baby elephant outline
+    - letter: F
+      word: FISH
+      illustration: Fish outline
+    - letter: G
+      word: GIRAFFE
+      illustration: Giraffe outline
+    - letter: H
+      word: HOUSE
+      illustration: Simple house outline
+    - letter: I
+      word: ICE CREAM
+      illustration: Ice cream cone outline
+    - letter: J
+      word: JUICE
+      illustration: Juice box outline
+    - letter: K
+      word: KITE
+      illustration: Flying kite outline
+    - letter: L
+      word: LION
+      illustration: Lion face outline
+    - letter: M
+      word: MANGO
+      illustration: Mango fruit outline
+  bonus_tile_14:
+    description: "cute star badge with text 'GREAT JOB!' in hollow bubble letters"
+  bonus_tile_15:
+    description: "cute smiling sun outline illustration"
+
+# ── N to Z spread (P003) ─────────────────────────────────────────────────────
+n_to_z:
+  letters:
+    - letter: N
+      word: NEST
+      illustration: Bird nest outline
+    - letter: O
+      word: OCTOPUS
+      illustration: Octopus outline
+    - letter: P
+      word: PENGUIN
+      illustration: Penguin outline
+    - letter: Q
+      word: QUEEN
+      illustration: Queen face and crown outline
+    - letter: R
+      word: RABBIT
+      illustration: Bunny rabbit outline
+    - letter: S
+      word: SUN
+      illustration: Smiling sun outline
+    - letter: T
+      word: TREE
+      illustration: Tree outline
+    - letter: U
+      word: UMBRELLA
+      illustration: Open umbrella outline
+    - letter: V
+      word: VAN
+      illustration: Vehicle van outline
+    - letter: W
+      word: WATCH
+      illustration: Wristwatch outline
+    - letter: X
+      word: XYLOPHONE
+      illustration: Xylophone outline
+    - letter: Y
+      word: YOYO
+      illustration: Yoyo outline
+    - letter: Z
+      word: ZEBRA
+      illustration: Zebra outline
+  bonus_tile_14:
+    description: "cute trophy badge with 'YOU DID IT!' in hollow bubble letters"
+  bonus_tile_15:
+    description: "cute smiling rainbow outline illustration"

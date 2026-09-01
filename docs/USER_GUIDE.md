@@ -1,16 +1,23 @@
-# CurioKraft Coloring Book Production System — User Guide
+# CurioKraft Coloring Book Production System — User Guide [OBSOLETE / ARCHIVED]
 
-**Edition:** Vol 1.0 (Amazon KDP Paperback 8.5 × 11 in)  
-**Publisher Imprint:** CURIOKRAFT-KIDS  
-**CLI Package:** `curiokraft-coloring-book` (`curiokraft-book` / `ck-publish`)
+> [!WARNING]
+> **THIS DOCUMENT IS ARCHIVED & OBSOLETE.**
+> Please use the new, streamlined publishing guide and modular documentation:
+> * 🚀 **Main Interactive Guide:** [docs/PUBLISHING_WORKFLOWS_GUIDE.md](PUBLISHING_WORKFLOWS_GUIDE.md) (Clear Track 1 Free Web UI vs. Track 2 Automated API separation)
+> * ⚙️ **Google AI Studio Setup:** [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)
+> * 📐 **KDP Print Geometry & Barcode Rules:** [docs/KDP_PRINT_SPECIFICATIONS.md](KDP_PRINT_SPECIFICATIONS.md)
+> * 🏛️ **Multi-Volume Architecture (Vol 2, Vol 3):** [docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md](MULTI_VOLUME_ARCHITECTURE_GUIDE.md)
+> * 🧠 **Multi-Agent System & Debates:** [docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md](MULTI_AGENT_SYSTEM_AND_DEBATES.md)
+> * 📥 **Image Inbox Naming Conventions:** [inbox/raw_pages/README.md](../inbox/raw_pages/README.md)
 
 ---
 
 ## 1. Categorized CLI Command Map
 
-The commands are divided into **two distinct operational tracks**:
+The commands are divided into **three distinct operational tracks**:
 1. 🧪 **Code Quality & Health Verification:** Fast local tests, doctor checks, and manifest audits (0 API cost, run anytime).
-2. 🚀 **Book Production & Assembly:** Sample visual review, batch generation, cover compositing, and print PDF compilation.
+2. 💡 **AI Prompt Synthesis & Transparency:** Multi-agent debate transcript audit, 1-click prompt exports for all 110 pages + Cover Hero transparent asset.
+3. 🚀 **Book Production, Ingestion & Assembly:** Sample visual review, web image ingestion, batch generation, cover compositing, and print PDF compilation.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -23,7 +30,15 @@ The commands are divided into **two distinct operational tracks**:
 │   • curiokraft-book manifest status    ──► Inspect 110-page lifecycle state │
 │   • curiokraft-book cover validate     ──► Diagnostic check on cover size   │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 🚀 TRACK B: BOOK GENERATION & ASSEMBLY                                      │
+│ 💡 TRACK B: PROMPT EXPORT, MULTI-AGENT DEBATES & WEB WORKFLOW (FREE)        │
+│   • curiokraft-book prompt export      ──► Export ALL 110 Prompts + Cover   │
+│   • curiokraft-book prompt show        ──► 1-Click copy single page prompt  │
+│   • curiokraft-book cover prompt       ──► Cover Hero (Transparent PNG)     │
+│   • curiokraft-book debate show        ──► Inspect 4-round agent debate/QA  │
+│   • curiokraft-book debate export      ──► Export full 110-page debate log  │
+│   • curiokraft-book ingest             ──► Process & rescue inbox images    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 🚀 TRACK C: BOOK PRODUCTION, COMPOSITING & ASSEMBLY                         │
 │   • curiokraft-book init               ──► Scaffold directories & templates │
 │   • curiokraft-book sample generate    ──► Visual check (1-5 pages, Gate 2) │
 │   • curiokraft-book generate book      ──► Full 110-page production batch   │
@@ -37,19 +52,21 @@ The commands are divided into **two distinct operational tracks**:
 
 ## 2. Step-by-Step Publishing Lifecycle Guide
 
-Execute the commands in this exact sequential order for every publication run:
+Execute the commands in this sequential order for your publication workflow:
 
 | Step # | Command | Category | Purpose & Output | Next Step on Success | Recovery on Failure |
 | :---: | :--- | :--- | :--- | :--- | :--- |
-| **0** | `curiokraft-book init` | Setup | Scaffolds `assets/`, `manifest/`, `config/`, `output/` folders. | `curiokraft-book doctor` | Check folder write permissions. |
-| **1** | `curiokraft-book doctor` | Quality | Audits workspace health, detects `curiokraft_logo.png`, `curiokraft_emblem.png`, and `Fredoka-Bold.ttf`. | `curiokraft-book test validators` | Drop missing assets into `assets/` subdirectories. |
+| **0** | `curiokraft-book init` | Setup | Scaffolds `assets/`, `manifest/`, `config/`, `inbox/`, `output/` folders. | `curiokraft-book doctor` | Check folder write permissions. |
+| **1** | `curiokraft-book doctor` | Quality | Audits workspace health, detects `curiokraft_logo.png`, `curiokraft_emblem.png`, `.env`, and `Fredoka-Bold.ttf`. | `curiokraft-book test validators` | Drop missing assets into `assets/` subdirectories. |
 | **2** | `curiokraft-book test validators` | Quality | Executes pytest unit tests verifying dimension, margin, grayscale, and Otsu rescue algorithms. | `curiokraft-book manifest audit` | Run `pytest tests/ -vv` to inspect failure logs. |
-| **3** | `curiokraft-book manifest audit` | Quality | Scans `manifest/objects.json` verifying 0 semantic collisions across 143 items. | `curiokraft-book sample generate --count 3` | Fix duplicate words in `manifest/objects.json`. |
-| **4** | `curiokraft-book sample generate --count 3` | Visual Gate | Generates 3 sample pages in `output/samples/` for visual style sign-off (Gate 2). | `curiokraft-book generate book` | Verify API key or test in `$env:CK_DEFAULT_PROVIDER="mock"`. |
-| **5** | `curiokraft-book generate book` | Production | Executes 4-round multi-agent debate, code rescue, and vector typography across all 110 pages in `output/interior_masters/`. | `curiokraft-book cover build` | Run `curiokraft-book manifest status` to see flagged pages. |
-| **6** | `curiokraft-book cover build` | Production | Composites $17.498 \times 11.250\text{ in}$ cover PNG and CMYK PDF with $0.248\text{ in}$ spine and barcode safe zone. | `curiokraft-book assemble interior` | Verify `assets/logo/` and `assets/emblem/` image integrity. |
-| **7** | `curiokraft-book assemble interior` | Production | Compiles all 110 master PNGs into `output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf`. | `curiokraft-book preflight run` | Ensure all 110 pages exist in `output/interior_masters/`. |
-| **8** | `curiokraft-book preflight run` | Certification | Executes full 18-point diagnostic and writes official `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`. | **PUBLISH TO KDP!** | Inspect failed check numbers in preflight table. |
+| **3** | `curiokraft-book manifest audit` | Quality | Scans `manifest/objects.json` verifying 0 semantic collisions across 143 items. | `curiokraft-book prompt export` | Fix duplicate words in `manifest/objects.json`. |
+| **4** | `curiokraft-book prompt export` | Prompts | Synthesizes and exports **all 110 page prompts** (Intro, Spreads, Drawing pages, Certificate) + **Cover Hero** (Transparent PNG) to `generated/prompts_export.md`. | `curiokraft-book ingest` (or `generate book`) | Verify `manifest/pages.json` integrity. |
+| **5** | `curiokraft-book ingest` *(if using Web UI)* | Ingestion | Binarizes, fits safe margins, and overlays typography on downloaded images placed in `inbox/raw_pages/`. | `curiokraft-book sample generate` | Check file naming (`raw_p005_banana.png`). |
+| **6** | `curiokraft-book sample generate --count 3` | Visual Gate | Generates 3 sample pages in `output/samples/` for visual style sign-off (Gate 2). | `curiokraft-book generate book` | Verify API key or test in mock mode. |
+| **7** | `curiokraft-book generate book` | Production | Executes 4-round multi-agent debate, code rescue, and vector typography across all 110 pages in `output/interior_masters/`. | `curiokraft-book cover build` | Run `curiokraft-book manifest status` to see flagged pages. |
+| **8** | `curiokraft-book cover build` | Production | Composites $17.498 \times 11.250\text{ in}$ cover PNG and CMYK PDF with $0.248\text{ in}$ spine and barcode safe zone (incorporating `inbox/cover_hero.png`). | `curiokraft-book assemble interior` | Verify `assets/logo/` and `assets/emblem/` image integrity. |
+| **9** | `curiokraft-book assemble interior` | Production | Compiles all 110 master PNGs into `output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf`. | `curiokraft-book preflight run` | Ensure all 110 pages exist in `output/interior_masters/`. |
+| **10** | `curiokraft-book preflight run` | Certification | Executes full 18-point diagnostic and writes official `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`. | **PUBLISH TO KDP!** | Inspect failed check numbers in preflight table. |
 
 ---
 
@@ -83,7 +100,60 @@ curiokraft-book manifest status
 
 ---
 
-### 🚀 Track B: Book Production & Assembly Commands
+### 💡 Track B: Prompt Export, Multi-Agent Debates & Web Workflow Commands
+
+> [!TIP]
+> 📖 **Google AI Studio Setup & System Instructions Guide:**
+> For the exact browser sidebar settings (Aspect Ratio `3:4`, Output `Images only`, Temperature `0.5`) and the copy-paste **System Instructions Presets** for both Interior Pages and Cover Master Artwork, see [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md).
+
+#### 1. `curiokraft-book prompt export` (Recommended for Full Book)
+Synthesizes and exports **all 110 page prompts** (Intro/Welcome Page P001, educational spreads P002-P005, individual coloring pages P006-P109, and Completion Certificate P110) plus the **Front Cover Master Artwork Prompt** and **Back Cover Master Artwork Prompt** into a clean, copy-pasteable Markdown document.
+```powershell
+# Export all 110 prompts + Cover prompts to default file (generated/prompts_export.md)
+curiokraft-book prompt export
+
+# Or export a specific subset / custom destination:
+curiokraft-book prompt export --count 10 --out generated/my_prompts.md
+curiokraft-book prompt export --pages P001,P002,P005,P110
+```
+- **Outputs:**
+  - `generated/prompts_export.md` (Contains every page's prompt, negative prompt, aspect ratio, drop target filename, and AI Studio instructions)
+  - `logs/agent_debates_log.md` (Synchronized multi-agent debate audit log)
+
+#### 2. `curiokraft-book prompt show`
+Generates and displays the exact positive and negative prompt for a single page in your terminal for 1-click copying.
+```powershell
+curiokraft-book prompt show --page P005
+```
+
+#### 3. `curiokraft-book cover prompt`
+Displays the optimized prompts for both the **Front Cover Master Artwork** and **Back Cover Master Artwork**.
+```powershell
+curiokraft-book cover prompt
+```
+- **Drop Targets:**
+  - Front Cover: `inbox/front_cover.png` (or `.jpg`)
+  - Back Cover: `inbox/back_cover.png` (or `.jpg`)
+
+#### 4. `curiokraft-book debate show` & `curiokraft-book debate export`
+Inspect the internal 4-round multi-agent debate (Director, Design, KDP, Market, Edu, Critic, Judge) and quality scoring for any page.
+```powershell
+# Inspect debate reasoning for a specific page:
+curiokraft-book debate show --page P005
+
+# Export the complete debate transcript for all 110 pages:
+curiokraft-book debate export --out logs/agent_debates_log.md
+```
+
+#### 5. `curiokraft-book ingest` (or `curiokraft-book process-raw`)
+Processes, binarizes (Otsu thresholding), resizes, centers to safe margins, and overlays vector typography on illustrations dropped into `inbox/raw_pages/`.
+```powershell
+curiokraft-book ingest
+```
+
+---
+
+### 🚀 Track C: Book Production & Assembly Commands
 
 #### 1. `curiokraft-book sample generate`
 Generates 1 to 5 sample master pages for Gate 2 visual approval before running the full batch.

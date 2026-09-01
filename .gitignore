@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache/
+dont-delete-alter/
 
 # Virtual Environments
 .venv/
@@ -30,7 +31,7 @@ ENV/
 # Output and Generated Production Files
 output/
 generated/
-logs/*.log
+logs/
 scratch/
 
 # Environment Variables & Secrets
