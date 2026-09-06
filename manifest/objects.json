@@ -2,159 +2,2205 @@
   "registry_version": "1.0",
   "total_objects": 143,
   "objects": [
-    {"object_id": "OBJ-0001", "canonical_name": "banana", "display_name": "BANANA", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["ripe banana"], "compound_variants": ["banana bunch"], "reserved_by": "category_page_005", "reuse_policy": "never"},
-    {"object_id": "OBJ-0002", "canonical_name": "orange", "display_name": "ORANGE", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["sweet orange", "citrus"], "compound_variants": ["orange slice"], "reserved_by": "category_page_006", "reuse_policy": "never"},
-    {"object_id": "OBJ-0003", "canonical_name": "strawberry", "display_name": "STRAWBERRY", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["berry"], "compound_variants": ["ripe strawberry"], "reserved_by": "category_page_007", "reuse_policy": "never"},
-    {"object_id": "OBJ-0004", "canonical_name": "watermelon", "display_name": "WATERMELON", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["melon"], "compound_variants": ["watermelon slice"], "reserved_by": "category_page_008", "reuse_policy": "never"},
-    {"object_id": "OBJ-0005", "canonical_name": "grape", "display_name": "GRAPE", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["grapes"], "compound_variants": ["grape bunch"], "reserved_by": "category_page_009", "reuse_policy": "never"},
-    {"object_id": "OBJ-0006", "canonical_name": "pineapple", "display_name": "PINEAPPLE", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["ananas"], "compound_variants": ["tropical pineapple"], "reserved_by": "category_page_010", "reuse_policy": "never"},
-    {"object_id": "OBJ-0007", "canonical_name": "mango", "display_name": "MANGO", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["ripe mango"], "compound_variants": ["mango fruit"], "reserved_by": "category_page_011", "reuse_policy": "never"},
-    {"object_id": "OBJ-0008", "canonical_name": "pear", "display_name": "PEAR", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["green pear"], "compound_variants": ["pear fruit"], "reserved_by": "category_page_012", "reuse_policy": "never"},
-    {"object_id": "OBJ-0009", "canonical_name": "peach", "display_name": "PEACH", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["sweet peach"], "compound_variants": ["peach fruit"], "reserved_by": "category_page_013", "reuse_policy": "never"},
-    {"object_id": "OBJ-0010", "canonical_name": "lemon", "display_name": "LEMON", "category": "Fruits & Vegetables", "semantic_group": "fruit", "synonyms": ["yellow lemon"], "compound_variants": ["lemon slice"], "reserved_by": "category_page_014", "reuse_policy": "never"},
-    {"object_id": "OBJ-0011", "canonical_name": "carrot", "display_name": "CARROT", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["orange carrot"], "compound_variants": ["carrot with leaves"], "reserved_by": "category_page_015", "reuse_policy": "never"},
-    {"object_id": "OBJ-0012", "canonical_name": "tomato", "display_name": "TOMATO", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["red tomato"], "compound_variants": ["round tomato"], "reserved_by": "category_page_016", "reuse_policy": "never"},
-    {"object_id": "OBJ-0013", "canonical_name": "potato", "display_name": "POTATO", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["spud"], "compound_variants": ["round potato"], "reserved_by": "category_page_017", "reuse_policy": "never"},
-    {"object_id": "OBJ-0014", "canonical_name": "corn", "display_name": "CORN", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["maize", "sweetcorn"], "compound_variants": ["corn cob"], "reserved_by": "category_page_018", "reuse_policy": "never"},
-    {"object_id": "OBJ-0015", "canonical_name": "broccoli", "display_name": "BROCCOLI", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["green broccoli"], "compound_variants": ["broccoli floret"], "reserved_by": "category_page_019", "reuse_policy": "never"},
-    {"object_id": "OBJ-0016", "canonical_name": "pumpkin", "display_name": "PUMPKIN", "category": "Fruits & Vegetables", "semantic_group": "vegetable", "synonyms": ["squash"], "compound_variants": ["round pumpkin"], "reserved_by": "category_page_020", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0017", "canonical_name": "pizza", "display_name": "PIZZA", "category": "Food & Drinks", "semantic_group": "meal", "synonyms": ["pizza slice"], "compound_variants": ["cheese pizza"], "reserved_by": "category_page_021", "reuse_policy": "never"},
-    {"object_id": "OBJ-0018", "canonical_name": "sandwich", "display_name": "SANDWICH", "category": "Food & Drinks", "semantic_group": "meal", "synonyms": ["sub"], "compound_variants": ["club sandwich"], "reserved_by": "category_page_022", "reuse_policy": "never"},
-    {"object_id": "OBJ-0019", "canonical_name": "burger", "display_name": "BURGER", "category": "Food & Drinks", "semantic_group": "meal", "synonyms": ["hamburger"], "compound_variants": ["cheeseburger"], "reserved_by": "category_page_023", "reuse_policy": "never"},
-    {"object_id": "OBJ-0020", "canonical_name": "pancake", "display_name": "PANCAKE", "category": "Food & Drinks", "semantic_group": "breakfast", "synonyms": ["hotcake", "flapjack"], "compound_variants": ["pancake stack"], "reserved_by": "category_page_024", "reuse_policy": "never"},
-    {"object_id": "OBJ-0021", "canonical_name": "cookie", "display_name": "COOKIE", "category": "Food & Drinks", "semantic_group": "snack", "synonyms": ["biscuit"], "compound_variants": ["chocolate chip cookie"], "reserved_by": "category_page_025", "reuse_policy": "never"},
-    {"object_id": "OBJ-0022", "canonical_name": "donut", "display_name": "DONUT", "category": "Food & Drinks", "semantic_group": "snack", "synonyms": ["doughnut"], "compound_variants": ["glazed donut"], "reserved_by": "category_page_026", "reuse_policy": "never"},
-    {"object_id": "OBJ-0023", "canonical_name": "cake", "display_name": "CAKE", "category": "Food & Drinks", "semantic_group": "dessert", "synonyms": ["birthday cake"], "compound_variants": ["slice of cake"], "reserved_by": "category_page_027", "reuse_policy": "never"},
-    {"object_id": "OBJ-0024", "canonical_name": "ice_cream", "display_name": "ICE CREAM", "category": "Food & Drinks", "semantic_group": "dessert", "synonyms": ["ice cream cone"], "compound_variants": ["sundae"], "reserved_by": "category_page_028", "reuse_policy": "never"},
-    {"object_id": "OBJ-0025", "canonical_name": "popcorn", "display_name": "POPCORN", "category": "Food & Drinks", "semantic_group": "snack", "synonyms": ["popped corn"], "compound_variants": ["popcorn box"], "reserved_by": "category_page_029", "reuse_policy": "never"},
-    {"object_id": "OBJ-0026", "canonical_name": "milk", "display_name": "MILK", "category": "Food & Drinks", "semantic_group": "beverage", "synonyms": ["milk carton", "glass of milk"], "compound_variants": ["milk bottle"], "reserved_by": "category_page_030", "reuse_policy": "never"},
-    {"object_id": "OBJ-0027", "canonical_name": "juice", "display_name": "JUICE", "category": "Food & Drinks", "semantic_group": "beverage", "synonyms": ["juice box", "fruit juice"], "compound_variants": ["juice glass"], "reserved_by": "category_page_031", "reuse_policy": "never"},
-    {"object_id": "OBJ-0028", "canonical_name": "cup", "display_name": "CUP", "category": "Food & Drinks", "semantic_group": "drinkware", "synonyms": ["mug", "teacup"], "compound_variants": ["coffee cup"], "reserved_by": "category_page_032", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0029", "canonical_name": "teddy_bear", "display_name": "TEDDY BEAR", "category": "Toys & Playtime", "semantic_group": "plush_toy", "synonyms": ["teddy", "stuffed bear"], "compound_variants": ["toy bear"], "reserved_by": "category_page_033", "reuse_policy": "never"},
-    {"object_id": "OBJ-0030", "canonical_name": "doll", "display_name": "DOLL", "category": "Toys & Playtime", "semantic_group": "figure_toy", "synonyms": ["ragdoll", "baby doll"], "compound_variants": ["toy doll"], "reserved_by": "category_page_034", "reuse_policy": "never"},
-    {"object_id": "OBJ-0031", "canonical_name": "wagon", "display_name": "WAGON", "category": "Toys & Playtime", "semantic_group": "riding_toy", "synonyms": ["pull wagon", "red wagon"], "compound_variants": ["toy wagon"], "reserved_by": "category_page_035", "reuse_policy": "never"},
-    {"object_id": "OBJ-0032", "canonical_name": "kaleidoscope", "display_name": "KALEIDOSCOPE", "category": "Toys & Playtime", "semantic_group": "visual_toy", "synonyms": ["pattern tube"], "compound_variants": ["toy kaleidoscope"], "reserved_by": "category_page_036", "reuse_policy": "never"},
-    {"object_id": "OBJ-0033", "canonical_name": "building_blocks", "display_name": "BUILDING BLOCKS", "category": "Toys & Playtime", "semantic_group": "construction_toy", "synonyms": ["toy blocks", "wooden blocks"], "compound_variants": ["stacking blocks"], "reserved_by": "category_page_037", "reuse_policy": "never"},
-    {"object_id": "OBJ-0034", "canonical_name": "puzzle", "display_name": "PUZZLE", "category": "Toys & Playtime", "semantic_group": "learning_toy", "synonyms": ["jigsaw puzzle"], "compound_variants": ["puzzle piece"], "reserved_by": "category_page_038", "reuse_policy": "never"},
-    {"object_id": "OBJ-0035", "canonical_name": "toy_robot", "display_name": "TOY ROBOT", "category": "Toys & Playtime", "semantic_group": "figure_toy", "synonyms": ["robot", "tin robot"], "compound_variants": ["friendly robot"], "reserved_by": "category_page_039", "reuse_policy": "never"},
-    {"object_id": "OBJ-0036", "canonical_name": "pinwheel", "display_name": "PINWHEEL", "category": "Toys & Playtime", "semantic_group": "wind_toy", "synonyms": ["windmill toy"], "compound_variants": ["spinning pinwheel"], "reserved_by": "category_page_040", "reuse_policy": "never"},
-    {"object_id": "OBJ-0037", "canonical_name": "sand_bucket", "display_name": "SAND BUCKET", "category": "Toys & Playtime", "semantic_group": "outdoor_toy", "synonyms": ["pail", "beach pail"], "compound_variants": ["bucket and shovel"], "reserved_by": "category_page_041", "reuse_policy": "never"},
-    {"object_id": "OBJ-0038", "canonical_name": "spinning_top", "display_name": "SPINNING TOP", "category": "Toys & Playtime", "semantic_group": "motion_toy", "synonyms": ["top", "whirligig"], "compound_variants": ["toy top"], "reserved_by": "category_page_042", "reuse_policy": "never"},
-    {"object_id": "OBJ-0039", "canonical_name": "marbles", "display_name": "MARBLES", "category": "Toys & Playtime", "semantic_group": "game_toy", "synonyms": ["glass marbles"], "compound_variants": ["marble pouch"], "reserved_by": "category_page_043", "reuse_policy": "never"},
-    {"object_id": "OBJ-0040", "canonical_name": "jump_rope", "display_name": "JUMP ROPE", "category": "Toys & Playtime", "semantic_group": "activity_toy", "synonyms": ["skipping rope"], "compound_variants": ["toddler jump rope"], "reserved_by": "category_page_044", "reuse_policy": "never"},
-    {"object_id": "OBJ-0041", "canonical_name": "rocking_horse", "display_name": "ROCKING HORSE", "category": "Toys & Playtime", "semantic_group": "riding_toy", "synonyms": ["wooden horse"], "compound_variants": ["nursery rocking horse"], "reserved_by": "category_page_045", "reuse_policy": "never"},
-    {"object_id": "OBJ-0042", "canonical_name": "beach_ball", "display_name": "BEACH BALL", "category": "Toys & Playtime", "semantic_group": "ball_toy", "synonyms": ["inflatable ball"], "compound_variants": ["striped beach ball"], "reserved_by": "category_page_046", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0043", "canonical_name": "dog", "display_name": "DOG", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["puppy", "canine"], "compound_variants": ["cute puppy"], "reserved_by": "category_page_047", "reuse_policy": "never"},
-    {"object_id": "OBJ-0044", "canonical_name": "cat", "display_name": "CAT", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["kitten", "feline"], "compound_variants": ["cute kitten"], "reserved_by": "category_page_048", "reuse_policy": "never"},
-    {"object_id": "OBJ-0045", "canonical_name": "rabbit", "display_name": "RABBIT", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["bunny", "hare"], "compound_variants": ["fluffy bunny"], "reserved_by": "category_page_049", "reuse_policy": "never"},
-    {"object_id": "OBJ-0046", "canonical_name": "lion", "display_name": "LION", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["lion cub"], "compound_variants": ["friendly lion"], "reserved_by": "category_page_050", "reuse_policy": "never"},
-    {"object_id": "OBJ-0047", "canonical_name": "elephant", "display_name": "ELEPHANT", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["baby elephant"], "compound_variants": ["playful elephant"], "reserved_by": "category_page_051", "reuse_policy": "never"},
-    {"object_id": "OBJ-0048", "canonical_name": "giraffe", "display_name": "GIRAFFE", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["tall giraffe"], "compound_variants": ["spotted giraffe"], "reserved_by": "category_page_052", "reuse_policy": "never"},
-    {"object_id": "OBJ-0049", "canonical_name": "monkey", "display_name": "MONKEY", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["chimp"], "compound_variants": ["cheerful monkey"], "reserved_by": "category_page_053", "reuse_policy": "never"},
-    {"object_id": "OBJ-0050", "canonical_name": "bear", "display_name": "BEAR", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["brown bear", "bear cub"], "compound_variants": ["friendly bear"], "reserved_by": "category_page_054", "reuse_policy": "never"},
-    {"object_id": "OBJ-0051", "canonical_name": "tiger", "display_name": "TIGER", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["tiger cub"], "compound_variants": ["striped tiger"], "reserved_by": "category_page_055", "reuse_policy": "never"},
-    {"object_id": "OBJ-0052", "canonical_name": "horse", "display_name": "HORSE", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["pony", "foal"], "compound_variants": ["friendly horse"], "reserved_by": "category_page_056", "reuse_policy": "never"},
-    {"object_id": "OBJ-0053", "canonical_name": "cow", "display_name": "COW", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["calf"], "compound_variants": ["spotted cow"], "reserved_by": "category_page_057", "reuse_policy": "never"},
-    {"object_id": "OBJ-0054", "canonical_name": "sheep", "display_name": "SHEEP", "category": "Animals & Nature Creatures", "semantic_group": "mammal", "synonyms": ["lamb"], "compound_variants": ["woolly sheep"], "reserved_by": "category_page_058", "reuse_policy": "never"},
-    {"object_id": "OBJ-0055", "canonical_name": "chicken", "display_name": "CHICKEN", "category": "Animals & Nature Creatures", "semantic_group": "bird", "synonyms": ["hen", "rooster", "chick"], "compound_variants": ["farm chicken"], "reserved_by": "category_page_059", "reuse_policy": "never"},
-    {"object_id": "OBJ-0056", "canonical_name": "duck", "display_name": "DUCK", "category": "Animals & Nature Creatures", "semantic_group": "bird", "synonyms": ["duckling"], "compound_variants": ["swimming duck"], "reserved_by": "category_page_060", "reuse_policy": "never"},
-    {"object_id": "OBJ-0057", "canonical_name": "frog", "display_name": "FROG", "category": "Animals & Nature Creatures", "semantic_group": "amphibian", "synonyms": ["toad"], "compound_variants": ["happy frog"], "reserved_by": "category_page_061", "reuse_policy": "never"},
-    {"object_id": "OBJ-0058", "canonical_name": "butterfly", "display_name": "BUTTERFLY", "category": "Animals & Nature Creatures", "semantic_group": "insect", "synonyms": ["moth"], "compound_variants": ["winged butterfly"], "reserved_by": "category_page_062", "reuse_policy": "never"},
-    {"object_id": "OBJ-0059", "canonical_name": "snail", "display_name": "SNAIL", "category": "Animals & Nature Creatures", "semantic_group": "creature", "synonyms": ["garden snail"], "compound_variants": ["spiral snail"], "reserved_by": "category_page_063", "reuse_policy": "never"},
-    {"object_id": "OBJ-0060", "canonical_name": "bee", "display_name": "BEE", "category": "Animals & Nature Creatures", "semantic_group": "insect", "synonyms": ["bumblebee", "honeybee"], "compound_variants": ["friendly bee"], "reserved_by": "category_page_064", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0061", "canonical_name": "shirt", "display_name": "SHIRT", "category": "Clothing & Accessories", "semantic_group": "top", "synonyms": ["t-shirt", "tee"], "compound_variants": ["striped shirt"], "reserved_by": "category_page_065", "reuse_policy": "never"},
-    {"object_id": "OBJ-0062", "canonical_name": "pants", "display_name": "PANTS", "category": "Clothing & Accessories", "semantic_group": "bottom", "synonyms": ["trousers", "jeans"], "compound_variants": ["denim pants"], "reserved_by": "category_page_066", "reuse_policy": "never"},
-    {"object_id": "OBJ-0063", "canonical_name": "dress", "display_name": "DRESS", "category": "Clothing & Accessories", "semantic_group": "garment", "synonyms": ["frock", "gown"], "compound_variants": ["polka dot dress"], "reserved_by": "category_page_067", "reuse_policy": "never"},
-    {"object_id": "OBJ-0064", "canonical_name": "socks", "display_name": "SOCKS", "category": "Clothing & Accessories", "semantic_group": "footwear_accessory", "synonyms": ["sock pair"], "compound_variants": ["striped socks"], "reserved_by": "category_page_068", "reuse_policy": "never"},
-    {"object_id": "OBJ-0065", "canonical_name": "shoes", "display_name": "SHOES", "category": "Clothing & Accessories", "semantic_group": "footwear", "synonyms": ["sneakers", "boots"], "compound_variants": ["toddler shoes"], "reserved_by": "category_page_069", "reuse_policy": "never"},
-    {"object_id": "OBJ-0066", "canonical_name": "jacket", "display_name": "JACKET", "category": "Clothing & Accessories", "semantic_group": "outerwear", "synonyms": ["coat", "windbreaker"], "compound_variants": ["zipper jacket"], "reserved_by": "category_page_070", "reuse_policy": "never"},
-    {"object_id": "OBJ-0067", "canonical_name": "backpack", "display_name": "BACKPACK", "category": "Clothing & Accessories", "semantic_group": "bag", "synonyms": ["schoolbag", "knapsack"], "compound_variants": ["toddler backpack"], "reserved_by": "category_page_071", "reuse_policy": "never"},
-    {"object_id": "OBJ-0068", "canonical_name": "sunglasses", "display_name": "SUNGLASSES", "category": "Clothing & Accessories", "semantic_group": "eyewear", "synonyms": ["shades", "sun glasses"], "compound_variants": ["cool sunglasses"], "reserved_by": "category_page_072", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0069", "canonical_name": "bed", "display_name": "BED", "category": "Household & Daily Living", "semantic_group": "furniture", "synonyms": ["cot", "crib bed"], "compound_variants": ["cozy bed"], "reserved_by": "category_page_073", "reuse_policy": "never"},
-    {"object_id": "OBJ-0070", "canonical_name": "chair", "display_name": "CHAIR", "category": "Household & Daily Living", "semantic_group": "furniture", "synonyms": ["seat", "armchair"], "compound_variants": ["wooden chair"], "reserved_by": "category_page_074", "reuse_policy": "never"},
-    {"object_id": "OBJ-0071", "canonical_name": "table", "display_name": "TABLE", "category": "Household & Daily Living", "semantic_group": "furniture", "synonyms": ["desk"], "compound_variants": ["dining table"], "reserved_by": "category_page_075", "reuse_policy": "never"},
-    {"object_id": "OBJ-0072", "canonical_name": "lamp", "display_name": "LAMP", "category": "Household & Daily Living", "semantic_group": "lighting", "synonyms": ["table lamp", "light"], "compound_variants": ["bedside lamp"], "reserved_by": "category_page_076", "reuse_policy": "never"},
-    {"object_id": "OBJ-0073", "canonical_name": "clock", "display_name": "CLOCK", "category": "Household & Daily Living", "semantic_group": "timepiece", "synonyms": ["wall clock", "alarm clock"], "compound_variants": ["round clock"], "reserved_by": "category_page_077", "reuse_policy": "never"},
-    {"object_id": "OBJ-0074", "canonical_name": "toothbrush", "display_name": "TOOTHBRUSH", "category": "Household & Daily Living", "semantic_group": "hygiene", "synonyms": ["dental brush"], "compound_variants": ["child toothbrush"], "reserved_by": "category_page_078", "reuse_policy": "never"},
-    {"object_id": "OBJ-0075", "canonical_name": "comb", "display_name": "COMB", "category": "Household & Daily Living", "semantic_group": "grooming", "synonyms": ["hairbrush", "hair comb"], "compound_variants": ["toothed comb"], "reserved_by": "category_page_079", "reuse_policy": "never"},
-    {"object_id": "OBJ-0076", "canonical_name": "soap", "display_name": "SOAP", "category": "Household & Daily Living", "semantic_group": "hygiene", "synonyms": ["soap bar"], "compound_variants": ["soap with bubbles"], "reserved_by": "category_page_080", "reuse_policy": "never"},
-    {"object_id": "OBJ-0077", "canonical_name": "towel", "display_name": "TOWEL", "category": "Household & Daily Living", "semantic_group": "linens", "synonyms": ["bath towel"], "compound_variants": ["folded towel"], "reserved_by": "category_page_081", "reuse_policy": "never"},
-    {"object_id": "OBJ-0078", "canonical_name": "pillow", "display_name": "PILLOW", "category": "Household & Daily Living", "semantic_group": "bedding", "synonyms": ["cushion"], "compound_variants": ["soft pillow"], "reserved_by": "category_page_082", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0079", "canonical_name": "car", "display_name": "CAR", "category": "Vehicles & Transportation", "semantic_group": "automobile", "synonyms": ["automobile", "sedan"], "compound_variants": ["family car"], "reserved_by": "category_page_083", "reuse_policy": "never"},
-    {"object_id": "OBJ-0080", "canonical_name": "bus", "display_name": "BUS", "category": "Vehicles & Transportation", "semantic_group": "transit", "synonyms": ["school bus", "coach"], "compound_variants": ["city bus"], "reserved_by": "category_page_084", "reuse_policy": "never"},
-    {"object_id": "OBJ-0081", "canonical_name": "truck", "display_name": "TRUCK", "category": "Vehicles & Transportation", "semantic_group": "hauling", "synonyms": ["lorry", "pickup"], "compound_variants": ["dump truck"], "reserved_by": "category_page_085", "reuse_policy": "never"},
-    {"object_id": "OBJ-0082", "canonical_name": "bicycle", "display_name": "BICYCLE", "category": "Vehicles & Transportation", "semantic_group": "cycle", "synonyms": ["bike", "trike"], "compound_variants": ["child bicycle"], "reserved_by": "category_page_086", "reuse_policy": "never"},
-    {"object_id": "OBJ-0083", "canonical_name": "motorcycle", "display_name": "MOTORCYCLE", "category": "Vehicles & Transportation", "semantic_group": "cycle", "synonyms": ["motorbike", "scooter"], "compound_variants": ["touring motorcycle"], "reserved_by": "category_page_087", "reuse_policy": "never"},
-    {"object_id": "OBJ-0084", "canonical_name": "taxi", "display_name": "TAXI", "category": "Vehicles & Transportation", "semantic_group": "automobile", "synonyms": ["cab", "taxicab"], "compound_variants": ["yellow taxi"], "reserved_by": "category_page_088", "reuse_policy": "never"},
-    {"object_id": "OBJ-0085", "canonical_name": "ambulance", "display_name": "AMBULANCE", "category": "Vehicles & Transportation", "semantic_group": "emergency", "synonyms": ["rescue van"], "compound_variants": ["emergency ambulance"], "reserved_by": "category_page_089", "reuse_policy": "never"},
-    {"object_id": "OBJ-0086", "canonical_name": "fire_truck", "display_name": "FIRE TRUCK", "category": "Vehicles & Transportation", "semantic_group": "emergency", "synonyms": ["fire engine"], "compound_variants": ["ladder fire truck"], "reserved_by": "category_page_090", "reuse_policy": "never"},
-    {"object_id": "OBJ-0087", "canonical_name": "police_car", "display_name": "POLICE CAR", "category": "Vehicles & Transportation", "semantic_group": "emergency", "synonyms": ["patrol car", "cop car"], "compound_variants": ["siren police car"], "reserved_by": "category_page_091", "reuse_policy": "never"},
-    {"object_id": "OBJ-0088", "canonical_name": "helicopter", "display_name": "HELICOPTER", "category": "Vehicles & Transportation", "semantic_group": "aircraft", "synonyms": ["chopper", "helo"], "compound_variants": ["rescue helicopter"], "reserved_by": "category_page_092", "reuse_policy": "never"},
-    {"object_id": "OBJ-0089", "canonical_name": "sailboat", "display_name": "SAILBOAT", "category": "Vehicles & Transportation", "semantic_group": "watercraft", "synonyms": ["sailing boat", "yacht"], "compound_variants": ["wind sailboat"], "reserved_by": "category_page_093", "reuse_policy": "never"},
-    {"object_id": "OBJ-0090", "canonical_name": "rocket", "display_name": "ROCKET", "category": "Vehicles & Transportation", "semantic_group": "spacecraft", "synonyms": ["spaceship", "rocket ship"], "compound_variants": ["launch rocket"], "reserved_by": "category_page_094", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0091", "canonical_name": "tree", "display_name": "TREE", "category": "Nature, Sky & Garden", "semantic_group": "flora", "synonyms": ["oak", "pine"], "compound_variants": ["leafy tree"], "reserved_by": "category_page_095", "reuse_policy": "never"},
-    {"object_id": "OBJ-0092", "canonical_name": "flower", "display_name": "FLOWER", "category": "Nature, Sky & Garden", "semantic_group": "flora", "synonyms": ["blossom", "tulip", "daisy"], "compound_variants": ["potted flower"], "reserved_by": "category_page_096", "reuse_policy": "never"},
-    {"object_id": "OBJ-0093", "canonical_name": "cactus", "display_name": "CACTUS", "category": "Nature, Sky & Garden", "semantic_group": "flora", "synonyms": ["desert cactus"], "compound_variants": ["saguaro cactus"], "reserved_by": "category_page_097", "reuse_policy": "never"},
-    {"object_id": "OBJ-0094", "canonical_name": "mushroom", "display_name": "MUSHROOM", "category": "Nature, Sky & Garden", "semantic_group": "fungus", "synonyms": ["toadstool"], "compound_variants": ["spotted mushroom"], "reserved_by": "category_page_098", "reuse_policy": "never"},
-    {"object_id": "OBJ-0095", "canonical_name": "cloud", "display_name": "CLOUD", "category": "Nature, Sky & Garden", "semantic_group": "weather", "synonyms": ["cumulus"], "compound_variants": ["fluffy cloud"], "reserved_by": "category_page_099", "reuse_policy": "never"},
-    {"object_id": "OBJ-0096", "canonical_name": "raindrop", "display_name": "RAINDROP", "category": "Nature, Sky & Garden", "semantic_group": "weather", "synonyms": ["water drop"], "compound_variants": ["smiling raindrop"], "reserved_by": "category_page_100", "reuse_policy": "never"},
-    {"object_id": "OBJ-0097", "canonical_name": "snowflake", "display_name": "SNOWFLAKE", "category": "Nature, Sky & Garden", "semantic_group": "weather", "synonyms": ["snow crystal"], "compound_variants": ["geometric snowflake"], "reserved_by": "category_page_101", "reuse_policy": "never"},
-    {"object_id": "OBJ-0098", "canonical_name": "mountain", "display_name": "MOUNTAIN", "category": "Nature, Sky & Garden", "semantic_group": "landscape", "synonyms": ["peak", "hill"], "compound_variants": ["snowy mountain"], "reserved_by": "category_page_102", "reuse_policy": "never"},
-    {"object_id": "OBJ-0099", "canonical_name": "pond", "display_name": "POND", "category": "Nature, Sky & Garden", "semantic_group": "landscape", "synonyms": ["pool", "water hole"], "compound_variants": ["lily pond"], "reserved_by": "category_page_103", "reuse_policy": "never"},
-    {"object_id": "OBJ-0100", "canonical_name": "waterfall", "display_name": "WATERFALL", "category": "Nature, Sky & Garden", "semantic_group": "landscape", "synonyms": ["cascade"], "compound_variants": ["river waterfall"], "reserved_by": "category_page_104", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0101", "canonical_name": "piano", "display_name": "PIANO", "category": "Musical Instruments & Sound Toys", "semantic_group": "keyboard", "synonyms": ["grand piano", "upright piano"], "compound_variants": ["toddler piano"], "reserved_by": "category_page_105", "reuse_policy": "never"},
-    {"object_id": "OBJ-0102", "canonical_name": "trumpet", "display_name": "TRUMPET", "category": "Musical Instruments & Sound Toys", "semantic_group": "brass", "synonyms": ["horn", "bugle"], "compound_variants": ["brass trumpet"], "reserved_by": "category_page_106", "reuse_policy": "never"},
-    {"object_id": "OBJ-0103", "canonical_name": "violin", "display_name": "VIOLIN", "category": "Musical Instruments & Sound Toys", "semantic_group": "string", "synonyms": ["fiddle"], "compound_variants": ["violin with bow"], "reserved_by": "category_page_107", "reuse_policy": "never"},
-    {"object_id": "OBJ-0104", "canonical_name": "tambourine", "display_name": "TAMBOURINE", "category": "Musical Instruments & Sound Toys", "semantic_group": "percussion", "synonyms": ["jingle ring"], "compound_variants": ["round tambourine"], "reserved_by": "category_page_108", "reuse_policy": "never"},
-    {"object_id": "OBJ-0105", "canonical_name": "maraca", "display_name": "MARACA", "category": "Musical Instruments & Sound Toys", "semantic_group": "percussion", "synonyms": ["rattle", "shaker"], "compound_variants": ["rumba maraca"], "reserved_by": "category_page_109", "reuse_policy": "never"},
-    {"object_id": "OBJ-0106", "canonical_name": "harmonica", "display_name": "HARMONICA", "category": "Musical Instruments & Sound Toys", "semantic_group": "wind", "synonyms": ["mouth organ", "blues harp"], "compound_variants": ["metal harmonica"], "reserved_by": "category_page_110", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0107", "canonical_name": "ant", "display_name": "ANT", "category": "Alphabet Section", "semantic_group": "insect", "synonyms": ["worker ant"], "compound_variants": ["friendly ant"], "reserved_by": "alphabet_page_001_A", "reuse_policy": "never"},
-    {"object_id": "OBJ-0108", "canonical_name": "bell", "display_name": "BELL", "category": "Alphabet Section", "semantic_group": "object", "synonyms": ["handbell"], "compound_variants": ["brass bell"], "reserved_by": "alphabet_page_001_B", "reuse_policy": "never"},
-    {"object_id": "OBJ-0109", "canonical_name": "crown", "display_name": "CROWN", "category": "Alphabet Section", "semantic_group": "headwear", "synonyms": ["tiara", "coronet"], "compound_variants": ["king crown"], "reserved_by": "alphabet_page_001_C", "reuse_policy": "never"},
-    {"object_id": "OBJ-0110", "canonical_name": "drum", "display_name": "DRUM", "category": "Alphabet Section", "semantic_group": "percussion", "synonyms": ["snare drum"], "compound_variants": ["bongo drum"], "reserved_by": "alphabet_page_001_D", "reuse_policy": "never"},
-    {"object_id": "OBJ-0111", "canonical_name": "egg", "display_name": "EGG", "category": "Alphabet Section", "semantic_group": "food_nature", "synonyms": ["bird egg"], "compound_variants": ["nest egg"], "reserved_by": "alphabet_page_001_E", "reuse_policy": "never"},
-    {"object_id": "OBJ-0112", "canonical_name": "fish", "display_name": "FISH", "category": "Alphabet Section", "semantic_group": "aquatic", "synonyms": ["goldfish"], "compound_variants": ["swimming fish"], "reserved_by": "alphabet_page_001_F", "reuse_policy": "never"},
-    {"object_id": "OBJ-0113", "canonical_name": "globe", "display_name": "GLOBE", "category": "Alphabet Section", "semantic_group": "learning", "synonyms": ["world map"], "compound_variants": ["desk globe"], "reserved_by": "alphabet_page_001_G", "reuse_policy": "never"},
-    {"object_id": "OBJ-0114", "canonical_name": "hat", "display_name": "HAT", "category": "Alphabet Section", "semantic_group": "headwear", "synonyms": ["cap", "fedora"], "compound_variants": ["sun hat"], "reserved_by": "alphabet_page_001_H", "reuse_policy": "never"},
-    {"object_id": "OBJ-0115", "canonical_name": "igloo", "display_name": "IGLOO", "category": "Alphabet Section", "semantic_group": "structure", "synonyms": ["snow house"], "compound_variants": ["ice dome"], "reserved_by": "alphabet_page_001_I", "reuse_policy": "never"},
-    {"object_id": "OBJ-0116", "canonical_name": "jellyfish", "display_name": "JELLYFISH", "category": "Alphabet Section", "semantic_group": "aquatic", "synonyms": ["sea jelly"], "compound_variants": ["ocean jellyfish"], "reserved_by": "alphabet_page_001_J", "reuse_policy": "never"},
-    {"object_id": "OBJ-0117", "canonical_name": "kite", "display_name": "KITE", "category": "Alphabet Section", "semantic_group": "air_toy", "synonyms": ["diamond kite"], "compound_variants": ["flying kite"], "reserved_by": "alphabet_page_001_K", "reuse_policy": "never"},
-    {"object_id": "OBJ-0118", "canonical_name": "leaf", "display_name": "LEAF", "category": "Alphabet Section", "semantic_group": "botanical", "synonyms": ["foliage"], "compound_variants": ["autumn leaf"], "reserved_by": "alphabet_page_001_L", "reuse_policy": "never"},
-    {"object_id": "OBJ-0119", "canonical_name": "moon", "display_name": "MOON", "category": "Alphabet Section", "semantic_group": "celestial", "synonyms": ["crescent moon"], "compound_variants": ["night moon"], "reserved_by": "alphabet_page_001_M", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0120", "canonical_name": "nest", "display_name": "NEST", "category": "Alphabet Section", "semantic_group": "nature", "synonyms": ["bird nest"], "compound_variants": ["egg nest"], "reserved_by": "alphabet_page_002_N", "reuse_policy": "never"},
-    {"object_id": "OBJ-0121", "canonical_name": "octopus", "display_name": "OCTOPUS", "category": "Alphabet Section", "semantic_group": "aquatic", "synonyms": ["sea octopus"], "compound_variants": ["friendly octopus"], "reserved_by": "alphabet_page_002_O", "reuse_policy": "never"},
-    {"object_id": "OBJ-0122", "canonical_name": "parrot", "display_name": "PARROT", "category": "Alphabet Section", "semantic_group": "bird", "synonyms": ["macaw"], "compound_variants": ["tropical parrot"], "reserved_by": "alphabet_page_002_P", "reuse_policy": "never"},
-    {"object_id": "OBJ-0123", "canonical_name": "queen", "display_name": "QUEEN", "category": "Alphabet Section", "semantic_group": "character", "synonyms": ["monarch"], "compound_variants": ["cartoon queen"], "reserved_by": "alphabet_page_002_Q", "reuse_policy": "never"},
-    {"object_id": "OBJ-0124", "canonical_name": "rainbow", "display_name": "RAINBOW", "category": "Alphabet Section", "semantic_group": "sky", "synonyms": ["color arc"], "compound_variants": ["cloud rainbow"], "reserved_by": "alphabet_page_002_R", "reuse_policy": "never"},
-    {"object_id": "OBJ-0125", "canonical_name": "sun", "display_name": "SUN", "category": "Alphabet Section", "semantic_group": "celestial", "synonyms": ["sunshine"], "compound_variants": ["smiling sun"], "reserved_by": "alphabet_page_002_S", "reuse_policy": "never"},
-    {"object_id": "OBJ-0126", "canonical_name": "turtle", "display_name": "TURTLE", "category": "Alphabet Section", "semantic_group": "reptile", "synonyms": ["tortoise"], "compound_variants": ["sea turtle"], "reserved_by": "alphabet_page_002_T", "reuse_policy": "never"},
-    {"object_id": "OBJ-0127", "canonical_name": "umbrella", "display_name": "UMBRELLA", "category": "Alphabet Section", "semantic_group": "accessory", "synonyms": ["parasol"], "compound_variants": ["rain umbrella"], "reserved_by": "alphabet_page_002_U", "reuse_policy": "never"},
-    {"object_id": "OBJ-0128", "canonical_name": "vase", "display_name": "VASE", "category": "Alphabet Section", "semantic_group": "decor", "synonyms": ["flower pot"], "compound_variants": ["ceramic vase"], "reserved_by": "alphabet_page_002_V", "reuse_policy": "never"},
-    {"object_id": "OBJ-0129", "canonical_name": "whale", "display_name": "WHALE", "category": "Alphabet Section", "semantic_group": "aquatic", "synonyms": ["blue whale"], "compound_variants": ["ocean whale"], "reserved_by": "alphabet_page_002_W", "reuse_policy": "never"},
-    {"object_id": "OBJ-0130", "canonical_name": "xylophone", "display_name": "XYLOPHONE", "category": "Alphabet Section", "semantic_group": "music", "synonyms": ["glockenspiel"], "compound_variants": ["toddler xylophone"], "reserved_by": "alphabet_page_002_X", "reuse_policy": "never"},
-    {"object_id": "OBJ-0131", "canonical_name": "yo_yo", "display_name": "YO-YO", "category": "Alphabet Section", "semantic_group": "toy", "synonyms": ["string toy"], "compound_variants": ["wooden yo-yo"], "reserved_by": "alphabet_page_002_Y", "reuse_policy": "never"},
-    {"object_id": "OBJ-0132", "canonical_name": "zebra", "display_name": "ZEBRA", "category": "Alphabet Section", "semantic_group": "mammal", "synonyms": ["striped zebra"], "compound_variants": ["baby zebra"], "reserved_by": "alphabet_page_002_Z", "reuse_policy": "never"},
-
-    {"object_id": "OBJ-0133", "canonical_name": "counting_zero", "display_name": "ZERO", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["empty"], "compound_variants": [], "reserved_by": "numbers_page_003_0", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0134", "canonical_name": "counting_balloon", "display_name": "BALLOON", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["party balloon"], "compound_variants": [], "reserved_by": "numbers_page_003_1", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0135", "canonical_name": "counting_bubbles", "display_name": "BUBBLES", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["soap bubbles"], "compound_variants": [], "reserved_by": "numbers_page_003_2", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0136", "canonical_name": "counting_stars", "display_name": "STARS", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["5-point stars"], "compound_variants": [], "reserved_by": "numbers_page_003_3", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0137", "canonical_name": "counting_hearts", "display_name": "HEARTS", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["love hearts"], "compound_variants": [], "reserved_by": "numbers_page_003_4", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0138", "canonical_name": "counting_buttons", "display_name": "BUTTONS", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["round buttons"], "compound_variants": [], "reserved_by": "numbers_page_003_5", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0139", "canonical_name": "counting_circles", "display_name": "CIRCLES", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["rings"], "compound_variants": [], "reserved_by": "numbers_page_004_6", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0140", "canonical_name": "counting_squares", "display_name": "SQUARES", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["boxes"], "compound_variants": [], "reserved_by": "numbers_page_004_7", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0141", "canonical_name": "counting_triangles", "display_name": "TRIANGLES", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["3-point shapes"], "compound_variants": [], "reserved_by": "numbers_page_004_8", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0142", "canonical_name": "counting_dots", "display_name": "DOTS", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["polka dots"], "compound_variants": [], "reserved_by": "numbers_page_004_9", "reuse_policy": "counting_only"},
-    {"object_id": "OBJ-0143", "canonical_name": "counting_flowers", "display_name": "FLOWERS", "category": "Numbers Section", "semantic_group": "number_symbol", "synonyms": ["daisy outlines"], "compound_variants": [], "reserved_by": "numbers_page_004_10", "reuse_policy": "counting_only"}
+    {
+      "object_id": "OBJ-0001",
+      "canonical_name": "banana",
+      "display_name": "BANANA",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "ripe banana"
+      ],
+      "compound_variants": [
+        "banana bunch"
+      ],
+      "reserved_by": "category_page_005",
+      "reuse_policy": "never",
+      "object_rule": "Show a single clean curved banana with thick smooth peel contours and wide open coloring areas. Avoid peel strings or clutter."
+    },
+    {
+      "object_id": "OBJ-0002",
+      "canonical_name": "orange",
+      "display_name": "ORANGE",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "sweet orange",
+        "citrus"
+      ],
+      "compound_variants": [
+        "orange slice"
+      ],
+      "reserved_by": "category_page_006",
+      "reuse_policy": "never",
+      "object_rule": "Show a single round orange with a cute little stem and single leaf attached at the top, and smooth outer contour."
+    },
+    {
+      "object_id": "OBJ-0003",
+      "canonical_name": "strawberry",
+      "display_name": "STRAWBERRY",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "berry"
+      ],
+      "compound_variants": [
+        "ripe strawberry"
+      ],
+      "reserved_by": "category_page_007",
+      "reuse_policy": "never",
+      "object_rule": "Show a single plump strawberry with a cute leafy calyx cap at the top and 4 to 6 large chunky seed spots."
+    },
+    {
+      "object_id": "OBJ-0004",
+      "canonical_name": "watermelon",
+      "display_name": "WATERMELON",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "melon"
+      ],
+      "compound_variants": [
+        "watermelon slice"
+      ],
+      "reserved_by": "category_page_008",
+      "reuse_policy": "never",
+      "object_rule": "Show a classic single triangular slice of watermelon with a distinct thick rind curve, large open wedge coloring area, and 3 to 5 large chunky black seeds. Avoid whole round melons, plates, or tiny seeds."
+    },
+    {
+      "object_id": "OBJ-0005",
+      "canonical_name": "grape",
+      "display_name": "GRAPE",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "grapes"
+      ],
+      "compound_variants": [
+        "grape bunch"
+      ],
+      "reserved_by": "category_page_009",
+      "reuse_policy": "never",
+      "object_rule": "Show a single recognizable bunch of grapes with clearly separated large circular grape shapes, a simple stem, and one small leaf. Large open coloring areas suitable for toddlers. Avoid isolated grape dots."
+    },
+    {
+      "object_id": "OBJ-0006",
+      "canonical_name": "pineapple",
+      "display_name": "PINEAPPLE",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "ananas"
+      ],
+      "compound_variants": [
+        "tropical pineapple"
+      ],
+      "reserved_by": "category_page_010",
+      "reuse_policy": "never",
+      "object_rule": "Show a single upright pineapple with spiky crown leaves on top and a simple bold diamond criss-cross pattern on the body."
+    },
+    {
+      "object_id": "OBJ-0007",
+      "canonical_name": "mango",
+      "display_name": "MANGO",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "ripe mango"
+      ],
+      "compound_variants": [
+        "mango fruit"
+      ],
+      "reserved_by": "category_page_011",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0008",
+      "canonical_name": "pear",
+      "display_name": "PEAR",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "green pear"
+      ],
+      "compound_variants": [
+        "pear fruit"
+      ],
+      "reserved_by": "category_page_012",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0009",
+      "canonical_name": "peach",
+      "display_name": "PEACH",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "sweet peach"
+      ],
+      "compound_variants": [
+        "peach fruit"
+      ],
+      "reserved_by": "category_page_013",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0010",
+      "canonical_name": "lemon",
+      "display_name": "LEMON",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "fruit",
+      "synonyms": [
+        "yellow lemon"
+      ],
+      "compound_variants": [
+        "lemon slice"
+      ],
+      "reserved_by": "category_page_014",
+      "reuse_policy": "never",
+      "object_rule": "Show a single classic oval lemon with pointed tips and a small top leaf, with wide open coloring areas."
+    },
+    {
+      "object_id": "OBJ-0011",
+      "canonical_name": "carrot",
+      "display_name": "CARROT",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "orange carrot"
+      ],
+      "compound_variants": [
+        "carrot with leaves"
+      ],
+      "reserved_by": "category_page_015",
+      "reuse_policy": "never",
+      "object_rule": "Show a single plump cartoon carrot with rounded tip and cute bushy green carrot leaves at the top."
+    },
+    {
+      "object_id": "OBJ-0012",
+      "canonical_name": "tomato",
+      "display_name": "TOMATO",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "red tomato"
+      ],
+      "compound_variants": [
+        "round tomato"
+      ],
+      "reserved_by": "category_page_016",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0013",
+      "canonical_name": "potato",
+      "display_name": "POTATO",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "spud"
+      ],
+      "compound_variants": [
+        "round potato"
+      ],
+      "reserved_by": "category_page_017",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0014",
+      "canonical_name": "corn",
+      "display_name": "CORN",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "maize",
+        "sweetcorn"
+      ],
+      "compound_variants": [
+        "corn cob"
+      ],
+      "reserved_by": "category_page_018",
+      "reuse_policy": "never",
+      "object_rule": "Show a single ear of sweet corn with large chunky kernels and open leafy husks on each side."
+    },
+    {
+      "object_id": "OBJ-0015",
+      "canonical_name": "broccoli",
+      "display_name": "BROCCOLI",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "green broccoli"
+      ],
+      "compound_variants": [
+        "broccoli floret"
+      ],
+      "reserved_by": "category_page_019",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0016",
+      "canonical_name": "pumpkin",
+      "display_name": "PUMPKIN",
+      "category": "Fruits & Vegetables",
+      "semantic_group": "vegetable",
+      "synonyms": [
+        "squash"
+      ],
+      "compound_variants": [
+        "round pumpkin"
+      ],
+      "reserved_by": "category_page_020",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0017",
+      "canonical_name": "pizza",
+      "display_name": "PIZZA",
+      "category": "Food & Drinks",
+      "semantic_group": "meal",
+      "synonyms": [
+        "pizza slice"
+      ],
+      "compound_variants": [
+        "cheese pizza"
+      ],
+      "reserved_by": "category_page_021",
+      "reuse_policy": "never",
+      "object_rule": "Show a single triangular slice of cheese pizza with a thick crust outline and 3 large round pepperoni slices."
+    },
+    {
+      "object_id": "OBJ-0018",
+      "canonical_name": "sandwich",
+      "display_name": "SANDWICH",
+      "category": "Food & Drinks",
+      "semantic_group": "meal",
+      "synonyms": [
+        "sub"
+      ],
+      "compound_variants": [
+        "club sandwich"
+      ],
+      "reserved_by": "category_page_022",
+      "reuse_policy": "never",
+      "object_rule": "Show a neat triangular sliced sandwich with thick bread crust outlines and simple cheese and lettuce layers."
+    },
+    {
+      "object_id": "OBJ-0019",
+      "canonical_name": "burger",
+      "display_name": "BURGER",
+      "category": "Food & Drinks",
+      "semantic_group": "meal",
+      "synonyms": [
+        "hamburger"
+      ],
+      "compound_variants": [
+        "cheeseburger"
+      ],
+      "reserved_by": "category_page_023",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0020",
+      "canonical_name": "pancake",
+      "display_name": "PANCAKE",
+      "category": "Food & Drinks",
+      "semantic_group": "breakfast",
+      "synonyms": [
+        "hotcake",
+        "flapjack"
+      ],
+      "compound_variants": [
+        "pancake stack"
+      ],
+      "reserved_by": "category_page_024",
+      "reuse_policy": "never",
+      "object_rule": "Show a neat stack of three fluffy round pancakes with a small square butter pat on top."
+    },
+    {
+      "object_id": "OBJ-0021",
+      "canonical_name": "cookie",
+      "display_name": "COOKIE",
+      "category": "Food & Drinks",
+      "semantic_group": "snack",
+      "synonyms": [
+        "biscuit"
+      ],
+      "compound_variants": [
+        "chocolate chip cookie"
+      ],
+      "reserved_by": "category_page_025",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0022",
+      "canonical_name": "donut",
+      "display_name": "DONUT",
+      "category": "Food & Drinks",
+      "semantic_group": "snack",
+      "synonyms": [
+        "doughnut"
+      ],
+      "compound_variants": [
+        "glazed donut"
+      ],
+      "reserved_by": "category_page_026",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0023",
+      "canonical_name": "cake",
+      "display_name": "CAKE",
+      "category": "Food & Drinks",
+      "semantic_group": "dessert",
+      "synonyms": [
+        "birthday cake"
+      ],
+      "compound_variants": [
+        "slice of cake"
+      ],
+      "reserved_by": "category_page_027",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0024",
+      "canonical_name": "ice_cream",
+      "display_name": "ICE CREAM",
+      "category": "Food & Drinks",
+      "semantic_group": "dessert",
+      "synonyms": [
+        "ice cream cone"
+      ],
+      "compound_variants": [
+        "sundae"
+      ],
+      "reserved_by": "category_page_028",
+      "reuse_policy": "never",
+      "object_rule": "Show a classic single ice cream cone with one large round scoop of ice cream on a criss-cross waffle cone."
+    },
+    {
+      "object_id": "OBJ-0025",
+      "canonical_name": "popcorn",
+      "display_name": "POPCORN",
+      "category": "Food & Drinks",
+      "semantic_group": "snack",
+      "synonyms": [
+        "popped corn"
+      ],
+      "compound_variants": [
+        "popcorn box"
+      ],
+      "reserved_by": "category_page_029",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0026",
+      "canonical_name": "milk",
+      "display_name": "MILK",
+      "category": "Food & Drinks",
+      "semantic_group": "beverage",
+      "synonyms": [
+        "milk carton",
+        "glass of milk"
+      ],
+      "compound_variants": [
+        "milk bottle"
+      ],
+      "reserved_by": "category_page_030",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0027",
+      "canonical_name": "juice",
+      "display_name": "JUICE",
+      "category": "Food & Drinks",
+      "semantic_group": "beverage",
+      "synonyms": [
+        "juice box",
+        "fruit juice"
+      ],
+      "compound_variants": [
+        "juice glass"
+      ],
+      "reserved_by": "category_page_031",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0028",
+      "canonical_name": "cup",
+      "display_name": "CUP",
+      "category": "Food & Drinks",
+      "semantic_group": "drinkware",
+      "synonyms": [
+        "mug",
+        "teacup"
+      ],
+      "compound_variants": [
+        "coffee cup"
+      ],
+      "reserved_by": "category_page_032",
+      "reuse_policy": "never",
+      "object_rule": "Show a cute classic preschool cup with a sturdy curved handle and clean smooth sides."
+    },
+    {
+      "object_id": "OBJ-0029",
+      "canonical_name": "teddy_bear",
+      "display_name": "TEDDY BEAR",
+      "category": "Toys & Playtime",
+      "semantic_group": "plush_toy",
+      "synonyms": [
+        "teddy",
+        "stuffed bear"
+      ],
+      "compound_variants": [
+        "toy bear"
+      ],
+      "reserved_by": "category_page_033",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0030",
+      "canonical_name": "doll",
+      "display_name": "DOLL",
+      "category": "Toys & Playtime",
+      "semantic_group": "figure_toy",
+      "synonyms": [
+        "ragdoll",
+        "baby doll"
+      ],
+      "compound_variants": [
+        "toy doll"
+      ],
+      "reserved_by": "category_page_034",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0031",
+      "canonical_name": "wagon",
+      "display_name": "WAGON",
+      "category": "Toys & Playtime",
+      "semantic_group": "riding_toy",
+      "synonyms": [
+        "pull wagon",
+        "red wagon"
+      ],
+      "compound_variants": [
+        "toy wagon"
+      ],
+      "reserved_by": "category_page_035",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0032",
+      "canonical_name": "kaleidoscope",
+      "display_name": "KALEIDOSCOPE",
+      "category": "Toys & Playtime",
+      "semantic_group": "visual_toy",
+      "synonyms": [
+        "pattern tube"
+      ],
+      "compound_variants": [
+        "toy kaleidoscope"
+      ],
+      "reserved_by": "category_page_036",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0033",
+      "canonical_name": "building_blocks",
+      "display_name": "BUILDING BLOCKS",
+      "category": "Toys & Playtime",
+      "semantic_group": "construction_toy",
+      "synonyms": [
+        "toy blocks",
+        "wooden blocks"
+      ],
+      "compound_variants": [
+        "stacking blocks"
+      ],
+      "reserved_by": "category_page_037",
+      "reuse_policy": "never",
+      "object_rule": "Show a neat small stack of three clean wooden toy cubes with rounded corners, stacked symmetrically. Strictly NO letters on blocks."
+    },
+    {
+      "object_id": "OBJ-0034",
+      "canonical_name": "puzzle",
+      "display_name": "PUZZLE",
+      "category": "Toys & Playtime",
+      "semantic_group": "learning_toy",
+      "synonyms": [
+        "jigsaw puzzle"
+      ],
+      "compound_variants": [
+        "puzzle piece"
+      ],
+      "reserved_by": "category_page_038",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0035",
+      "canonical_name": "toy_robot",
+      "display_name": "TOY ROBOT",
+      "category": "Toys & Playtime",
+      "semantic_group": "figure_toy",
+      "synonyms": [
+        "robot",
+        "tin robot"
+      ],
+      "compound_variants": [
+        "friendly robot"
+      ],
+      "reserved_by": "category_page_039",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0036",
+      "canonical_name": "pinwheel",
+      "display_name": "PINWHEEL",
+      "category": "Toys & Playtime",
+      "semantic_group": "wind_toy",
+      "synonyms": [
+        "windmill toy"
+      ],
+      "compound_variants": [
+        "spinning pinwheel"
+      ],
+      "reserved_by": "category_page_040",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0037",
+      "canonical_name": "sand_bucket",
+      "display_name": "SAND BUCKET",
+      "category": "Toys & Playtime",
+      "semantic_group": "outdoor_toy",
+      "synonyms": [
+        "pail",
+        "beach pail"
+      ],
+      "compound_variants": [
+        "bucket and shovel"
+      ],
+      "reserved_by": "category_page_041",
+      "reuse_policy": "never",
+      "object_rule": "Show a classic preschool sand pail bucket with a curved handle and a small toy shovel resting beside it."
+    },
+    {
+      "object_id": "OBJ-0038",
+      "canonical_name": "spinning_top",
+      "display_name": "SPINNING TOP",
+      "category": "Toys & Playtime",
+      "semantic_group": "motion_toy",
+      "synonyms": [
+        "top",
+        "whirligig"
+      ],
+      "compound_variants": [
+        "toy top"
+      ],
+      "reserved_by": "category_page_042",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0039",
+      "canonical_name": "marbles",
+      "display_name": "MARBLES",
+      "category": "Toys & Playtime",
+      "semantic_group": "game_toy",
+      "synonyms": [
+        "glass marbles"
+      ],
+      "compound_variants": [
+        "marble pouch"
+      ],
+      "reserved_by": "category_page_043",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0040",
+      "canonical_name": "jump_rope",
+      "display_name": "JUMP ROPE",
+      "category": "Toys & Playtime",
+      "semantic_group": "activity_toy",
+      "synonyms": [
+        "skipping rope"
+      ],
+      "compound_variants": [
+        "toddler jump rope"
+      ],
+      "reserved_by": "category_page_044",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0041",
+      "canonical_name": "rocking_horse",
+      "display_name": "ROCKING HORSE",
+      "category": "Toys & Playtime",
+      "semantic_group": "riding_toy",
+      "synonyms": [
+        "wooden horse"
+      ],
+      "compound_variants": [
+        "nursery rocking horse"
+      ],
+      "reserved_by": "category_page_045",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0042",
+      "canonical_name": "beach_ball",
+      "display_name": "BEACH BALL",
+      "category": "Toys & Playtime",
+      "semantic_group": "ball_toy",
+      "synonyms": [
+        "inflatable ball"
+      ],
+      "compound_variants": [
+        "striped beach ball"
+      ],
+      "reserved_by": "category_page_046",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0043",
+      "canonical_name": "dog",
+      "display_name": "DOG",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "puppy",
+        "canine"
+      ],
+      "compound_variants": [
+        "cute puppy"
+      ],
+      "reserved_by": "category_page_047",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0044",
+      "canonical_name": "cat",
+      "display_name": "CAT",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "kitten",
+        "feline"
+      ],
+      "compound_variants": [
+        "cute kitten"
+      ],
+      "reserved_by": "category_page_048",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0045",
+      "canonical_name": "rabbit",
+      "display_name": "RABBIT",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "bunny",
+        "hare"
+      ],
+      "compound_variants": [
+        "fluffy bunny"
+      ],
+      "reserved_by": "category_page_049",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0046",
+      "canonical_name": "lion",
+      "display_name": "LION",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "lion cub"
+      ],
+      "compound_variants": [
+        "friendly lion"
+      ],
+      "reserved_by": "category_page_050",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0047",
+      "canonical_name": "elephant",
+      "display_name": "ELEPHANT",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "baby elephant"
+      ],
+      "compound_variants": [
+        "playful elephant"
+      ],
+      "reserved_by": "category_page_051",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0048",
+      "canonical_name": "giraffe",
+      "display_name": "GIRAFFE",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "tall giraffe"
+      ],
+      "compound_variants": [
+        "spotted giraffe"
+      ],
+      "reserved_by": "category_page_052",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0049",
+      "canonical_name": "monkey",
+      "display_name": "MONKEY",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "chimp"
+      ],
+      "compound_variants": [
+        "cheerful monkey"
+      ],
+      "reserved_by": "category_page_053",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0050",
+      "canonical_name": "bear",
+      "display_name": "BEAR",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "brown bear",
+        "bear cub"
+      ],
+      "compound_variants": [
+        "friendly bear"
+      ],
+      "reserved_by": "category_page_054",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0051",
+      "canonical_name": "tiger",
+      "display_name": "TIGER",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "tiger cub"
+      ],
+      "compound_variants": [
+        "striped tiger"
+      ],
+      "reserved_by": "category_page_055",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0052",
+      "canonical_name": "horse",
+      "display_name": "HORSE",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "pony",
+        "foal"
+      ],
+      "compound_variants": [
+        "friendly horse"
+      ],
+      "reserved_by": "category_page_056",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0053",
+      "canonical_name": "cow",
+      "display_name": "COW",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "calf"
+      ],
+      "compound_variants": [
+        "spotted cow"
+      ],
+      "reserved_by": "category_page_057",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0054",
+      "canonical_name": "sheep",
+      "display_name": "SHEEP",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "lamb"
+      ],
+      "compound_variants": [
+        "woolly sheep"
+      ],
+      "reserved_by": "category_page_058",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0055",
+      "canonical_name": "chicken",
+      "display_name": "CHICKEN",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "bird",
+      "synonyms": [
+        "hen",
+        "rooster",
+        "chick"
+      ],
+      "compound_variants": [
+        "farm chicken"
+      ],
+      "reserved_by": "category_page_059",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0056",
+      "canonical_name": "duck",
+      "display_name": "DUCK",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "bird",
+      "synonyms": [
+        "duckling"
+      ],
+      "compound_variants": [
+        "swimming duck"
+      ],
+      "reserved_by": "category_page_060",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0057",
+      "canonical_name": "frog",
+      "display_name": "FROG",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "amphibian",
+      "synonyms": [
+        "toad"
+      ],
+      "compound_variants": [
+        "happy frog"
+      ],
+      "reserved_by": "category_page_061",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0058",
+      "canonical_name": "butterfly",
+      "display_name": "BUTTERFLY",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "insect",
+      "synonyms": [
+        "moth"
+      ],
+      "compound_variants": [
+        "winged butterfly"
+      ],
+      "reserved_by": "category_page_062",
+      "reuse_policy": "never",
+      "object_rule": "Show one complete butterfly with symmetrical open wings displaying large simple round coloring spots, a simple body, and cute antennae."
+    },
+    {
+      "object_id": "OBJ-0059",
+      "canonical_name": "snail",
+      "display_name": "SNAIL",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "creature",
+      "synonyms": [
+        "garden snail"
+      ],
+      "compound_variants": [
+        "spiral snail"
+      ],
+      "reserved_by": "category_page_063",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0060",
+      "canonical_name": "bee",
+      "display_name": "BEE",
+      "category": "Animals & Nature Creatures",
+      "semantic_group": "insect",
+      "synonyms": [
+        "bumblebee",
+        "honeybee"
+      ],
+      "compound_variants": [
+        "friendly bee"
+      ],
+      "reserved_by": "category_page_064",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0061",
+      "canonical_name": "shirt",
+      "display_name": "SHIRT",
+      "category": "Clothing & Accessories",
+      "semantic_group": "top",
+      "synonyms": [
+        "t-shirt",
+        "tee"
+      ],
+      "compound_variants": [
+        "striped shirt"
+      ],
+      "reserved_by": "category_page_065",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0062",
+      "canonical_name": "pants",
+      "display_name": "PANTS",
+      "category": "Clothing & Accessories",
+      "semantic_group": "bottom",
+      "synonyms": [
+        "trousers",
+        "jeans"
+      ],
+      "compound_variants": [
+        "denim pants"
+      ],
+      "reserved_by": "category_page_066",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0063",
+      "canonical_name": "dress",
+      "display_name": "DRESS",
+      "category": "Clothing & Accessories",
+      "semantic_group": "garment",
+      "synonyms": [
+        "frock",
+        "gown"
+      ],
+      "compound_variants": [
+        "polka dot dress"
+      ],
+      "reserved_by": "category_page_067",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0064",
+      "canonical_name": "socks",
+      "display_name": "SOCKS",
+      "category": "Clothing & Accessories",
+      "semantic_group": "footwear_accessory",
+      "synonyms": [
+        "sock pair"
+      ],
+      "compound_variants": [
+        "striped socks"
+      ],
+      "reserved_by": "category_page_068",
+      "reuse_policy": "never",
+      "object_rule": "Show a cute matching pair of toddler socks placed neatly side-by-side with wide open coloring surfaces."
+    },
+    {
+      "object_id": "OBJ-0065",
+      "canonical_name": "shoes",
+      "display_name": "SHOES",
+      "category": "Clothing & Accessories",
+      "semantic_group": "footwear",
+      "synonyms": [
+        "sneakers",
+        "boots"
+      ],
+      "compound_variants": [
+        "toddler shoes"
+      ],
+      "reserved_by": "category_page_069",
+      "reuse_policy": "never",
+      "object_rule": "Show a cute matching pair of toddler sneakers placed neatly side-by-side with bold laces and clean soles."
+    },
+    {
+      "object_id": "OBJ-0066",
+      "canonical_name": "jacket",
+      "display_name": "JACKET",
+      "category": "Clothing & Accessories",
+      "semantic_group": "outerwear",
+      "synonyms": [
+        "coat",
+        "windbreaker"
+      ],
+      "compound_variants": [
+        "zipper jacket"
+      ],
+      "reserved_by": "category_page_070",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0067",
+      "canonical_name": "backpack",
+      "display_name": "BACKPACK",
+      "category": "Clothing & Accessories",
+      "semantic_group": "bag",
+      "synonyms": [
+        "schoolbag",
+        "knapsack"
+      ],
+      "compound_variants": [
+        "toddler backpack"
+      ],
+      "reserved_by": "category_page_071",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0068",
+      "canonical_name": "sunglasses",
+      "display_name": "SUNGLASSES",
+      "category": "Clothing & Accessories",
+      "semantic_group": "eyewear",
+      "synonyms": [
+        "shades",
+        "sun glasses"
+      ],
+      "compound_variants": [
+        "cool sunglasses"
+      ],
+      "reserved_by": "category_page_072",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0069",
+      "canonical_name": "bed",
+      "display_name": "BED",
+      "category": "Household & Daily Living",
+      "semantic_group": "furniture",
+      "synonyms": [
+        "cot",
+        "crib bed"
+      ],
+      "compound_variants": [
+        "cozy bed"
+      ],
+      "reserved_by": "category_page_073",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0070",
+      "canonical_name": "chair",
+      "display_name": "CHAIR",
+      "category": "Household & Daily Living",
+      "semantic_group": "furniture",
+      "synonyms": [
+        "seat",
+        "armchair"
+      ],
+      "compound_variants": [
+        "wooden chair"
+      ],
+      "reserved_by": "category_page_074",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0071",
+      "canonical_name": "table",
+      "display_name": "TABLE",
+      "category": "Household & Daily Living",
+      "semantic_group": "furniture",
+      "synonyms": [
+        "desk"
+      ],
+      "compound_variants": [
+        "dining table"
+      ],
+      "reserved_by": "category_page_075",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0072",
+      "canonical_name": "lamp",
+      "display_name": "LAMP",
+      "category": "Household & Daily Living",
+      "semantic_group": "lighting",
+      "synonyms": [
+        "table lamp",
+        "light"
+      ],
+      "compound_variants": [
+        "bedside lamp"
+      ],
+      "reserved_by": "category_page_076",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0073",
+      "canonical_name": "clock",
+      "display_name": "CLOCK",
+      "category": "Household & Daily Living",
+      "semantic_group": "timepiece",
+      "synonyms": [
+        "wall clock",
+        "alarm clock"
+      ],
+      "compound_variants": [
+        "round clock"
+      ],
+      "reserved_by": "category_page_077",
+      "reuse_policy": "never",
+      "object_rule": "Show a classic round preschool alarm clock with two top bells, sturdy little feet, and simple chunky hour and minute hands."
+    },
+    {
+      "object_id": "OBJ-0074",
+      "canonical_name": "toothbrush",
+      "display_name": "TOOTHBRUSH",
+      "category": "Household & Daily Living",
+      "semantic_group": "hygiene",
+      "synonyms": [
+        "dental brush"
+      ],
+      "compound_variants": [
+        "child toothbrush"
+      ],
+      "reserved_by": "category_page_078",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0075",
+      "canonical_name": "comb",
+      "display_name": "COMB",
+      "category": "Household & Daily Living",
+      "semantic_group": "grooming",
+      "synonyms": [
+        "hairbrush",
+        "hair comb"
+      ],
+      "compound_variants": [
+        "toothed comb"
+      ],
+      "reserved_by": "category_page_079",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0076",
+      "canonical_name": "soap",
+      "display_name": "SOAP",
+      "category": "Household & Daily Living",
+      "semantic_group": "hygiene",
+      "synonyms": [
+        "soap bar"
+      ],
+      "compound_variants": [
+        "soap with bubbles"
+      ],
+      "reserved_by": "category_page_080",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0077",
+      "canonical_name": "towel",
+      "display_name": "TOWEL",
+      "category": "Household & Daily Living",
+      "semantic_group": "linens",
+      "synonyms": [
+        "bath towel"
+      ],
+      "compound_variants": [
+        "folded towel"
+      ],
+      "reserved_by": "category_page_081",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0078",
+      "canonical_name": "pillow",
+      "display_name": "PILLOW",
+      "category": "Household & Daily Living",
+      "semantic_group": "bedding",
+      "synonyms": [
+        "cushion"
+      ],
+      "compound_variants": [
+        "soft pillow"
+      ],
+      "reserved_by": "category_page_082",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0079",
+      "canonical_name": "car",
+      "display_name": "CAR",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "automobile",
+      "synonyms": [
+        "automobile",
+        "sedan"
+      ],
+      "compound_variants": [
+        "family car"
+      ],
+      "reserved_by": "category_page_083",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0080",
+      "canonical_name": "bus",
+      "display_name": "BUS",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "transit",
+      "synonyms": [
+        "school bus",
+        "coach"
+      ],
+      "compound_variants": [
+        "city bus"
+      ],
+      "reserved_by": "category_page_084",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0081",
+      "canonical_name": "truck",
+      "display_name": "TRUCK",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "hauling",
+      "synonyms": [
+        "lorry",
+        "pickup"
+      ],
+      "compound_variants": [
+        "dump truck"
+      ],
+      "reserved_by": "category_page_085",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0082",
+      "canonical_name": "bicycle",
+      "display_name": "BICYCLE",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "cycle",
+      "synonyms": [
+        "bike",
+        "trike"
+      ],
+      "compound_variants": [
+        "child bicycle"
+      ],
+      "reserved_by": "category_page_086",
+      "reuse_policy": "never",
+      "object_rule": "Show one complete bicycle with two clearly recognizable wheels, a simple frame, handlebars, and seat. Avoid complex chains and sprockets."
+    },
+    {
+      "object_id": "OBJ-0083",
+      "canonical_name": "motorcycle",
+      "display_name": "MOTORCYCLE",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "cycle",
+      "synonyms": [
+        "motorbike",
+        "scooter"
+      ],
+      "compound_variants": [
+        "touring motorcycle"
+      ],
+      "reserved_by": "category_page_087",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0084",
+      "canonical_name": "taxi",
+      "display_name": "TAXI",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "automobile",
+      "synonyms": [
+        "cab",
+        "taxicab"
+      ],
+      "compound_variants": [
+        "yellow taxi"
+      ],
+      "reserved_by": "category_page_088",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0085",
+      "canonical_name": "ambulance",
+      "display_name": "AMBULANCE",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "emergency",
+      "synonyms": [
+        "rescue van"
+      ],
+      "compound_variants": [
+        "emergency ambulance"
+      ],
+      "reserved_by": "category_page_089",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0086",
+      "canonical_name": "fire_truck",
+      "display_name": "FIRE TRUCK",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "emergency",
+      "synonyms": [
+        "fire engine"
+      ],
+      "compound_variants": [
+        "ladder fire truck"
+      ],
+      "reserved_by": "category_page_090",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0087",
+      "canonical_name": "police_car",
+      "display_name": "POLICE CAR",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "emergency",
+      "synonyms": [
+        "patrol car",
+        "cop car"
+      ],
+      "compound_variants": [
+        "siren police car"
+      ],
+      "reserved_by": "category_page_091",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0088",
+      "canonical_name": "helicopter",
+      "display_name": "HELICOPTER",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "aircraft",
+      "synonyms": [
+        "chopper",
+        "helo"
+      ],
+      "compound_variants": [
+        "rescue helicopter"
+      ],
+      "reserved_by": "category_page_092",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0089",
+      "canonical_name": "sailboat",
+      "display_name": "SAILBOAT",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "watercraft",
+      "synonyms": [
+        "sailing boat",
+        "yacht"
+      ],
+      "compound_variants": [
+        "wind sailboat"
+      ],
+      "reserved_by": "category_page_093",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0090",
+      "canonical_name": "rocket",
+      "display_name": "ROCKET",
+      "category": "Vehicles & Transportation",
+      "semantic_group": "spacecraft",
+      "synonyms": [
+        "spaceship",
+        "rocket ship"
+      ],
+      "compound_variants": [
+        "launch rocket"
+      ],
+      "reserved_by": "category_page_094",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0091",
+      "canonical_name": "tree",
+      "display_name": "TREE",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "flora",
+      "synonyms": [
+        "oak",
+        "pine"
+      ],
+      "compound_variants": [
+        "leafy tree"
+      ],
+      "reserved_by": "category_page_095",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0092",
+      "canonical_name": "flower",
+      "display_name": "FLOWER",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "flora",
+      "synonyms": [
+        "blossom",
+        "tulip",
+        "daisy"
+      ],
+      "compound_variants": [
+        "potted flower"
+      ],
+      "reserved_by": "category_page_096",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0093",
+      "canonical_name": "cactus",
+      "display_name": "CACTUS",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "flora",
+      "synonyms": [
+        "desert cactus"
+      ],
+      "compound_variants": [
+        "saguaro cactus"
+      ],
+      "reserved_by": "category_page_097",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0094",
+      "canonical_name": "mushroom",
+      "display_name": "MUSHROOM",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "fungus",
+      "synonyms": [
+        "toadstool"
+      ],
+      "compound_variants": [
+        "spotted mushroom"
+      ],
+      "reserved_by": "category_page_098",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0095",
+      "canonical_name": "cloud",
+      "display_name": "CLOUD",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "weather",
+      "synonyms": [
+        "cumulus"
+      ],
+      "compound_variants": [
+        "fluffy cloud"
+      ],
+      "reserved_by": "category_page_099",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0096",
+      "canonical_name": "raindrop",
+      "display_name": "RAINDROP",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "weather",
+      "synonyms": [
+        "water drop"
+      ],
+      "compound_variants": [
+        "smiling raindrop"
+      ],
+      "reserved_by": "category_page_100",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0097",
+      "canonical_name": "snowflake",
+      "display_name": "SNOWFLAKE",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "weather",
+      "synonyms": [
+        "snow crystal"
+      ],
+      "compound_variants": [
+        "geometric snowflake"
+      ],
+      "reserved_by": "category_page_101",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0098",
+      "canonical_name": "mountain",
+      "display_name": "MOUNTAIN",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "landscape",
+      "synonyms": [
+        "peak",
+        "hill"
+      ],
+      "compound_variants": [
+        "snowy mountain"
+      ],
+      "reserved_by": "category_page_102",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0099",
+      "canonical_name": "pond",
+      "display_name": "POND",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "landscape",
+      "synonyms": [
+        "pool",
+        "water hole"
+      ],
+      "compound_variants": [
+        "lily pond"
+      ],
+      "reserved_by": "category_page_103",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0100",
+      "canonical_name": "waterfall",
+      "display_name": "WATERFALL",
+      "category": "Nature, Sky & Garden",
+      "semantic_group": "landscape",
+      "synonyms": [
+        "cascade"
+      ],
+      "compound_variants": [
+        "river waterfall"
+      ],
+      "reserved_by": "category_page_104",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0101",
+      "canonical_name": "piano",
+      "display_name": "PIANO",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "keyboard",
+      "synonyms": [
+        "grand piano",
+        "upright piano"
+      ],
+      "compound_variants": [
+        "toddler piano"
+      ],
+      "reserved_by": "category_page_105",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0102",
+      "canonical_name": "trumpet",
+      "display_name": "TRUMPET",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "brass",
+      "synonyms": [
+        "horn",
+        "bugle"
+      ],
+      "compound_variants": [
+        "brass trumpet"
+      ],
+      "reserved_by": "category_page_106",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0103",
+      "canonical_name": "violin",
+      "display_name": "VIOLIN",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "string",
+      "synonyms": [
+        "fiddle"
+      ],
+      "compound_variants": [
+        "violin with bow"
+      ],
+      "reserved_by": "category_page_107",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0104",
+      "canonical_name": "tambourine",
+      "display_name": "TAMBOURINE",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "percussion",
+      "synonyms": [
+        "jingle ring"
+      ],
+      "compound_variants": [
+        "round tambourine"
+      ],
+      "reserved_by": "category_page_108",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0105",
+      "canonical_name": "maraca",
+      "display_name": "MARACA",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "percussion",
+      "synonyms": [
+        "rattle",
+        "shaker"
+      ],
+      "compound_variants": [
+        "rumba maraca"
+      ],
+      "reserved_by": "category_page_109",
+      "reuse_policy": "never",
+      "object_rule": "Show a cute matching pair of preschool maracas placed neatly side-by-side with simple festive stripes."
+    },
+    {
+      "object_id": "OBJ-0106",
+      "canonical_name": "harmonica",
+      "display_name": "HARMONICA",
+      "category": "Musical Instruments & Sound Toys",
+      "semantic_group": "wind",
+      "synonyms": [
+        "mouth organ",
+        "blues harp"
+      ],
+      "compound_variants": [
+        "metal harmonica"
+      ],
+      "reserved_by": "category_page_110",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0107",
+      "canonical_name": "ant",
+      "display_name": "ANT",
+      "category": "Alphabet Section",
+      "semantic_group": "insect",
+      "synonyms": [
+        "worker ant"
+      ],
+      "compound_variants": [
+        "friendly ant"
+      ],
+      "reserved_by": "alphabet_page_001_A",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0108",
+      "canonical_name": "bell",
+      "display_name": "BELL",
+      "category": "Alphabet Section",
+      "semantic_group": "object",
+      "synonyms": [
+        "handbell"
+      ],
+      "compound_variants": [
+        "brass bell"
+      ],
+      "reserved_by": "alphabet_page_001_B",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0109",
+      "canonical_name": "crown",
+      "display_name": "CROWN",
+      "category": "Alphabet Section",
+      "semantic_group": "headwear",
+      "synonyms": [
+        "tiara",
+        "coronet"
+      ],
+      "compound_variants": [
+        "king crown"
+      ],
+      "reserved_by": "alphabet_page_001_C",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0110",
+      "canonical_name": "drum",
+      "display_name": "DRUM",
+      "category": "Alphabet Section",
+      "semantic_group": "percussion",
+      "synonyms": [
+        "snare drum"
+      ],
+      "compound_variants": [
+        "bongo drum"
+      ],
+      "reserved_by": "alphabet_page_001_D",
+      "reuse_policy": "never",
+      "object_rule": "Show a classic preschool snare drum with bold drum head and two wooden drumsticks resting neatly beside it."
+    },
+    {
+      "object_id": "OBJ-0111",
+      "canonical_name": "egg",
+      "display_name": "EGG",
+      "category": "Alphabet Section",
+      "semantic_group": "food_nature",
+      "synonyms": [
+        "bird egg"
+      ],
+      "compound_variants": [
+        "nest egg"
+      ],
+      "reserved_by": "alphabet_page_001_E",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0112",
+      "canonical_name": "fish",
+      "display_name": "FISH",
+      "category": "Alphabet Section",
+      "semantic_group": "aquatic",
+      "synonyms": [
+        "goldfish"
+      ],
+      "compound_variants": [
+        "swimming fish"
+      ],
+      "reserved_by": "alphabet_page_001_F",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0113",
+      "canonical_name": "globe",
+      "display_name": "GLOBE",
+      "category": "Alphabet Section",
+      "semantic_group": "learning",
+      "synonyms": [
+        "world map"
+      ],
+      "compound_variants": [
+        "desk globe"
+      ],
+      "reserved_by": "alphabet_page_001_G",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0114",
+      "canonical_name": "hat",
+      "display_name": "HAT",
+      "category": "Alphabet Section",
+      "semantic_group": "headwear",
+      "synonyms": [
+        "cap",
+        "fedora"
+      ],
+      "compound_variants": [
+        "sun hat"
+      ],
+      "reserved_by": "alphabet_page_001_H",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0115",
+      "canonical_name": "igloo",
+      "display_name": "IGLOO",
+      "category": "Alphabet Section",
+      "semantic_group": "structure",
+      "synonyms": [
+        "snow house"
+      ],
+      "compound_variants": [
+        "ice dome"
+      ],
+      "reserved_by": "alphabet_page_001_I",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0116",
+      "canonical_name": "jellyfish",
+      "display_name": "JELLYFISH",
+      "category": "Alphabet Section",
+      "semantic_group": "aquatic",
+      "synonyms": [
+        "sea jelly"
+      ],
+      "compound_variants": [
+        "ocean jellyfish"
+      ],
+      "reserved_by": "alphabet_page_001_J",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0117",
+      "canonical_name": "kite",
+      "display_name": "KITE",
+      "category": "Alphabet Section",
+      "semantic_group": "air_toy",
+      "synonyms": [
+        "diamond kite"
+      ],
+      "compound_variants": [
+        "flying kite"
+      ],
+      "reserved_by": "alphabet_page_001_K",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0118",
+      "canonical_name": "leaf",
+      "display_name": "LEAF",
+      "category": "Alphabet Section",
+      "semantic_group": "botanical",
+      "synonyms": [
+        "foliage"
+      ],
+      "compound_variants": [
+        "autumn leaf"
+      ],
+      "reserved_by": "alphabet_page_001_L",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0119",
+      "canonical_name": "moon",
+      "display_name": "MOON",
+      "category": "Alphabet Section",
+      "semantic_group": "celestial",
+      "synonyms": [
+        "crescent moon"
+      ],
+      "compound_variants": [
+        "night moon"
+      ],
+      "reserved_by": "alphabet_page_001_M",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0120",
+      "canonical_name": "nest",
+      "display_name": "NEST",
+      "category": "Alphabet Section",
+      "semantic_group": "nature",
+      "synonyms": [
+        "bird nest"
+      ],
+      "compound_variants": [
+        "egg nest"
+      ],
+      "reserved_by": "alphabet_page_002_N",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0121",
+      "canonical_name": "octopus",
+      "display_name": "OCTOPUS",
+      "category": "Alphabet Section",
+      "semantic_group": "aquatic",
+      "synonyms": [
+        "sea octopus"
+      ],
+      "compound_variants": [
+        "friendly octopus"
+      ],
+      "reserved_by": "alphabet_page_002_O",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0122",
+      "canonical_name": "parrot",
+      "display_name": "PARROT",
+      "category": "Alphabet Section",
+      "semantic_group": "bird",
+      "synonyms": [
+        "macaw"
+      ],
+      "compound_variants": [
+        "tropical parrot"
+      ],
+      "reserved_by": "alphabet_page_002_P",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0123",
+      "canonical_name": "queen",
+      "display_name": "QUEEN",
+      "category": "Alphabet Section",
+      "semantic_group": "character",
+      "synonyms": [
+        "monarch"
+      ],
+      "compound_variants": [
+        "cartoon queen"
+      ],
+      "reserved_by": "alphabet_page_002_Q",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0124",
+      "canonical_name": "rainbow",
+      "display_name": "RAINBOW",
+      "category": "Alphabet Section",
+      "semantic_group": "sky",
+      "synonyms": [
+        "color arc"
+      ],
+      "compound_variants": [
+        "cloud rainbow"
+      ],
+      "reserved_by": "alphabet_page_002_R",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0125",
+      "canonical_name": "sun",
+      "display_name": "SUN",
+      "category": "Alphabet Section",
+      "semantic_group": "celestial",
+      "synonyms": [
+        "sunshine"
+      ],
+      "compound_variants": [
+        "smiling sun"
+      ],
+      "reserved_by": "alphabet_page_002_S",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0126",
+      "canonical_name": "turtle",
+      "display_name": "TURTLE",
+      "category": "Alphabet Section",
+      "semantic_group": "reptile",
+      "synonyms": [
+        "tortoise"
+      ],
+      "compound_variants": [
+        "sea turtle"
+      ],
+      "reserved_by": "alphabet_page_002_T",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0127",
+      "canonical_name": "umbrella",
+      "display_name": "UMBRELLA",
+      "category": "Alphabet Section",
+      "semantic_group": "accessory",
+      "synonyms": [
+        "parasol"
+      ],
+      "compound_variants": [
+        "rain umbrella"
+      ],
+      "reserved_by": "alphabet_page_002_U",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0128",
+      "canonical_name": "vase",
+      "display_name": "VASE",
+      "category": "Alphabet Section",
+      "semantic_group": "decor",
+      "synonyms": [
+        "flower pot"
+      ],
+      "compound_variants": [
+        "ceramic vase"
+      ],
+      "reserved_by": "alphabet_page_002_V",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0129",
+      "canonical_name": "whale",
+      "display_name": "WHALE",
+      "category": "Alphabet Section",
+      "semantic_group": "aquatic",
+      "synonyms": [
+        "blue whale"
+      ],
+      "compound_variants": [
+        "ocean whale"
+      ],
+      "reserved_by": "alphabet_page_002_W",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0130",
+      "canonical_name": "xylophone",
+      "display_name": "XYLOPHONE",
+      "category": "Alphabet Section",
+      "semantic_group": "music",
+      "synonyms": [
+        "glockenspiel"
+      ],
+      "compound_variants": [
+        "toddler xylophone"
+      ],
+      "reserved_by": "alphabet_page_002_X",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0131",
+      "canonical_name": "yo_yo",
+      "display_name": "YO-YO",
+      "category": "Alphabet Section",
+      "semantic_group": "toy",
+      "synonyms": [
+        "string toy"
+      ],
+      "compound_variants": [
+        "wooden yo-yo"
+      ],
+      "reserved_by": "alphabet_page_002_Y",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0132",
+      "canonical_name": "zebra",
+      "display_name": "ZEBRA",
+      "category": "Alphabet Section",
+      "semantic_group": "mammal",
+      "synonyms": [
+        "striped zebra"
+      ],
+      "compound_variants": [
+        "baby zebra"
+      ],
+      "reserved_by": "alphabet_page_002_Z",
+      "reuse_policy": "never"
+    },
+    {
+      "object_id": "OBJ-0133",
+      "canonical_name": "counting_zero",
+      "display_name": "ZERO",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "empty"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_0",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0134",
+      "canonical_name": "counting_balloon",
+      "display_name": "BALLOON",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "party balloon"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_1",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0135",
+      "canonical_name": "counting_bubbles",
+      "display_name": "BUBBLES",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "soap bubbles"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_2",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0136",
+      "canonical_name": "counting_stars",
+      "display_name": "STARS",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "5-point stars"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_3",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0137",
+      "canonical_name": "counting_hearts",
+      "display_name": "HEARTS",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "love hearts"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_4",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0138",
+      "canonical_name": "counting_buttons",
+      "display_name": "BUTTONS",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "round buttons"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_003_5",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0139",
+      "canonical_name": "counting_circles",
+      "display_name": "CIRCLES",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "rings"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_004_6",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0140",
+      "canonical_name": "counting_squares",
+      "display_name": "SQUARES",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "boxes"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_004_7",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0141",
+      "canonical_name": "counting_triangles",
+      "display_name": "TRIANGLES",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "3-point shapes"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_004_8",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0142",
+      "canonical_name": "counting_dots",
+      "display_name": "DOTS",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "polka dots"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_004_9",
+      "reuse_policy": "counting_only"
+    },
+    {
+      "object_id": "OBJ-0143",
+      "canonical_name": "counting_flowers",
+      "display_name": "FLOWERS",
+      "category": "Numbers Section",
+      "semantic_group": "number_symbol",
+      "synonyms": [
+        "daisy outlines"
+      ],
+      "compound_variants": [],
+      "reserved_by": "numbers_page_004_10",
+      "reuse_policy": "counting_only"
+    }
   ]
 }

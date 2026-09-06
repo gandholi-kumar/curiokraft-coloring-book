@@ -32,7 +32,8 @@ class RetryManager:
     def attempt_programmatic_rescue(
         self,
         raw_image_path: str | Path,
-        output_rescued_path: str | Path
+        output_rescued_path: str | Path,
+        is_spread: bool = False
     ) -> tuple[bool, str, list[str]]:
         """Attempt deterministic code-level rescue on raw image before wasting an API call.
         
@@ -41,6 +42,7 @@ class RetryManager:
         Args:
             raw_image_path: Path to the raw generated image.
             output_rescued_path: Destination path for the rescued image.
+            is_spread: Whether the page is a spread (bypasses top header reservation).
             
         Returns:
             Tuple of (passed: bool, message: str, remaining_violations: list[str]).
@@ -49,7 +51,7 @@ class RetryManager:
         out_p = Path(output_rescued_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Executing deterministic rescue pipeline on: {raw_p.name}")
+        logger.info(f"Executing deterministic rescue pipeline on: {raw_p.name} (spread={is_spread})")
 
         # Step 1: Adaptive Binarization (cleans light gray, antialiasing, compression noise)
         bin_res = rescue_binarize(raw_p, output_path=out_p, use_otsu=True)
@@ -57,7 +59,16 @@ class RetryManager:
             return False, "Failed to apply adaptive binarization.", ["RESCUE_BINARIZE_FAILED"]
 
         # Step 2: Auto-Margin Centering and Scaling to 0.50in boundary
-        fit_res = fit_to_safe_margins(out_p, output_path=out_p, safe_margin_in=0.50)
+        header_res = 0.0 if is_spread else 1.20
+        coverage = 1.0 if is_spread else 0.72
+        fit_res = fit_to_safe_margins(
+            out_p,
+            output_path=out_p,
+            safe_margin_in=0.50,
+            header_reservation_in=header_res,
+            target_coverage_ratio=coverage,
+            is_spread=is_spread
+        )
         if not fit_res.success:
             return False, "Failed to fit artwork to safe margins.", ["RESCUE_MARGIN_FIT_FAILED"]
 

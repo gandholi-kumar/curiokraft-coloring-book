@@ -1,233 +1,461 @@
-"""Programmatic compositor for special publication pages (Welcome/Ownership and Completion Certificate)."""
+"""Programmatic compositor for special publication pages (Welcome/Ownership and Completion Certificate).
+
+Design System: welcome-cert-page-crafting skill
+- AI generates: mascot, badge, scenes, stars, sparkles, crayons (JPG/PNG assets in inbox/special_assets/)
+- Python generates: ALL typography, borders, zones, layout, geometry, branding
+- Same mascot appears on BOTH pages (generate once, reuse)
+- COLOR . SAY . DISCOVER . PLAY is pixel-identical on both pages
+- Narrative cascade: WELCOME, LITTLE EXPLORER -> YOU DID IT -> SUPER COLORIST
+"""
 
 from pathlib import Path
-from typing import Optional
-from PIL import Image, ImageDraw, ImageFont
+from typing import Optional, Tuple
+import numpy as np
+from PIL import Image, ImageDraw
+
+from curiokraft_book.compositor.fonts import get_typography_font
+
+
+# ---------------------------------------------------------------------------
+# BOOK THEME -- single source of truth for both pages
+# ---------------------------------------------------------------------------
+BOOK_THEME = {
+    "canvas_w": 2550,
+    "canvas_h": 3300,
+    "dpi": 300,
+    "safe_margin": 113,
+    "bleed": 38,
+    "border_outer_inset": 140,
+    "border_inner_inset": 170,
+    "border_outer_width": 12,
+    "border_inner_width": 5,
+    "border_radius": 30,
+    "size_hero": 135,
+    "size_award": 110,
+    "size_brand": 78,
+    "size_tagline": 56,
+    "size_heading": 64,
+    "size_body": 44,
+    "size_small": 40,
+    "black": 0,
+    "dark_gray": 50,
+    "mid_gray": 120,
+    "light_gray": 215,
+    "white": 255,
+}
+
+
+SPECIAL_ASSET_DIR = Path("inbox/special_assets")
+ASSET_NAMES = {
+    "mascot":      ["tiny_mascot.png", "tiny_mascot.png.jpg", "tiny_mascot.jpg"],
+    "badge":       ["super_colorist_badge.png", "super_colorist_badge.jpg"],
+    "welcome":     ["welcome_scene.png", "welcome_scene.jpg"],
+    "celebration": ["celebration_scene.png", "celebration_scene.jpg"],
+    "stars":       ["stars.png", "stars.jpg"],
+    "sparkles":    ["sparkles.png", "sparkles.jpg"],
+    "crayons":     ["crayons.png", "crayons.jpg"],
+}
+
+
+def _find_asset(key: str, asset_dir: Path = SPECIAL_ASSET_DIR) -> Optional[Path]:
+    for name in ASSET_NAMES.get(key, []):
+        p = asset_dir / name
+        if p.exists():
+            return p
+    return None
+
+
+def _load_asset_grayscale(key: str, asset_dir: Path = SPECIAL_ASSET_DIR, crop: bool = True) -> Optional[Image.Image]:
+    p = _find_asset(key, asset_dir)
+    if p is None:
+        return None
+    try:
+        with Image.open(p) as raw:
+            rgba = raw.convert("RGBA")
+            data = np.array(rgba)
+            r, g, b, a = data[..., 0], data[..., 1], data[..., 2], data[..., 3]
+            lum = (0.299 * r + 0.587 * g + 0.114 * b).astype(np.uint8)
+            lum[a < 128] = 255
+            # Checkerboard / background thresholding
+            lum[lum > 140] = 255
+            if crop:
+                mask = lum < 140
+                rows = np.any(mask, axis=1)
+                cols = np.any(mask, axis=0)
+                if np.any(rows) and np.any(cols):
+                    rmin, rmax = np.where(rows)[0][[0, -1]]
+                    cmin, cmax = np.where(cols)[0][[0, -1]]
+                    pad = 12
+                    rmin = max(0, rmin - pad)
+                    rmax = min(lum.shape[0], rmax + pad)
+                    cmin = max(0, cmin - pad)
+                    cmax = min(lum.shape[1], cmax + pad)
+                    lum = lum[rmin:rmax, cmin:cmax]
+            return Image.fromarray(lum, mode="L")
+    except Exception:
+        return None
+
+
+def _load_welcome_scene_halves(asset_dir: Path = SPECIAL_ASSET_DIR) -> Tuple[Optional[Image.Image], Optional[Image.Image]]:
+    """Dynamically split welcome_scene into left and right clusters to surround the central mascot."""
+    p = _find_asset("welcome", asset_dir)
+    if p is None:
+        return None, None
+    try:
+        with Image.open(p) as raw:
+            rgba = raw.convert("RGBA")
+            data = np.array(rgba)
+            r, g, b, a = data[..., 0], data[..., 1], data[..., 2], data[..., 3]
+            lum = (0.299 * r + 0.587 * g + 0.114 * b).astype(np.uint8)
+            lum[a < 128] = 255
+            lum[lum > 140] = 255
+
+            w = lum.shape[1]
+            mid_start = int(w * 0.30)
+            mid_end = int(w * 0.70)
+            col_dark_counts = (lum[:, mid_start:mid_end] < 140).sum(axis=0)
+            best_split = mid_start + int(np.argmin(col_dark_counts))
+
+            left_arr = lum[:, :best_split]
+            right_arr = lum[:, best_split:]
+
+            def crop_sub(arr):
+                mask = arr < 140
+                rows = np.any(mask, axis=1)
+                cols = np.any(mask, axis=0)
+                if np.any(rows) and np.any(cols):
+                    rmin, rmax = np.where(rows)[0][[0, -1]]
+                    cmin, cmax = np.where(cols)[0][[0, -1]]
+                    pad = 12
+                    rmin = max(0, rmin - pad)
+                    rmax = min(arr.shape[0], rmax + pad)
+                    cmin = max(0, cmin - pad)
+                    cmax = min(arr.shape[1], cmax + pad)
+                    return Image.fromarray(arr[rmin:rmax, cmin:cmax], mode="L")
+                return None
+
+            return crop_sub(left_arr), crop_sub(right_arr)
+    except Exception:
+        return None, None
+
+
+def _paste_asset(canvas: Image.Image, asset_img: Image.Image,
+                 x: int, y: int, max_w: int, max_h: int) -> tuple:
+    scale = min(max_w / asset_img.width, max_h / asset_img.height, 1.0)
+    new_w = max(1, int(asset_img.width * scale))
+    new_h = max(1, int(asset_img.height * scale))
+    resized = asset_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    px = x + (max_w - new_w) // 2
+    py = y + (max_h - new_h) // 2
+    canvas_crop = canvas.crop((px, py, px + new_w, py + new_h))
+    blended = Image.fromarray(np.minimum(np.array(canvas_crop), np.array(resized)), mode="L")
+    canvas.paste(blended, (px, py))
+    return new_w, new_h
+
+
+def _font(size: int):
+    return get_typography_font(font_size_pt=size)
+
+
+def _centered_text(draw, y: int, text: str, font, fill: int = 0,
+                   canvas_w: int = 2550, stroke_width: int = 0, stroke_fill: int = 255):
+    draw.text((canvas_w // 2, y), text, font=font, fill=fill,
+              anchor="mm", stroke_width=stroke_width, stroke_fill=stroke_fill)
+
+
+def _draw_star(draw, cx: int, cy: int, r: int, fill: int = 0):
+    ri = int(r * 0.42)
+    pts = [
+        (cx, cy - r), (cx + int(ri * 0.59), cy - int(ri * 0.81)),
+        (cx + int(r * 0.95), cy - int(r * 0.31)), (cx + int(ri * 0.95), cy + int(ri * 0.31)),
+        (cx + int(r * 0.59), cy + int(r * 0.81)), (cx, cy + ri),
+        (cx - int(r * 0.59), cy + int(r * 0.81)), (cx - int(ri * 0.95), cy + int(ri * 0.31)),
+        (cx - int(r * 0.95), cy - int(r * 0.31)), (cx - int(ri * 0.59), cy - int(ri * 0.81)),
+    ]
+    draw.polygon(pts, fill=fill)
+
+
+def _draw_border_welcome(draw, t: dict):
+    cw, ch = t["canvas_w"], t["canvas_h"]
+    oi, ii = t["border_outer_inset"], t["border_inner_inset"]
+    r = t["border_radius"]
+    draw.rounded_rectangle([oi, oi, cw - oi, ch - oi],
+                           radius=r + 10, outline=0, width=t["border_outer_width"])
+    draw.rounded_rectangle([ii, ii, cw - ii, ch - ii],
+                           radius=r, outline=0, width=t["border_inner_width"])
+    _draw_star(draw, oi + 40, oi + 40, 26, fill=0)
+    _draw_star(draw, cw - oi - 40, oi + 40, 26, fill=0)
+    _draw_star(draw, oi + 40, ch - oi - 40, 26, fill=0)
+    _draw_star(draw, cw - oi - 40, ch - oi - 40, 26, fill=0)
+
+
+def _draw_border_certificate(draw, t: dict):
+    cw, ch = t["canvas_w"], t["canvas_h"]
+    oi, ii = t["border_outer_inset"], t["border_inner_inset"]
+    r = t["border_radius"]
+    draw.rounded_rectangle([oi, oi, cw - oi, ch - oi],
+                           radius=r + 10, outline=0, width=t["border_outer_width"] + 4)
+    draw.rounded_rectangle([ii, ii, cw - ii, ch - ii],
+                           radius=r, outline=0, width=t["border_inner_width"])
+    draw.rounded_rectangle([ii + 20, ii + 20, cw - ii - 20, ch - ii - 20],
+                           radius=r - 8, outline=0, width=3)
+    for cx, cy in [(oi + 55, oi + 55), (cw - oi - 55, oi + 55),
+                   (oi + 55, ch - oi - 55), (cw - oi - 55, ch - oi - 55)]:
+        _draw_star(draw, cx, cy, 36, fill=0)
+    _draw_star(draw, cw // 2, oi + 30, 20, fill=0)
+    _draw_star(draw, cw // 2, ch - oi - 30, 20, fill=0)
+
+
+def _draw_name_hero_box(draw, t: dict, top_y: int, box_h: int = 180, helper_text: str = "") -> int:
+    cw = t["canvas_w"]
+    box_l, box_r = 340, cw - 340
+    box_t, box_b = top_y, top_y + box_h
+    draw.rounded_rectangle([box_l + 10, box_t + 10, box_r + 10, box_b + 10],
+                           radius=22, fill=t["light_gray"])
+    draw.rounded_rectangle([box_l, box_t, box_r, box_b],
+                           radius=22, fill=t["white"], outline=0, width=8)
+    if helper_text:
+        f_help = _font(34)
+        draw.text((cw // 2, box_t + box_h // 2), helper_text, font=f_help,
+                  fill=t["light_gray"], anchor="mm")
+    return box_b
+
+
+def _draw_debug_guides(draw, t: dict):
+    cw, ch = t["canvas_w"], t["canvas_h"]
+    b = t["bleed"]
+    s = t["safe_margin"]
+    draw.rectangle([b, b, cw - b, ch - b], outline=80, width=6)
+    draw.rectangle([s, s, cw - s, ch - s], outline=140, width=4)
 
 
 def render_welcome_page(
-    output_path: str | Path = "output/interior_masters/page_001.png",
+    output_path: str = "output/interior_masters/page_001.png",
     title: str = "TINY HANDS COLOR & LEARN",
-    subtitle: str = "FUN & EASY FIRST WORDS",
-    font_dir: str | Path = "assets/fonts",
+    font_dir: str = "assets/fonts",
+    asset_dir: str = "inbox/special_assets",
     canvas_w: int = 2550,
     canvas_h: int = 3300,
-    dpi: int = 300
+    dpi: int = 300,
+    show_guides: bool = False,
+    mascot_image_path: Optional[str] = None,
+    award_image_path: Optional[str] = None,
 ) -> Path:
-    """Render Page 1: Welcome & 'This Book Belongs To' Ownership Page.
-    
-    Layout (Right Page / Recto):
-    - Top header: 'WELCOME TO' + Book Title
-    - Central decorative 'THIS BOOK BELONGS TO:' colorable ribbon box
-    - Friendly colorable mascot / book illustration
-    - Cheerful bubbly stars, hearts, and bubbles border
-    - Safe margins: Gutter >= 0.50 in, Outside >= 0.50 in, Top/Bottom >= 0.50 in
-    """
+    t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
+    a_dir = Path(asset_dir)
     out_p = Path(output_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    f_dir = Path(font_dir)
 
-    img = Image.new("L", (canvas_w, canvas_h), 255)
+    img = Image.new("L", (canvas_w, canvas_h), t["white"])
     draw = ImageDraw.Draw(img)
 
-    f_title = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 140)
-    f_sub = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 70)
-    f_badge = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 95)
-    f_label = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 60)
-    f_brand = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 48)
+    _draw_border_welcome(draw, t)
 
-    # 1. Outer Decorative Double Frame
-    draw.rounded_rectangle([180, 180, canvas_w - 180, canvas_h - 180], radius=40, outline=0, width=12)
-    draw.rounded_rectangle([210, 210, canvas_w - 210, canvas_h - 210], radius=30, outline=0, width=4)
+    # 1. Top Zone - Hero Headline
+    f_hero = _font(135)
+    _centered_text(draw, 310, "WELCOME,", f_hero, fill=0, canvas_w=canvas_w)
+    _centered_text(draw, 450, "LITTLE EXPLORER!", f_hero, fill=0, canvas_w=canvas_w)
 
-    # 2. Top Title Section
-    draw.text((canvas_w // 2, 380), "WELCOME TO", font=f_sub, fill=0, anchor="mm")
-    
-    # Book Title in large bubbly text with outline
-    draw.text(
-        (canvas_w // 2, 540),
-        title,
-        font=f_title,
-        fill=255,
-        stroke_width=16,
-        stroke_fill=0,
-        anchor="mm"
-    )
-    
-    draw.text((canvas_w // 2, 680), subtitle, font=f_sub, fill=80, anchor="mm")
-    draw.line([(500, 760), (canvas_w - 500, 760)], fill=0, width=6)
+    # 2. Brand Zone
+    f_brand = _font(t["size_brand"])
+    _centered_text(draw, 570, title, f_brand, fill=t["dark_gray"], canvas_w=canvas_w)
+    draw.line([(520, 620), (canvas_w - 520, 620)], fill=t["mid_gray"], width=4)
 
-    # 3. Central "This Book Belongs To" Nameplate Box
-    box_top = 920
-    box_bot = 1620
-    box_left = 350
-    box_right = canvas_w - 350
+    # 3. Subheading (Identical Mantra to Certificate)
+    f_tag = _font(t["size_tagline"])
+    _centered_text(draw, 680, "COLOR  •  SAY  •  DISCOVER  •  PLAY",
+                   f_tag, fill=t["dark_gray"], canvas_w=canvas_w)
 
-    # Shaded shadow + white box
-    draw.rounded_rectangle([box_left + 15, box_top + 15, box_right + 15, box_bot + 15], radius=35, fill=220)
-    draw.rounded_rectangle([box_left, box_top, box_right, box_bot], radius=35, fill=255, outline=0, width=14)
+    # 4. Ownership Zone
+    f_own = _font(t["size_heading"])
+    _centered_text(draw, 775, "THIS BOOK BELONGS TO:", f_own, fill=0, canvas_w=canvas_w)
+    name_box_bottom = _draw_name_hero_box(draw, t, top_y=825, box_h=170)
 
-    # Top Ribbon Badge
-    draw.rounded_rectangle([box_left + 80, box_top - 50, box_right - 80, box_top + 60], radius=25, fill=255, outline=0, width=10)
-    draw.text((canvas_w // 2, box_top + 5), "THIS BOOK BELONGS TO:", font=f_badge, fill=0, anchor="mm")
+    # 5. Interaction Zone - Centered Hero Mascot surrounded by balanced artifacts
+    interaction_top = name_box_bottom + 45
+    mascot = _load_asset_grayscale("mascot", a_dir)
+    left_wel, right_wel = _load_welcome_scene_halves(a_dir)
+    sparkles = _load_asset_grayscale("sparkles", a_dir)
 
-    # Name Lines for Child
-    draw.text((box_left + 100, box_top + 220), "MY NAME IS:", font=f_label, fill=0, anchor="lm")
-    draw.line([(box_left + 100, box_top + 380), (box_right - 100, box_top + 380)], fill=0, width=8)
-    draw.line([(box_left + 100, box_top + 540), (box_right - 100, box_top + 540)], fill=180, width=4)
+    # Left Column: Balloons & Stars from welcome scene
+    if left_wel:
+        _paste_asset(img, left_wel, x=220, y=interaction_top + 10, max_w=560, max_h=1480)
 
-    # 4. Colorable Center Mascot Vignette (Friendly Teddy Bear + Apple + Crayons)
-    # Bear head
-    draw.ellipse([canvas_w // 2 - 220, 1850, canvas_w // 2 + 220, 2290], fill=255, outline=0, width=12)
-    # Bear ears
-    draw.ellipse([canvas_w // 2 - 260, 1820, canvas_w // 2 - 140, 1940], fill=255, outline=0, width=10)
-    draw.ellipse([canvas_w // 2 + 140, 1820, canvas_w // 2 + 260, 1940], fill=255, outline=0, width=10)
-    # Inner ears
-    draw.ellipse([canvas_w // 2 - 235, 1845, canvas_w // 2 - 165, 1915], fill=255, outline=0, width=6)
-    draw.ellipse([canvas_w // 2 + 165, 1845, canvas_w // 2 + 235, 1915], fill=255, outline=0, width=6)
-    # Muzzle & Nose
-    draw.ellipse([canvas_w // 2 - 100, 2020, canvas_w // 2 + 100, 2180], fill=255, outline=0, width=8)
-    draw.ellipse([canvas_w // 2 - 40, 2040, canvas_w // 2 + 40, 2100], fill=0) # black nose
-    draw.arc([canvas_w // 2 - 40, 2080, canvas_w // 2 + 40, 2140], start=0, end=180, fill=0, width=8) # smile
-    # Happy eyes
-    draw.ellipse([canvas_w // 2 - 110, 1970, canvas_w // 2 - 60, 2020], fill=0)
-    draw.ellipse([canvas_w // 2 + 60, 1970, canvas_w // 2 + 110, 2020], fill=0)
-    draw.ellipse([canvas_w // 2 - 95, 1975, canvas_w // 2 - 75, 1995], fill=255) # catchlight
-    draw.ellipse([canvas_w // 2 + 75, 1975, canvas_w // 2 + 95, 1995], fill=255) # catchlight
+    # Center: Hero Teddy Bear Mascot (heroic centered presence)
+    if mascot:
+        _paste_asset(img, mascot, x=(canvas_w - 980) // 2, y=interaction_top + 120, max_w=980, max_h=1260)
 
-    # Bear body & paws
-    draw.ellipse([canvas_w // 2 - 280, 2220, canvas_w // 2 + 280, 2750], fill=255, outline=0, width=12)
-    draw.ellipse([canvas_w // 2 - 340, 2400, canvas_w // 2 - 200, 2640], fill=255, outline=0, width=10) # left paw
-    draw.ellipse([canvas_w // 2 + 200, 2400, canvas_w // 2 + 340, 2640], fill=255, outline=0, width=10) # right paw
+    # Right Column: Balloon, crayons, rainbow & stars from welcome scene
+    if right_wel:
+        _paste_asset(img, right_wel, x=canvas_w - 220 - 560, y=interaction_top + 10, max_w=560, max_h=1480)
 
-    # 5. Decorative Stars and Bubbles
-    star_locs = [(320, 320), (canvas_w - 320, 320), (300, 1800), (canvas_w - 300, 1800), (350, 2650), (canvas_w - 350, 2650)]
-    for sx, sy in star_locs:
-        draw.polygon([(sx, sy - 40), (sx + 12, sy - 12), (sx + 40, sy), (sx + 12, sy + 12), (sx, sy + 40), (sx - 12, sy + 12), (sx - 40, sy), (sx - 12, sy - 12)], fill=255, outline=0, width=6)
+    # Floating sparkle accents around Mascot's ears and waving paw
+    if sparkles:
+        _paste_asset(img, sparkles, x=740, y=interaction_top + 40, max_w=220, max_h=180)
+        _paste_asset(img, sparkles, x=1600, y=interaction_top + 40, max_w=220, max_h=180)
 
-    # 6. Bottom Brand Inlay
-    draw.text((canvas_w // 2, 2950), "CURIOKRAFT-KIDS  •  EARLY LEARNING SERIES", font=f_brand, fill=0, anchor="mm")
-    draw.text((canvas_w // 2, 3020), "Ages 1 - 4  •  100+ First Words, Letters & Numbers", font=f_brand, fill=100, anchor="mm")
+    # 6. Parent Connection Zone - Framed Tip Card (enlarged for parent readability)
+    tip_top = 2580
+    tip_l, tip_r = 340, canvas_w - 340
+    tip_h = 220
+    tip_b = tip_top + tip_h
+    draw.rounded_rectangle([tip_l, tip_top, tip_r, tip_b],
+                           radius=24, outline=0, width=4)
+    draw.rounded_rectangle([tip_l + 10, tip_top + 10, tip_r - 10, tip_b - 10],
+                           radius=18, outline=t["light_gray"], width=2)
+
+    f_tip_lbl = _font(54)
+    _centered_text(draw, tip_top + 68, "GROWN-UP TIP", f_tip_lbl, fill=0, canvas_w=canvas_w)
+    _draw_star(draw, canvas_w // 2 - 250, tip_top + 68, 18, fill=0)
+    _draw_star(draw, canvas_w // 2 + 250, tip_top + 68, 18, fill=0)
+
+    f_tip_body = _font(48)
+    _centered_text(draw, tip_top + 150,
+                   "Color together, say the words aloud, and celebrate every little discovery!",
+                   f_tip_body, fill=t["dark_gray"], canvas_w=canvas_w)
+
+
+    # 7. Footer Zone (safe distance above inner border at 3130)
+    f_foot = _font(40)
+    _centered_text(draw, 2980,
+                   "AGES 1–4   •   100+ FIRST WORDS, LETTERS & NUMBERS",
+                   f_foot, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(draw, 3038,
+                   "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
+                   _font(34), fill=t["mid_gray"], canvas_w=canvas_w)
+
+    if show_guides:
+        _draw_debug_guides(draw, t)
+
+    assert img.width == canvas_w, f"Width mismatch: {img.width} != {canvas_w}"
+    assert img.height == canvas_h, f"Height mismatch: {img.height} != {canvas_h}"
+    assert dpi >= 300, f"DPI {dpi} < 300 -- KDP minimum not met"
 
     img.save(out_p, dpi=(dpi, dpi))
     return out_p
 
 
 def render_certificate_page(
-    output_path: str | Path = "output/interior_masters/page_110.png",
+    output_path: str = "output/interior_masters/page_110.png",
     title: str = "TINY HANDS COLOR & LEARN",
-    font_dir: str | Path = "assets/fonts",
+    font_dir: str = "assets/fonts",
+    asset_dir: str = "inbox/special_assets",
     canvas_w: int = 2550,
     canvas_h: int = 3300,
-    dpi: int = 300
+    dpi: int = 300,
+    show_guides: bool = False,
+    award_image_path: Optional[str] = None,
 ) -> Path:
-    """Render Page 110: Official Completion Certificate Page ('Super Colorist Award').
-    
-    Layout (Left Page / Verso):
-    - Ornate decorative certificate border with ribbon corners
-    - Large 3D Bubbly 'SUPER COLORIST AWARD!'
-    - 'PROUDLY PRESENTED TO:' + Wide name line
-    - Milestone achievement text
-    - Colorable ribbon medal & starburst badge
-    - Date & Parent/Teacher Signature lines
-    """
+    t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
+    a_dir = Path(asset_dir)
     out_p = Path(output_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
-    f_dir = Path(font_dir)
 
-    img = Image.new("L", (canvas_w, canvas_h), 255)
+    img = Image.new("L", (canvas_w, canvas_h), t["white"])
     draw = ImageDraw.Draw(img)
 
-    f_huge = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 130)
-    f_title = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 90)
-    f_sub = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 65)
-    f_name = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 75)
-    f_body = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 52)
-    f_small = ImageFont.truetype(str(f_dir / "Fredoka-Bold.ttf"), 44)
+    _draw_border_certificate(draw, t)
 
-    # 1. Ornate Multi-Layer Certificate Frame
-    draw.rectangle([140, 140, canvas_w - 140, canvas_h - 140], outline=0, width=16)
-    draw.rectangle([170, 170, canvas_w - 170, canvas_h - 170], outline=0, width=4)
-    draw.rectangle([210, 210, canvas_w - 210, canvas_h - 210], outline=0, width=8)
+    # 1. Top Zone - Hero Headline with flanking sparkles
+    sparkles = _load_asset_grayscale("sparkles", a_dir)
+    if sparkles:
+        _paste_asset(img, sparkles, x=220, y=240, max_w=250, max_h=220)
+        _paste_asset(img, sparkles, x=canvas_w - 470, y=240, max_w=250, max_h=220)
 
-    # Corner ribbon rosettes
-    corners = [(210, 210), (canvas_w - 210, 210), (210, canvas_h - 210), (canvas_w - 210, canvas_h - 210)]
-    for cx, cy in corners:
-        draw.ellipse([cx - 45, cy - 45, cx + 45, cy + 45], fill=255, outline=0, width=8)
-        draw.ellipse([cx - 20, cy - 20, cx + 20, cy + 20], fill=0)
+    f_hero = _font(135)
+    _centered_text(draw, 305, "YOU DID IT,", f_hero, fill=0, canvas_w=canvas_w)
+    _centered_text(draw, 445, "LITTLE EXPLORER!", f_hero, fill=0, canvas_w=canvas_w)
 
-    # 2. Header Section
-    draw.text((canvas_w // 2, 380), "★ OFFICIAL CERTIFICATE ★", font=f_title, fill=0, anchor="mm")
-    
-    # Large Bubbly Header
-    draw.text(
-        (canvas_w // 2, 540),
-        "SUPER COLORIST AWARD!",
-        font=f_huge,
-        fill=255,
-        stroke_width=16,
-        stroke_fill=0,
-        anchor="mm"
-    )
-    draw.line([(400, 640), (canvas_w - 400, 640)], fill=0, width=6)
+    # 2. Main Award Banner flanked by stars
+    f_award = _font(105)
+    _draw_star(draw, 380, 565, 24, fill=0)
+    _draw_star(draw, canvas_w - 380, 565, 24, fill=0)
+    _centered_text(draw, 565, "SUPER COLORIST", f_award, fill=0, canvas_w=canvas_w)
+    draw.line([(420, 625), (canvas_w - 420, 625)], fill=0, width=6)
 
-    # 3. Presentation Text
-    draw.text((canvas_w // 2, 780), "THIS CERTIFICATE IS PROUDLY PRESENTED TO:", font=f_sub, fill=80, anchor="mm")
+    # 3. Recipient Zone
+    f_body = _font(46)
+    _centered_text(draw, 685, "This special certificate celebrates",
+                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
+    name_box_bottom = _draw_name_hero_box(draw, t, top_y=730, box_h=170)
 
-    # Name Line
-    draw.line([(350, 1020), (canvas_w - 350, 1020)], fill=0, width=10)
-    draw.text((canvas_w // 2, 1070), "(SUPERSTAR ARTIST NAME)", font=f_small, fill=120, anchor="mm")
+    # 4. Achievement & Emotional Payoff Zone
+    ach_y = name_box_bottom + 50
+    _centered_text(draw, ach_y, f"for completing the {title} adventure!",
+                   _font(48), fill=0, canvas_w=canvas_w)
+    _centered_text(draw, ach_y + 65,
+                   "You explored, colored, discovered, and played with",
+                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(draw, ach_y + 125,
+                   "100+ first words, letters, numbers, and everyday objects.",
+                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
 
-    # Achievement Paragraph
-    draw.text(
-        (canvas_w // 2, 1240),
-        f"For successfully coloring and learning 100+ everyday objects, letters,",
-        font=f_body,
-        fill=0,
-        anchor="mm"
-    )
-    draw.text(
-        (canvas_w // 2, 1310),
-        f"and numbers in '{title}'!",
-        font=f_body,
-        fill=0,
-        anchor="mm"
-    )
-    draw.text(
-        (canvas_w // 2, 1390),
-        "You showed amazing creativity, fine motor skills, and imagination!",
-        font=f_body,
-        fill=0,
-        anchor="mm"
-    )
+    emo_y = ach_y + 205
+    f_emo = _font(42)
+    _centered_text(draw, emo_y,
+                   "Every page was a little adventure.  •  Every color was your own.",
+                   f_emo, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(draw, emo_y + 58,
+                   "Every discovery was something to celebrate!",
+                   f_emo, fill=0, canvas_w=canvas_w)
 
-    # 4. Large Colorable Medal / Trophy Stamp
-    badge_cx, badge_cy = canvas_w // 2, 1820
-    # Starburst outer seal
-    draw.ellipse([badge_cx - 240, badge_cy - 240, badge_cx + 240, badge_cy + 240], fill=255, outline=0, width=14)
-    draw.ellipse([badge_cx - 200, badge_cy - 200, badge_cx + 200, badge_cy + 200], fill=255, outline=0, width=6)
-    
-    # Medal ribbons hanging down
-    draw.polygon([(badge_cx - 100, badge_cy + 180), (badge_cx - 150, badge_cy + 420), (badge_cx - 90, badge_cy + 360), (badge_cx - 30, badge_cy + 420), (badge_cx - 40, badge_cy + 200)], fill=255, outline=0, width=8)
-    draw.polygon([(badge_cx + 40, badge_cy + 200), (badge_cx + 30, badge_cy + 420), (badge_cx + 90, badge_cy + 360), (badge_cx + 150, badge_cy + 420), (badge_cx + 100, badge_cy + 180)], fill=255, outline=0, width=8)
-    
-    # Text inside seal
-    draw.text((badge_cx, badge_cy - 70), "★ ★ ★", font=f_title, fill=0, anchor="mm")
-    draw.text((badge_cx, badge_cy + 15), "#1", font=f_huge, fill=0, anchor="mm")
-    draw.text((badge_cx, badge_cy + 105), "CHAMPION", font=f_sub, fill=0, anchor="mm")
+    # 5. Central Hero Medal & Celebratory Assembly Zone (y=1400 to 2350)
+    badge_y = emo_y + 140
+    badge = _load_asset_grayscale("badge", a_dir)
+    mascot = _load_asset_grayscale("mascot", a_dir)
+    celebration = _load_asset_grayscale("celebration", a_dir)
+    stars = _load_asset_grayscale("stars", a_dir)
 
-    # 5. Signature and Date Section
-    sig_y = 2650
-    # Date Line
-    draw.line([(350, sig_y), (1050, sig_y)], fill=0, width=6)
-    draw.text((700, sig_y + 50), "DATE", font=f_small, fill=0, anchor="mm")
+    # Left: Celebration confetti & streamers
+    if celebration:
+        _paste_asset(img, celebration, x=220, y=badge_y + 20, max_w=500, max_h=760)
 
-    # Teacher / Parent Signature Line
-    draw.line([(canvas_w - 1050, sig_y), (canvas_w - 350, sig_y)], fill=0, width=6)
-    draw.text((canvas_w - 700, sig_y + 50), "PARENT / TEACHER SIGNATURE", font=f_small, fill=0, anchor="mm")
+    # Center: SUPER COLORIST MEDAL (Dominant hero badge, ~860x860)
+    if badge:
+        _paste_asset(img, badge, x=(canvas_w - 860) // 2, y=badge_y - 30, max_w=860, max_h=860)
 
-    # 6. Bottom Brand Footer
-    draw.text((canvas_w // 2, 2980), "CURIOKRAFT-KIDS PUBLICATIONS  •  OFFICIAL MASTER EDITION", font=f_small, fill=100, anchor="mm")
+    # Right: Teddy Bear mascot cheering proudly
+    if mascot:
+        _paste_asset(img, mascot, x=canvas_w - 740, y=badge_y + 50, max_w=520, max_h=680)
+
+    # 6. Subheading (Identical Mantra) with decorative stars
+    tag_y = badge_y + 850
+    f_tag = _font(t["size_tagline"])
+    _draw_star(draw, 440, tag_y, 16, fill=t["mid_gray"])
+    _draw_star(draw, canvas_w - 440, tag_y, 16, fill=t["mid_gray"])
+    _centered_text(draw, tag_y, "COLOR  •  SAY  •  DISCOVER  •  PLAY",
+                   f_tag, fill=t["dark_gray"], canvas_w=canvas_w)
+
+    # Stars cluster accent above signatures
+    if stars:
+        _paste_asset(img, stars, x=(canvas_w - 380) // 2, y=tag_y + 45, max_w=380, max_h=160)
+
+    # 7. Signature Zone (comfortably proportioned)
+    sig_y = 2670
+    f_sig = _font(38)
+    draw.line([(340, sig_y), (1060, sig_y)], fill=0, width=5)
+    draw.text((700, sig_y + 36), "Date", font=f_sig, fill=t["mid_gray"], anchor="mm")
+    draw.line([(canvas_w - 1060, sig_y), (canvas_w - 340, sig_y)], fill=0, width=5)
+    draw.text((canvas_w - 700, sig_y + 36), "My Grown-Up's Signature",
+              font=f_sig, fill=t["mid_gray"], anchor="mm")
+
+    # 8. Footer Zone (safe distance above inner border at 3130)
+    f_foot = _font(40)
+    _draw_star(draw, 340, 2980, 18, fill=t["dark_gray"])
+    _draw_star(draw, canvas_w - 340, 2980, 18, fill=t["dark_gray"])
+    _centered_text(draw, 2980,
+                   "KEEP COLORING  •  KEEP EXPLORING  •  KEEP LEARNING!",
+                   f_foot, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(draw, 3038,
+                   "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
+                   _font(34), fill=t["mid_gray"], canvas_w=canvas_w)
+
+    if show_guides:
+        _draw_debug_guides(draw, t)
+
+    assert img.width == canvas_w, f"Width mismatch: {img.width} != {canvas_w}"
+    assert img.height == canvas_h, f"Height mismatch: {img.height} != {canvas_h}"
+    assert dpi >= 300, f"DPI {dpi} < 300 -- KDP minimum not met"
 
     img.save(out_p, dpi=(dpi, dpi))
     return out_p

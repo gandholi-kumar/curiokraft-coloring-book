@@ -36,16 +36,58 @@ book:
       width: 17.498
       height: 11.250
     spine_width_in: 0.248
+    spine:
+      mode: "clean_background"  # Options: "clean_background" (seamless background art flow, zero text, zero emblem) | "full" (title + emblem) | "text_only" | "emblem_only"
+      render_text: false        # Explicit boolean toggle for rotated 3D spine title
+      render_emblem: false      # Explicit boolean toggle for bottom spine emblem
     front_cover_in:
       width: 8.5
       height: 11.0
     back_cover_in:
       width: 8.5
       height: 11.0
-    barcode_exclusion_in:
+    barcode_exclusion_zone:
+      status: "locked_multi_volume_standard"
+      zero_text_mandate: true
+      permitted_continuous_assets:
+        - "background_color (#FFF9E6)"
+        - "stardust"
+        - "doodles"
+        - "rolling_waves"
       width: 2.000
       height: 1.200
       location: "back_cover_bottom_right"
+      canvas_pixels_300dpi:
+        x1: 1845
+        y1: 2850
+        x2: 2545
+        y2: 3280
+        width: 700
+        height: 430
+    publisher_badge:
+      status: "locked_multi_volume_standard"
+      zero_text_mandate: true
+      permitted_continuous_assets:
+        - "background_color (#FFF9E6)"
+        - "stardust"
+        - "doodles"
+        - "rolling_waves"
+      location: "back_cover_bottom_left"
+      width_in: 2.133
+      height_in: 1.400
+      canvas_pixels_300dpi:
+        x1: 180
+        y1: 2860
+        x2: 820
+        y2: 3280
+        width: 640
+        height: 420
+        corner_radius: 28
+        box_shadow:
+          offset_x: 16
+          offset_y: 20
+          blur_radius: 20
+          alpha: 95
     color_profile: "CMYK"
     finish: "glossy_or_matte_commercial"
 

@@ -212,27 +212,75 @@ class DiskInboxProvider(BaseImageProvider):
         return "inbox"
 
     def find_image(self, page_id: Optional[str] = None, page_number: Optional[int] = None, canonical_label: str = "") -> Optional[Path]:
-        canon = canonical_label.lower().strip()
-        candidates = []
-        extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"]
+        if not self.inbox_dir.exists():
+            return None
 
+        canon = canonical_label.lower().strip().replace(" ", "_")
+        valid_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+
+        inbox_files = [f for f in self.inbox_dir.iterdir() if f.is_file() and f.stat().st_size > 500]
+
+        def get_clean_stem_and_ext(file_path: Path) -> tuple[str, str]:
+            name = file_path.name.lower()
+            for ext in [".png.jpg", ".jpg.png", ".jpeg.jpg", ".jpeg.png", ".png.jpeg", ".jpg.jpeg"]:
+                if name.endswith(ext):
+                    clean_stem = name[:-len(ext)]
+                    return clean_stem, ext
+            return file_path.stem.lower(), file_path.suffix.lower()
+
+        candidates_p1 = []
+        candidates_p2 = []
+        candidates_p3 = []
+
+        import re
+
+        target_prefixes = []
         if page_number is not None:
-            for ext in extensions:
-                candidates.append(self.inbox_dir / f"raw_p{page_number:03d}_{canon}{ext}")
-                candidates.append(self.inbox_dir / f"p{page_number:03d}_{canon}{ext}")
-                candidates.append(self.inbox_dir / f"raw_p{page_number:03d}{ext}")
-                candidates.append(self.inbox_dir / f"p{page_number:03d}{ext}")
+            target_prefixes.extend([
+                f"raw_p{page_number:03d}",
+                f"p{page_number:03d}",
+                f"raw_p{page_number}",
+                f"p{page_number}",
+            ])
         if page_id:
-            for ext in extensions:
-                candidates.append(self.inbox_dir / f"{page_id}_{canon}{ext}")
-                candidates.append(self.inbox_dir / f"{page_id}{ext}")
-        if canon:
-            for ext in extensions:
-                candidates.append(self.inbox_dir / f"{canon}{ext}")
+            pid = page_id.lower().strip()
+            target_prefixes.extend([f"raw_{pid}", pid])
 
-        for c in candidates:
-            if c.exists() and c.is_file() and c.stat().st_size > 500:
-                return c
+        for f in inbox_files:
+            clean_stem, ext = get_clean_stem_and_ext(f)
+            is_valid_img = any(ext.endswith(ve) for ve in valid_extensions)
+            if not is_valid_img:
+                continue
+
+            # Strict page-number ownership check: if file explicitly starts with a page number (e.g. raw_p110),
+            # it must NEVER be matched by any other page (e.g. Page 49).
+            p_match = re.match(r"^(?:raw_)?p(\d+)(?:[_-].*)?$", clean_stem)
+            if p_match:
+                file_page_num = int(p_match.group(1))
+                if page_number is not None and file_page_num != page_number:
+                    continue  # Strictly belongs to a different page
+
+            matches_page = any(clean_stem == pfx or clean_stem.startswith(f"{pfx}_") or clean_stem.startswith(f"{pfx}-") for pfx in target_prefixes)
+            
+            # Whole-token canonical matching (prevents 'cat' matching 'certificate' or 'car' matching 'carrot')
+            stem_delim = f"_{'_'.join(re.split(r'[-_\s]+', clean_stem))}_"
+            canon_delim = f"_{'_'.join(re.split(r'[-_\s]+', canon))}_"
+            matches_canon = bool(canon and (clean_stem == canon or canon_delim in stem_delim))
+
+            if matches_page and matches_canon:
+                candidates_p1.append(f)
+            elif matches_page:
+                candidates_p2.append(f)
+            elif matches_canon:
+                candidates_p3.append(f)
+
+        if candidates_p1:
+            return candidates_p1[0]
+        if candidates_p2:
+            return candidates_p2[0]
+        if candidates_p3:
+            return candidates_p3[0]
+
         return None
 
     def generate(

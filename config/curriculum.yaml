@@ -202,6 +202,10 @@ cover_styling:
       bubble_count: 36
       star_count: 48
       sparkle_count: 32
+  spine:
+    mode: "clean_background"  # Options: "clean_background" | "full" | "text_only" | "emblem_only"
+    render_text: false
+    render_emblem: false
   title_styling:
     palette:
     - '#E74C3C'

@@ -4,6 +4,28 @@ All notable changes, issue investigations, root cause analyses, and solutions im
 
 ---
 
+## [Version 1.4.0] — 2026-09-05
+
+### 🎨 5-Tier Hierarchical Master Prompt Architecture & Multi-Volume Extensibility
+- **Observed Issue:**  
+  Interior prompts for objects like `watermelon` and `grape` in `generated/prompts_export.md` exhibited severe semantic clutter and confusion (e.g. "a single delicious grape... with chunky seeds, big toppings, or smooth rind curves"), failing to capture the essential toddler visual archetypes (such as a grape bunch with stem or a classic watermelon wedge slice).
+- **Root Cause Analysis:**  
+  1. [`config/taxonomy.yaml`](file:///h:/Store/CurioKraft/Publications/coloring-book/config/taxonomy.yaml) utilized a monolithic catch-all `food` template that stuffed contradictory concepts ("seeds, big toppings, or smooth rind curves") into every fruit, vegetable, snack, and meal.
+  2. The multi-agent debate engine was disconnected from [`manifest/objects.json`](file:///h:/Store/CurioKraft/Publications/coloring-book/manifest/objects.json) metadata (`compound_variants`, `synonyms`, `category`), ignoring object nuances.
+  3. Single-object prompts lacked a clean architectural separation between universal book style, category-level behavior, and sparse object-specific rules.
+- **Fix Provided:**  
+  - **5-Tier Hierarchical Prompt Architecture:** Refactored prompt synthesis in [`src/curiokraft_book/orchestrator/debate_engine.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/orchestrator/debate_engine.py):
+    - *Tier 1 (Master Prompt v1.0):* Universal 2D toddler line art, thick smooth black outlines, large open coloring zones, centered 3:4 portrait composition, pure stark white background (`#FFFFFF`), zero shading/gradients, strictly NO text/borders.
+    - *Tier 2 (Category Rules):* Implemented the 9 canonical behavioral rules directly in [`config/taxonomy.yaml`](file:///h:/Store/CurioKraft/Publications/coloring-book/config/taxonomy.yaml) for Fruits & Vegetables, Food & Drinks, Toys & Playtime, Animals & Nature Creatures, Clothing & Accessories, Household & Daily Living, Vehicles & Transportation, Nature, Sky & Garden, and Musical Instruments & Sound Toys.
+    - *Tier 3 (Subject Identification):* Canonical name and clean title from manifest.
+    - *Tier 4 (Object-Specific Rules):* Injected 23 targeted `object_rule` definitions into [`manifest/objects.json`](file:///h:/Store/CurioKraft/Publications/coloring-book/manifest/objects.json) for physically ambiguous items (`watermelon slice`, `grape bunch`, `bicycle`, `sandwich`, `butterfly`, etc.).
+    - *Tier 5 (Compact Negative Prompt):* Category-aware negative tokens merged with baseline toddler guardrails without contradictory anatomy restrictions.
+  - **Multi-Volume & New Category Extensibility Guide:** Added comprehensive documentation to [`docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md) and [`docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md) detailing how Volume 2 handles new objects in existing categories with zero code changes, and exact steps to add brand new categories declaratively.
+  - **Regenerated Prompts:** Exported clean prompts for all 110 pages into [`generated/prompts_export.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/generated/prompts_export.md) and [`generated/prompts_export.json`](file:///h:/Store/CurioKraft/Publications/coloring-book/generated/prompts_export.json).
+  - **Quality Verification:** 19/19 automated test suite passing (100% green).
+
+---
+
 ## [Version 1.1.0] — 2026-08-30
 
 ### 1. 🎨 Live AI Image Generation via Google Native Gemini Image Models (`gemini-3.1-flash-image`) & DALL-E 3
@@ -188,3 +210,106 @@ All notable changes, issue investigations, root cause analyses, and solutions im
      - **Horizontal Placement:** $X \in [1845, 2545]\text{ px}$ (`margin_from_spine_px: 42`), leaving $42\text{ px}$ ($0.140\text{ in}$) clearance from spine fold.
      - **Vertical Placement:** $Y \in [2850, 3280]\text{ px}$ (`margin_from_bottom_px: 95`), maintaining $57\text{ px}$ ($0.190\text{ in}$) clearance inside the red trim line ($Y=3337\text{ px}$).
 - **Standard Status:** **PERMANENTLY FROZEN MASTER SPECIFICATION**. These parameters are locked into `config/curriculum.yaml`, `config/book_config.yaml`, and `docs/KDP_PRINT_SPECIFICATIONS.md` and will serve as the immutable benchmark for all 8.5 × 11 in 110-page B&W paperback coloring books in this publication line.
+
+---
+
+## [Version 1.2.0] — 2026-09-02
+
+### 1. 🎨 Back Cover Precision Prompting, Crayon Geometry & Programmatic Brand Logo Overlay
+- **Observed Issues:**  
+  1. AI-generated back cover artwork produced a hallucinated fake logo with gibberish alien text (`WIRGODPAT KIDS`) and a cartoon face in the publisher box.
+  2. Generated images contained a dark/shaded cyan rectangular blemish on the bottom-right where the prompt had mentioned barcode space, while the compositor was drawing gray outlines and placeholder text.
+  3. Mini crayons on the 6 flashcards were rendered full-length and unrotated rather than angled and cropped.
+  4. Preview flashcards featured placeholder objects (`MILK`, `GUITAR`) that did not correspond to actual single-page coloring illustrations in the book.
+- **Root Cause Analysis:**  
+  1. Text-to-image models cannot reproduce authentic vector/PNG brand logos from text prompts alone. The publisher container must remain blank in the prompt, and the authentic logo asset must be stamped programmatically by the compositor.
+  2. Explicitly mentioning "barcode space" caused diffusion models to generate visual artifacts in the background gradient. Amazon KDP dynamically imprints the barcode at print time, requiring a clean live background.
+  3. Flashcard preview prompts needed precise geometrical rotation, cropping specifications, and dynamic synchronization with `manifest/pages.json`.
+- **Fix Provided:**  
+  - Updated [`src/curiokraft_book/orchestrator/debate_engine.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/orchestrator/debate_engine.py) (`generate_back_cover_prompt`):
+    - **Logo Container:** Mandated that the AI leave the bottom-left white container completely blank (zero text, zero logo) with strict negative prompt tokens against fake logos.
+    - **Seamless Barcode Zone:** Required a continuous, blemish-free turquoise gradient across the bottom-right with negative prompts against shaded rectangles.
+    - **Crayon Geometry (-45° & 50% Crop):** Formatted prompt specifying `-45 degrees` rotation pointing diagonally inward toward the card center with the blunt end cropped behind the card edge.
+    - **Manifest-Driven Card Selection:** Dynamically samples 6 iconic, single-page coloring illustrations representing key chapters: `BANANA` (P006), `TEDDY BEAR` (P034), `CAT` (P049), `CAR` (P084), `STRAWBERRY` (P008), and `PIANO` (P106).
+  - Updated [`src/curiokraft_book/compositor/cover.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/compositor/cover.py):
+    - Programmatically overlays the authentic high-resolution [assets/logo/curiokraft_logo.PNG](file:///h:/Store/CurioKraft/Publications/coloring-book/assets/logo/curiokraft_logo.PNG) (origami bird taking flight from an open book) with RGBA transparency onto the bottom-left publisher area.
+    - Removed gray outline box and placeholder text from the barcode area for clean print submission.
+    - Expanded candidate search to automatically detect artwork placed in `inbox/raw_pages/` as well as `inbox/`.
+  - Updated [`src/curiokraft_book/compositor/brand.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/compositor/brand.py) to support case-insensitive and alternative logo/emblem paths (`.PNG`, `.png`).
+  - Re-synchronized [`generated/prompts_export.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/generated/prompts_export.md) and [`logs/agent_debates_log.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/logs/agent_debates_log.md).
+
+---
+
+### 2. 📚 Modular Documentation Suite & Dual-Track Publishing Workflow Architecture
+- **Observed Issues:**  
+  1. `USER_GUIDE.md` had become a monolithic 461-line document mixing free Web UI workflows, paid API batch jobs, mathematical KDP geometry, and debate theory, causing cognitive overload.
+  2. Legacy planning files created pre-implementation (`PROJECT_ARCHITECTURE_AND_USER_GUIDE.md`, `TINY_HANDS_...Master_Project_Reference`) cluttered the documentation directory.
+  3. Image drop naming conventions for special spreads (Pages 1–5, 110, covers) and multi-volume resolution rules were undocumented.
+- **Root Cause Analysis:**  
+  Documentation needed modularization into self-contained, task-oriented guides with clear separation between user personas (Zero-Cost Web UI vs. Automated Cloud API) and deep developer specifications.
+- **Fix Provided:**  
+  - Created **[`docs/PUBLISHING_WORKFLOWS_GUIDE.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/docs/PUBLISHING_WORKFLOWS_GUIDE.md)** as the primary interactive publishing hub:
+    - **🟢 Track 1 (Free Web UI / Zero API Cost):** Complete step-by-step guide for Google AI Studio prompt export, inbox drops, `curiokraft-book ingest`, cover compositing, and interior PDF assembly.
+    - **⚡ Track 2 (Automated Cloud API):** Fast batch production with `$env:OPENAI_API_KEY` or `$env:GEMINI_API_KEY`.
+    - **🧪 Track 3 (Offline Bézier Simulator):** Local test suite without external dependencies.
+    - **CLI Command Cheat Sheet & Documentation Index.**
+  - Created **[`docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** explaining the 3-tier decoupled architecture and tutorial for scaling to Volume 2, Volume 3, and themed editions.
+  - Merged `agent_contract_system.md` into **[`docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** creating a single comprehensive specification for all 10 specialist agents, decision rules, and JSON input/output schemas.
+  - Added full Repository & Directory Structure map to root [`README.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/README.md).
+  - Updated [`inbox/raw_pages/README.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/inbox/raw_pages/README.md) with complete special spread mapping (Pages 1–5, 110, Covers) and object-independent naming rules for future volumes.
+  - Marked legacy `USER_GUIDE.md` as archived with top-level redirect banners.
+
+---
+
+### 3. 🛡️ Cover Layout Calibration: Spine Emblem, Title Tracking, Frozen Barcode Box & Safe Margins
+- **Observed Issues:**  
+  1. Publisher logo container lacked explicit spatial boundaries and dimensions in the prompt, resulting in disproportionate AI-drawn containers.
+  2. Brand emblem was missing from the base of the spine, and spine title text was tightly kerned, leaving excess vertical space on the $3375\text{ px}$ spine canvas.
+  3. Barcode white exclusion box was omitted in production artwork.
+  4. Front cover top text header (`CURIOKRAFT-KIDS Presents`) was positioned too close to the physical trim/bleed edge ($Y \approx 90\text{ px}$).
+  5. Age range was inconsistent between front cover (`AGES 1-4 YEARS`) and back cover (`AGES 1-3`).
+- **Root Cause Analysis:**  
+  1. The AI prompt needed precise pixel/inch geometry and boundary constraints relative to the left and bottom canvas edges.
+  2. The spine required explicit bottom emblem placement with fold safe margin clearance ($0.0625\text{ in}$), while spine text needed increased tracking across spine height rather than widening font width.
+  3. Amazon KDP requires a pure clean white box at the locked coordinates for automated barcode stamping.
+  4. Cover prompts needed explicit safety margins ($\ge 1.0\text{ in} / 300\text{ px}$) from the top canvas edge to account for physical cutting tolerances.
+- **Fix Provided:**  
+  - Updated [`src/curiokraft_book/compositor/cover.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/compositor/cover.py):
+    - **Spine Emblem Overlay:** Stamped [`assets/emblem/curiokraft_emblem.png`](file:///h:/Store/CurioKraft/Publications/coloring-book/assets/emblem/curiokraft_emblem.png) at $Y = 2955\text{ px}$ (~12.5% from bottom edge), safely above the bottom trim line and centered on the $74\text{ px}$ spine.
+    - **Spine Title Tracking:** Increased letter tracking from `8 px` to **`26 px`**, spreading the title `TINY HANDS COLOR & LEARN` along the middle height of the spine without horizontal fold bleed.
+    - **Publisher Badge Sizing:** Stamped a crisp $480 \times 270\text{ px}$ white rounded card container at $X=180\text{ px}, Y=2925\text{ px}$ with the authentic [curiokraft_logo.PNG](file:///h:/Store/CurioKraft/Publications/coloring-book/assets/logo/curiokraft_logo.PNG) scaled to fill ~85% of the container.
+    - **Frozen Barcode Box:** Programmatically stamped the solid pure white rectangle ($700 \times 430\text{ px}$ @ 300 DPI, $X \in [1845, 2545], Y \in [2850, 3280]$) with zero lines and zero text.
+  - Updated [`src/curiokraft_book/orchestrator/debate_engine.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/orchestrator/debate_engine.py):
+    - **Locked Spatial Prompt:** Specified exact dimensions ($1.6\text{ in} / 480\text{ px} \times 0.9\text{ in} / 270\text{ px}$) and position ($0.60\text{ in} / 180\text{ px}$ from left/bottom edges) in back cover prompt.
+    - **Front Cover Top Safe Margin:** Mandated $\ge 1.0\text{ in} / 300\text{ px}$ clearance from the top canvas edge for all top banners.
+    - **Age Range Synchronization:** Synchronized age badges across both covers to **`AGES 1-4 YEARS`**.
+  - Re-exported [`generated/prompts_export.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/generated/prompts_export.md) and [`logs/agent_debates_log.md`](file:///h:/Store/CurioKraft/Publications/coloring-book/logs/agent_debates_log.md).
+
+---
+
+### 4. 🎨 Configurable Spine Modes & Seamless Continuous Background Art Flow (`clean_background`)
+- **Observed Issues:**  
+  1. On books with narrow spines (e.g. $0.248\text{ in} / 74\text{ px}$ for 110 pages), printing title text and emblems on the spine can feel cramped and carries physical binding cut tolerance risks.
+  2. The system lacked a configuration option to toggle spine text/emblems off in favor of a continuous, seamless flow of the background artwork connecting back and front covers.
+- **Root Cause Analysis:**  
+  Industry publishing best practices recommend leaving spines clean/blank on narrow volumes under $0.35\text{ in}$ to guarantee zero manufacturing fold creep. The compositor needed a declarative configuration in `book_config.yaml` and `curriculum.yaml` with mathematical array interpolation across the spine.
+- **Fix Provided:**  
+  - Updated [`config/book_config.yaml`](file:///h:/Store/CurioKraft/Publications/coloring-book/config/book_config.yaml) and [`config/curriculum.yaml`](file:///h:/Store/CurioKraft/Publications/coloring-book/config/curriculum.yaml):
+    - Added `spine` configuration block:
+      ```yaml
+      spine:
+        mode: "clean_background"  # Options: "clean_background" | "full" | "text_only" | "emblem_only"
+        render_text: false        # Explicit toggle for rotated 3D spine title
+        render_emblem: false      # Explicit toggle for bottom spine emblem
+      ```
+  - Updated [`src/curiokraft_book/compositor/cover.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/compositor/cover.py):
+    - Added horizontal mathematical interpolation between the rightmost pixel column of the back cover and the leftmost pixel column of the front cover across the $74\text{ px}$ spine width (`weights = np.linspace(0.0, 1.0, spine_w_px)`).
+    - When `mode: "clean_background"` is set, skips text and emblem rendering completely, generating a 100% seamless, continuous flow of the sunny yellow-to-sky cyan background artwork across the spine with zero visible seams.
+    - Preserved full backward compatibility for `mode: "full"`, `mode: "text_only"`, and `mode: "emblem_only"`.
+    - Added `spine_mode` tracking to [`CoverCompositorResult`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/compositor/cover.py#L80).
+  - Updated [`src/curiokraft_book/cli.py`](file:///h:/Store/CurioKraft/Publications/coloring-book/src/curiokraft_book/cli.py):
+    - Enhanced `curiokraft-book cover build` terminal summary to output the active spine mode.
+  - Automated tests: **All 19 unit tests passing (100% green).**
+
+
+

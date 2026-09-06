@@ -15,8 +15,8 @@ _Parameter_ | _Recommended Setting_ | _Rationale_
 **Aspect ratio** | **`3:4` (Vertical Portrait)** | Matches the standard US Letter 8.5 x 11.0 in publishing ratio (0.77 ≈≉ 3:4). Prevents awkward square (1:1) or widescreen landscape (16:9) letterboxing.
 **Resolution** | **`2K`** (or highest available) | Provides ultra-sharp vector-style line art contours when scaled to 300 DPI (2550 x 3300 px).
 **Output format** | **`Images only`** | Dedicates 100% of compute to image rendering and skips conversational text filler.
-**Temperature** | **`0.5 - 0.7��** (Interior Pages)<br>**`0.9 - 1.0`** (Cover Art) | Lower temperature for interior pages enforces strict adherence to zero-shading and no-text rules. Higher temperature for covers produces vibrant, creative color gradients.
-**Thinking level** | **`Minimal`+* / `Default` | Sufficient for direct visual synthesis.
+**Temperature** | **`0.9`** (Interior Pages & Cover Art) | 0.9 provides ideal creativity and adherence for preschool vector line art and vibrant cover gradients.
+**Thinking level** | **`Minimal`** / **`Default`** | Sufficient for direct visual synthesis.
 
 ### ⚽ Advanced Settings
 
@@ -38,7 +38,7 @@ Google AI Studio supports saving named **System Instructions** in your browser's
 > **Apply When Generating:** Pages 001 through 110 (all interior drawings, alphabet spreads, and counting spreads).
 
 ```text
-You are an expert co[Ytial children's coloring book illustrator specializing in high-contrast preschool line art for toddlers (ages 1-4).
+You are an expert commercial children's coloring book illustrator specializing in high-contrast preschool line art for toddlers (ages 1-4).
 
 CORE COMPLIANCE RULESS
 1. PURE LINE ART: Clean, continuous, closed black vector outlines with bold 5pt stroke weight.
@@ -82,17 +82,40 @@ All prompts are written to [`generated/prompts_export.md`](../generated/prompts_
 > The file `generated/prompts_export.md` also includes the full AI Studio settings and System Instruction presets right at the top, making it easy to reference during prompting sessions.
 
 ### Step 2: Generate in Google AI Studio
+
+You have two generation approaches: **Automated via Playwright (Recommended)** or **Manual Copy-Paste**.
+
+#### Option A: Automated via Playwright (Recommended — Zero Copy-Paste)
+1. **Launch Your Installed Chrome with Debugging**:
+   Double-click `start-chrome.bat` (or run `npm run chrome` in `Publications/playwright`).
+   This opens your regular Chrome with your Google account and loads the `Interior_Images` chat (`https://aistudio.google.com/prompts/1jeO_q736JGcGkrCTmHq1Sia4ZUILYSGx`).
+2. **Run Batch or Single-Page Generation**:
+   In `Publications/playwright`, run:
+   ```powershell
+   # Generate a single page (e.g. Strawberry P008)
+   npm start -- --pages P008
+
+   # Generate a batch of pages
+   npm start -- --pages P007,P008,P010
+
+   # Generate all 112 prompts autonomously
+   npm start
+   ```
+   Playwright automatically hooks into your active Chrome window over port 9222, submits prompts, awaits completion, and saves images straight to `inbox/raw_pages/`.
+
+#### Option B: Manual Copy-Paste
 1. **For Interior Pages:**
    - Select System Instruction: **`CurioKraft - Interior Coloring Pages`**
-   - Aspect ratio: **`3:4`** | Output: **`Images only`** | Temperature: **`0.5`** | Top P: **`0.95`**
+   - Aspect ratio: **`3:4`** | Output: **`Images only`** | Temperature: **`0.9`** | Top P: **`0.95`**
+   - Recommended Models: **`Nano Banana` (`gemini-2.5-flash-image`)** or **`Nano Banana 2` (`gemini-3.1-flash-image`)**
    - Copy prompt from `generated/prompts_export.md` → Paste into AI Studio
-   - Download the generated `.jpg` or `.png` to `inbox/raw_pages/raw_p005_banana.jpg` (or `.png`)
+   - Download the generated `.jpg` or `.png` to `inbox/raw_pages/raw_p007_orange.png`
 
 2. **For Covers:**
    - Select System Instruction: **`CurioKraft - Cover Art Master`**
-   - Aspect ratio: **`3:4`** | Output: **`Images only`+* | Temperature: **`0.9`** | Top P: **`0.95`+*
-   - Copy Front Cover prompt → Save as `inbox/front_cover.jpg` (or `.png`)
-    - Copy Back Cover prompt → Save as `inbox/back_cover.jpg` (or `.png`)
+   - Aspect ratio: **`3:4`** | Output: **`Images only`** | Temperature: **`0.9`** | Top P: **`0.95`**
+   - Copy Front Cover prompt → Save as `inbox/front_cover.png`
+   - Copy Back Cover prompt → Save as `inbox/back_cover.png`
 
 ### Step 3: Process & Assemble
 Run the automated ingestion and build pipeline:

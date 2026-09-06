@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # CurioKraft Kids — Taxonomy Configuration
 # =============================================================================
 # ALL category keyword sets and visual prompt templates live here.
@@ -99,185 +99,116 @@ living_keywords:
 
 categories:
 
-  vehicles:
+  fruits_vegetables:
+    category_name: "Fruits & Vegetables"
+    category_rule: >-
+      Preserve the natural recognizable shape, structure, and essential physical characteristics of the fruit or vegetable.
+      Keep surface details minimal and only include details that are naturally important for recognition.
     keywords:
-      - car
-      - bus
-      - truck
-      - train
-      - plane
-      - airplane
-      - boat
-      - yacht
-      - sailboat
-      - bicycle
-      - bike
-      - motorcycle
-      - scooter
-      - taxi
-      - ambulance
-      - fire_truck
-      - police_car
-      - helicopter
-      - rocket
-      - tractor
-      - wagon
+      - banana
+      - orange
+      - strawberry
+      - watermelon
+      - grape
+      - pineapple
+      - mango
+      - pear
+      - peach
+      - lemon
+      - carrot
+      - tomato
+      - potato
+      - corn
+      - broccoli
+      - pumpkin
+      - apple
+      - cherry
+      - coconut
+      - avocado
+      - cucumber
+      - onion
+      - pepper
+      - eggplant
     section_hints:
-      - vehicle
-      - transport
+      - fruit
+      - vegetable
+      - produce
     visual_template: >-
-      a cute classic {readable}, three-quarter side profile view displaying the complete
-      vehicle body, large chunky round wheels, big clear colorable windows,
-      and friendly preschool proportions
+      a single delicious {readable}, authentic simplified physical shape with large open coloring zones and zero micro-textures
+    negative_tokens:
+      - messy seeds
+      - toppings
+      - rind clutter
+      - face on fruit
+      - eyes on fruit
+      - smiling fruit
+      - cartoon face
 
-  paired_items:
+  food_drinks:
+    category_name: "Food & Drinks"
+    category_rule: >-
+      Preserve the recognizable physical form of the food or drink while simplifying unnecessary preparation,
+      packaging, texture, or decorative details. Include only essential features needed to identify the subject.
     keywords:
-      - shoes
-      - socks
-      - boots
-      - gloves
-      - mittens
-      - maracas
-      - chopsticks
-      - slippers
-      - earrings
-      - flip_flops
-    section_hints: []
-    visual_template: >-
-      a cute matching pair of toddler {readable} placed neatly side-by-side
-      with wide open coloring surfaces
-
-  # State-dependent items are resolved by the engine before category matching.
-  # They are listed here for documentation and future extension.
-  state_dependent:
-    items:
-      book:
-        visual_template: >-
-          a wide open toddler storybook with large clean blank colorable pages
-          and a simple bookmark ribbon
-      umbrella:
-        visual_template: >-
-          an open round canopy umbrella with distinct colorable stripe sections
-          and a clean curved J-handle
-      sunglasses:
-        visual_template: >-
-          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
-      glasses:
-        visual_template: >-
-          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
-
-  clothing:
-    keywords:
-      - shirt
-      - pants
-      - dress
-      - jacket
-      - coat
-      - sweater
-      - hat
-      - cap
-      - backpack
-      - bag
-      - scarf
-      - skirt
-      - shorts
-      - vest
-      - apron
-      - hoodie
-      - raincoat
-    section_hints:
-      - cloth
-      - wear
-      - fashion
-      - apparel
-    visual_template: >-
-      a classic toddler {readable}, clean 2D flat-lay presentation with neat smooth seams,
-      rounded collar and cuffs, large uncluttered coloring surfaces
-
-  household:
-    keywords:
-      - bed
-      - chair
-      - table
-      - lamp
-      - clock
-      - couch
-      - sofa
-      - bath
-      - bathtub
-      - toothbrush
-      - toothpaste
-      - soap
-      - comb
-      - brush
-      - towel
-      - mirror
-      - vase
-      - kettle
-      - pot
-      - pan
-      - mug
+      - pizza
+      - sandwich
+      - burger
+      - pancake
+      - cookie
+      - donut
+      - cake
+      - ice_cream
+      - popcorn
+      - milk
+      - juice
       - cup
-      - bowl
-      - plate
-      - fork
-      - spoon
-      - knife
-      - scissors
-      - broom
-      - bucket
+      - taco
+      - sushi
+      - hotdog
+      - pretzel
+      - waffle
+      - croissant
+      - muffin
+      - cupcake
     section_hints:
-      - house
-      - home
-      - furniture
-      - kitchen
-      - bathroom
+      - food
+      - drink
+      - snack
+      - meal
+      - beverage
+      - dessert
     visual_template: >-
-      a classic toddler {readable}, clear three-quarter isometric perspective view displaying
-      its iconic simplified physical structure (sturdy legs, smooth surface,
-      cozy preschool proportions), wide open coloring areas
+      a classic delicious {readable}, authentic simplified physical shape with large open coloring surfaces and zero messy textures
+    negative_tokens:
+      - messy crumbs
+      - wrappers
+      - brands
+      - logos
+      - face on food
+      - eyes on food
+      - cartoon food face
 
-  music:
+  toys_playtime:
+    category_name: "Toys & Playtime"
+    category_rule: >-
+      Preserve the recognizable basic structure of the toy while simplifying mechanical or decorative details.
+      Use large simple shapes and avoid tiny components.
     keywords:
-      - drum
-      - guitar
-      - piano
-      - trumpet
-      - flute
-      - xylophone
-      - violin
-      - tambourine
-      - bell
-      - harp
-      - accordion
-      - recorder
-      - saxophone
-      - tuba
-      - banjo
-      - ukulele
-      - cello
-      - clarinet
-    section_hints:
-      - music
-      - instrument
-      - musical
-    visual_template: >-
-      a classic toddler {readable} musical instrument, three-quarter angle view displaying
-      its simplified musical body (bold drum skin and drumsticks, large keys, or clear strings),
-      wide open coloring zones
-
-  toys:
-    keywords:
-      - pinwheel
+      - teddy_bear
+      - doll
+      - wagon
       - kaleidoscope
       - blocks
       - building_blocks
       - puzzle
+      - toy_robot
+      - pinwheel
       - sand_bucket
       - top
       - spinning_top
       - marbles
       - jump_rope
+      - rocking_horse
       - beach_ball
       - ball
       - yo_yo
@@ -292,10 +223,228 @@ categories:
       - play
       - game
     visual_template: >-
-      a classic retro toddler {readable} toy, chunky physical contours with
-      large bold colorable geometric badges and surfaces
+      a classic retro toddler {readable} toy, chunky physical contours with large bold colorable surfaces
+    negative_tokens:
+      - tiny mechanical parts
+      - complex gears
+      - loose wires
+      - background playroom
 
-  nature:
+  animals_creatures:
+    category_name: "Animals & Nature Creatures"
+    category_rule: >-
+      Preserve the natural recognizable anatomy and silhouette of the specified animal or creature.
+      Use simplified anatomy suitable for toddlers without turning the creature into an anthropomorphic cartoon character.
+    keywords:
+      - dog
+      - cat
+      - rabbit
+      - lion
+      - elephant
+      - giraffe
+      - monkey
+      - bear
+      - tiger
+      - horse
+      - cow
+      - sheep
+      - chicken
+      - duck
+      - frog
+      - butterfly
+      - snail
+      - bee
+      - puppy
+      - kitten
+      - bunny
+      - cub
+      - calf
+      - bird
+      - fish
+      - whale
+      - dolphin
+      - turtle
+    section_hints:
+      - animal
+      - creature
+      - wildlife
+      - safari
+      - farm
+      - pet
+    visual_template: >-
+      a cute friendly baby {readable}, adorable chubby preschool proportions, natural species-appropriate posture with sweet smiling round eyes and happy gentle expression
+    negative_tokens:
+      - human clothes
+      - human shoes
+      - anthropomorphic clothing
+      - standing on two legs
+      - upright on hind legs
+      - bipedal stance
+      - human-like posture
+      - human arms
+      - human hands
+      - human feet
+      - sitting like a human
+      - scary expression
+      - sharp teeth
+      - realistic fur texture
+      - complex scales
+      - realistic animal photo
+      - background habitat
+      - floor
+      - grass
+      - jungle
+
+  clothing_accessories:
+    category_name: "Clothing & Accessories"
+    category_rule: >-
+      Preserve the recognizable shape and basic construction of the clothing item or accessory.
+      Avoid complex fabric textures, intricate patterns, excessive folds, and decorative micro-details.
+    keywords:
+      - shirt
+      - pants
+      - dress
+      - socks
+      - shoes
+      - jacket
+      - backpack
+      - sunglasses
+      - coat
+      - sweater
+      - hat
+      - cap
+      - bag
+      - scarf
+      - skirt
+      - shorts
+      - vest
+      - apron
+      - hoodie
+      - raincoat
+      - boots
+      - mittens
+      - gloves
+    section_hints:
+      - clothing
+      - cloth
+      - wear
+      - fashion
+      - apparel
+      - accessory
+    visual_template: >-
+      a classic toddler {readable}, clean 2D flat-lay presentation with neat smooth seams, rounded contours, and large uncluttered coloring surfaces
+    negative_tokens:
+      - intricate fabric patterns
+      - plaid
+      - houndstooth
+      - zipper micro-teeth
+      - hanger
+      - person wearing clothes
+      - body
+
+  household_daily_living:
+    category_name: "Household & Daily Living"
+    category_rule: >-
+      Preserve the recognizable everyday form and essential functional characteristics of the household or daily-living object.
+      Simplify buttons, controls, textures, and small components.
+    keywords:
+      - bed
+      - chair
+      - table
+      - lamp
+      - clock
+      - toothbrush
+      - comb
+      - soap
+      - towel
+      - pillow
+      - couch
+      - sofa
+      - bath
+      - bathtub
+      - toothpaste
+      - brush
+      - mirror
+      - vase
+      - kettle
+      - pot
+      - pan
+      - mug
+      - bowl
+      - plate
+      - fork
+      - spoon
+      - knife
+      - scissors
+      - broom
+      - bucket
+    section_hints:
+      - household
+      - house
+      - home
+      - furniture
+      - kitchen
+      - bathroom
+      - daily
+    visual_template: >-
+      a classic toddler {readable}, clear three-quarter or frontal view displaying its iconic simplified physical structure, smooth clean surface, cozy preschool proportions, and wide open coloring areas
+    negative_tokens:
+      - room interior
+      - floor
+      - wall
+      - wallpaper
+      - electrical cords
+      - plugs
+      - tiny screws
+      - face on object
+
+  vehicles_transportation:
+    category_name: "Vehicles & Transportation"
+    category_rule: >-
+      Preserve the recognizable overall structure and defining characteristics of the vehicle.
+      Simplify mechanical components and avoid unnecessary technical details, while keeping the vehicle immediately identifiable.
+    keywords:
+      - car
+      - bus
+      - truck
+      - bicycle
+      - motorcycle
+      - taxi
+      - ambulance
+      - fire_truck
+      - police_car
+      - helicopter
+      - sailboat
+      - rocket
+      - train
+      - plane
+      - airplane
+      - boat
+      - yacht
+      - scooter
+      - tractor
+      - wagon
+    section_hints:
+      - vehicle
+      - transport
+      - transportation
+      - automobile
+    visual_template: >-
+      a cute classic {readable}, clear three-quarter or side profile view displaying the complete vehicle body, authentic support structure, big clear colorable panels, and friendly preschool proportions
+    negative_tokens:
+      - tiny mechanical chains
+      - complex engine parts
+      - road
+      - street
+      - background scenery
+      - exhaust smoke
+      - human driver
+
+  nature_sky_garden:
+    category_name: "Nature, Sky & Garden"
+    category_rule: >-
+      Represent the specified natural subject as a simple standalone form.
+      Preserve its recognizable natural characteristics while avoiding scenery, environmental context, or additional background elements.
     keywords:
       - tree
       - flower
@@ -322,70 +471,571 @@ categories:
     section_hints:
       - nature
       - sky
+      - garden
       - outdoor
       - weather
     visual_template: >-
-      a single majestic {readable}, standalone isolated central vignette with clean rounded
-      contours, strictly zero horizon, zero sky, zero landscape background
+      a single iconic {readable}, standalone isolated central vignette with clean rounded contours, strictly zero horizon, zero landscape background
+    negative_tokens:
+      - full landscape
+      - horizon line
+      - background forest
+      - mountain range
+      - sky backdrop
+      - ground plane
+      - scenery
 
-  food:
+  musical_instruments:
+    category_name: "Musical Instruments & Sound Toys"
+    category_rule: >-
+      Preserve the recognizable shape and essential structural characteristics of the musical instrument or sound toy.
+      Simplify strings, keys, holes, controls, and other small components where necessary.
     keywords:
-      - banana
-      - orange
-      - strawberry
-      - watermelon
-      - grape
-      - pineapple
-      - mango
-      - pear
-      - peach
-      - lemon
-      - carrot
-      - tomato
-      - potato
-      - corn
-      - broccoli
-      - pumpkin
-      - pizza
-      - sandwich
-      - burger
-      - pancake
-      - cookie
-      - donut
-      - cake
-      - ice_cream
-      - popcorn
-      - milk
-      - juice
-      - apple
-      - cherry
-      - coconut
-      - avocado
-      - cucumber
-      - onion
-      - pepper
-      - eggplant
-      - taco
-      - sushi
-      - hotdog
-      - pretzel
-      - waffle
-      - croissant
-      - muffin
-      - cupcake
+      - piano
+      - trumpet
+      - violin
+      - tambourine
+      - maraca
+      - harmonica
+      - drum
+      - guitar
+      - flute
+      - xylophone
+      - bell
+      - harp
+      - accordion
+      - recorder
+      - saxophone
+      - tuba
+      - banjo
+      - ukulele
+      - cello
+      - clarinet
     section_hints:
-      - fruit
-      - food
-      - vegetable
-      - snack
-      - dessert
+      - musical
+      - music
+      - instrument
+      - sound
     visual_template: >-
-      a single delicious {readable}, authentic simplified physical shape with 4 to 6 large
-      chunky distinct coloring segments (chunky seeds, big toppings, or smooth rind curves),
-      zero micro-textures
+      a classic toddler {readable} musical instrument, three-quarter angle view displaying its simplified musical body (large keys, bold strings, or clean drum surface), wide open coloring zones
+    negative_tokens:
+      - sheet music
+      - musical notes floating
+      - musician
+      - hands playing
+      - stage
+      - intricate frets
+      - micro-screws
+
+  paired_items:
+    category_name: "Paired Items"
+    category_rule: >-
+      Show a matching pair placed neatly side-by-side with balanced open coloring surfaces.
+    keywords:
+      - shoes
+      - socks
+      - boots
+      - gloves
+      - mittens
+      - maracas
+      - chopsticks
+      - slippers
+      - earrings
+      - flip_flops
+    section_hints: []
+    visual_template: >-
+      a cute matching pair of toddler {readable} placed neatly side-by-side with wide open coloring surfaces
+    negative_tokens:
+      - single shoe
+      - single sock
+      - feet
+      - floor
+
+  # State-dependent items are resolved by the engine before category matching.
+  state_dependent:
+    items:
+      book:
+        visual_template: >-
+          a wide open toddler storybook with large clean blank colorable pages and a simple bookmark ribbon
+      umbrella:
+        visual_template: >-
+          an open round canopy umbrella with distinct colorable stripe sections and a clean curved J-handle
+      sunglasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+      glasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+      chair:
+        visual_template: >-
+          a classic toddler wooden chair, three-quarter view displaying its sturdy legs, backrest, smooth surface, and cozy preschool proportions
+      table:
+        visual_template: >-
+          a classic toddler wooden table, three-quarter view displaying its sturdy four legs, smooth flat tabletop, and cozy preschool proportions
+      crib:
+        visual_template: >-
+          a classic toddler crib, three-quarter view displaying its sturdy corner posts, smooth safety rails, and cozy preschool proportions
 
   # Fallback — used when nothing else matches
   fallback:
+    category_name: "General Objects"
+    category_rule: >-
+      Preserve the iconic simplified physical silhouette with wide open coloring zones and clear contours.
     visual_template: >-
-      a single {readable}, clear three-quarter or frontal view displaying its most iconic,
-      authentic simplified physical silhouette with wide open coloring zones
+      a single {readable}, clear three-quarter or frontal view displaying its most iconic, authentic simplified physical silhouette with wide open coloring zones
+    negative_tokens:
+      - background scenery
+      - floor
+      - text
+      - shading
+
+# ---------------------------------------------------------------------------
+# ANIMAL LOCOMOTION & ANATOMY MATRIX (Authoritative Standard)
+# ---------------------------------------------------------------------------
+animal_locomotion_matrix:
+  quadrupeds:
+    locomotion_type: "quadrupedal_walking"
+    limb_count: 4
+    default_posture: "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body"
+    default_orientation: "three-quarter front view showing the complete body and limbs"
+    safeguards: "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture. Do not anthropomorphize the body."
+    negative_tokens:
+      - "standing on two legs"
+      - "upright on hind legs"
+      - "bipedal stance"
+      - "human-like posture"
+      - "human arms"
+      - "human hands"
+      - "human feet"
+      - "sitting like a human"
+      - "anthropomorphic body"
+
+  bipeds:
+    locomotion_type: "bipedal_walking"
+    limb_count: 2
+    default_posture: "natural bird standing posture on two legs, standing balanced on both feet"
+    default_orientation: "three-quarter view showing both feet supporting the body"
+    safeguards: "Head and neck positioned naturally. Do not use four legs. Do not give human arms or hands. Do not anthropomorphize the bird."
+    negative_tokens:
+      - "four legs"
+      - "quadrupedal stance"
+      - "human arms"
+      - "human hands"
+      - "human feet"
+      - "human shoes"
+      - "anthropomorphic body"
+
+  aquatic:
+    locomotion_type: "swimming"
+    limb_count: 0
+    default_posture: "natural horizontal streamlined swimming posture"
+    default_orientation: "side-facing swimming profile"
+    safeguards: "Fins and tail positioned naturally. Do not draw legs, feet, or terrestrial ground."
+    negative_tokens:
+      - "legs"
+      - "feet"
+      - "paws"
+      - "standing on ground"
+      - "walking upright"
+      - "terrestrial walking"
+
+  amphibians:
+    locomotion_type: "crouching_hopping"
+    limb_count: 4
+    default_posture: "natural low-to-ground crouching posture with folded hind legs and front paws grounded"
+    default_orientation: "three-quarter front view"
+    safeguards: "Do not stand upright like a human. Do not give human hands or clothing."
+    negative_tokens:
+      - "standing upright"
+      - "bipedal stance"
+      - "human arms"
+      - "human hands"
+      - "human legs"
+
+  invertebrates:
+    locomotion_type: "crawling"
+    limb_count: 0
+    default_posture: "natural low-to-ground crawling posture with shell balanced naturally"
+    default_orientation: "side profile view"
+    safeguards: "Do not draw legs, arms, or human features."
+    negative_tokens:
+      - "legs"
+      - "feet"
+      - "paws"
+      - "human arms"
+      - "human hands"
+
+  insects:
+    locomotion_type: "flying_perching"
+    limb_count: 6
+    default_posture: "natural resting or flying posture with symmetrical wings"
+    default_orientation: "balanced view showing complete wing silhouette"
+    safeguards: "Do not draw human arms, hands, shoes, or cartoon mascot clothes."
+    negative_tokens:
+      - "human arms"
+      - "human hands"
+      - "human shoes"
+      - "anthropomorphic clothing"
+
+  arboreal:
+    locomotion_type: "climbing_quadrupedal"
+    limb_count: 4
+    default_posture: "natural species-appropriate four-limbed posture or seated natural posture on all fours"
+    default_orientation: "three-quarter front view"
+    safeguards: "Do not stand upright like a human child. Do not give human feet or clothing."
+    negative_tokens:
+      - "standing upright on two legs"
+      - "human standing posture"
+      - "bipedal stance"
+      - "human clothes"
+      - "shoes"
+
+animal_species_profiles:
+  dog:
+    class: "quadrupeds"
+    anatomy: "natural canine anatomy with a compact baby puppy body, four sturdy legs, four paws, a wagging tail, floppy puppy ears, and a cute canine muzzle"
+  cat:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a rounded kitten body, four sturdy legs, four paws, a gentle tail, triangular ears, sweet whiskers, and a cute feline muzzle"
+  rabbit:
+    class: "quadrupeds"
+    anatomy: "natural leporid anatomy with a compact bunny body, long upright ears, four legs with characteristic folded hind legs and front paws, and a small fluffy tail"
+    posture_override: "natural quadrupedal rabbit stance, standing naturally on all four paws"
+  lion:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a compact baby lion cub body, four sturdy legs, four paws, a slender tail with a small tuft, rounded lion ears, and a gentle muzzle"
+  elephant:
+    class: "quadrupeds"
+    anatomy: "natural proboscidean anatomy with a rounded baby elephant body, four sturdy column-like legs, large soft flapping ears, a curved playful trunk, and a small tail"
+    safeguards_extra: "Trunk remains naturally attached to the face and curves gently downward and upward."
+  giraffe:
+    class: "quadrupeds"
+    anatomy: "natural giraffid anatomy with four long slender legs, a tall elegant neck, a compact torso, small ossicones, gentle ears, a short mane, and a slender tail"
+    safeguards_extra: "Tall neck remains anatomically connected to the torso and held naturally upright."
+  monkey:
+    class: "arboreal"
+    anatomy: "natural primate anatomy with a baby monkey body, four grasping limbs, four paws, rounded ears, and a long curved tail"
+  bear:
+    class: "quadrupeds"
+    anatomy: "natural ursid anatomy with a chubby baby bear cub body, four sturdy thick legs, four paws, small rounded ears, a short tail, and a cute bear muzzle"
+    safeguards_extra: "Strictly remain on all four legs. Do not rear up on hind legs."
+  tiger:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a baby tiger cub body, four sturdy legs, four paws, a long striped tail, rounded ears, and gentle wide preschool tiger stripe outlines"
+  horse:
+    class: "quadrupeds"
+    anatomy: "natural equine anatomy with a baby foal body, four long slender legs, four hooves, a soft mane, gentle ears, and a flowing tail"
+    posture_override: "natural equine quadrupedal standing posture, standing securely on all four hooves"
+  cow:
+    class: "quadrupeds"
+    anatomy: "natural bovine anatomy with a rounded baby calf body, four sturdy legs, four hooves, soft ears, a small tail, and gentle wide preschool spots"
+    posture_override: "natural bovine quadrupedal standing posture, standing securely on all four hooves"
+  sheep:
+    class: "quadrupeds"
+    anatomy: "natural ovine anatomy with a fluffy cloud-like rounded lamb body, four slender legs, small hooves, soft floppy ears, and a tiny tail"
+    posture_override: "natural ovine quadrupedal standing posture, standing securely on all four legs"
+  chicken:
+    class: "bipeds"
+    anatomy: "natural gallinaceous bird anatomy with a plump rounded chick body, two small wings, two legs with three-toed bird feet supporting the body, and a small cute beak"
+  duck:
+    class: "bipeds"
+    anatomy: "natural anseriform bird anatomy with a rounded baby duckling body, two small wings, two legs with webbed duck feet supporting the body, and a flat rounded bill"
+  frog:
+    class: "amphibians"
+    anatomy: "natural amphibian anatomy with a plump rounded frog body, big round protruding eyes on top of the head, front webbed paws, and folded powerful hind legs"
+  butterfly:
+    class: "insects"
+    anatomy: "natural lepidopteran insect anatomy with a slender insect body, two delicate antennae, and two pairs of large symmetrical open colorable wings with simple bold preschool shapes"
+  snail:
+    class: "invertebrates"
+    anatomy: "natural gastropod mollusk anatomy with a smooth spiral shell on its back, a soft elongated crawling foot, and two sweet antennae with rounded eye dots"
+  bee:
+    class: "insects"
+    anatomy: "natural hymenopteran insect anatomy with a chubby rounded bumblebee body, two small clear wings, two antennae, six small legs, and bold preschool stripe segments"
+
+# ---------------------------------------------------------------------------
+# VEHICLE STRUCTURAL DOMAIN & DESIGN MATRIX (Authoritative Standard)
+# ---------------------------------------------------------------------------
+vehicle_domain_matrix:
+  wheeled_four_wheel:
+    domain_type: "land_wheeled_automotive"
+    has_wheels: true
+    wheel_count: 4
+    default_support: "four chunky round rubber tires supporting a sturdy automotive chassis"
+    default_orientation: "three-quarter side-front profile view displaying the complete vehicle body and wheels"
+    safeguards: "Keep windows large, clean, and empty. Avoid complex engine details, exhaust smoke, or road lines."
+    negative_tokens:
+      - "tiny mechanical chains"
+      - "complex engine parts"
+      - "road"
+      - "street"
+      - "exhaust smoke"
+      - "human driver"
+      - "passengers"
+
+  wheeled_two_wheel:
+    domain_type: "land_cycle"
+    has_wheels: true
+    wheel_count: 2
+    default_support: "two clearly separated circular wheels connected by a clean tubular frame"
+    default_orientation: "side profile view clearly displaying both wheels and frame"
+    safeguards: "Show exactly two wheels. Do not draw four wheels or car bodies. Keep frame clean without complex sprockets."
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+      - "complex sprockets"
+      - "tiny gear teeth"
+      - "road"
+      - "street"
+      - "human rider"
+
+  rail_vehicles:
+    domain_type: "rail_transit"
+    has_wheels: true
+    wheel_count: "multiple_rail_wheels"
+    default_support: "multiple round steel train wheels aligned neatly along the bottom baseline"
+    default_orientation: "three-quarter side profile view displaying the locomotive cabin and wheels"
+    safeguards: "Keep train wheels cleanly circular and aligned. Avoid heavy smoke, dirty soot, or complex drive rods."
+    negative_tokens:
+      - "rubber car tires"
+      - "steering wheel"
+      - "complex pistons"
+      - "heavy dark smoke"
+      - "road"
+      - "street"
+
+  rotorcraft:
+    domain_type: "aerial_rotary"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "two horizontal parallel landing skids (runner rails) attached cleanly beneath the fuselage"
+    default_orientation: "three-quarter side profile view displaying the cockpit bubble, top rotor, tail boom, and landing skids"
+    safeguards: "Supported strictly by twin landing skids. Strictly DO NOT draw wheels, tires, car wheels, or landing gear wheels. Strictly DO NOT draw airplane wings."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear wheels"
+      - "airplane wings"
+      - "jet engines"
+      - "road"
+      - "street"
+      - "human pilot"
+
+  spacecraft:
+    domain_type: "space_propulsion"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "3 to 4 bold symmetrical stabilizing fins flared at the bottom base with a central rocket exhaust nozzle"
+    default_orientation: "upright vertical or dynamic slight upward angle displaying the complete rocket fuselage and base fins"
+    safeguards: "Supported strictly by aerodynamic base fins and rocket nozzle. Strictly DO NOT draw wheels, tires, road gear, landing tracks, or airplane wings."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "road wheels"
+      - "landing gear"
+      - "road"
+      - "street"
+      - "tracks"
+      - "ground"
+      - "wings with propellers"
+      - "astronaut face"
+
+  watercraft:
+    domain_type: "marine_surface"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a smooth curved buoyant boat hull resting on a clean horizontal waterline"
+    default_orientation: "three-quarter side profile view displaying the buoyant hull, deck, and sails or cabin"
+    safeguards: "Supported strictly by a floating boat hull. Strictly DO NOT draw wheels, tires, automotive axles, or legs."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear"
+      - "road"
+      - "pavement"
+      - "street"
+      - "tracks"
+      - "legs"
+      - "human captain"
+
+  fixed_wing_aircraft:
+    domain_type: "aerial_fixed_wing"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "aerodynamic flight stance with two wide symmetrical horizontal wings and clean minimal landing gear"
+    default_orientation: "three-quarter front-side view displaying the full wingspan, fuselage, and tail fin"
+    safeguards: "Wings must be smoothly attached to the cylindrical fuselage. Keep windows clean and colorable."
+    negative_tokens:
+      - "car wheels"
+      - "bicycle wheels"
+      - "road"
+      - "street"
+      - "complex mechanical engines"
+      - "military weapons"
+      - "passengers"
+      - "human pilot"
+
+  submersible:
+    domain_type: "marine_underwater"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a streamlined watertight cylindrical submarine hull with diving fins and rear propeller"
+    default_orientation: "side profile view displaying the elongated hull, conning tower, and periscope"
+    safeguards: "Strictly DO NOT draw wheels, tires, or landing tracks."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "landing gear"
+      - "legs"
+      - "road"
+
+  lighter_than_air:
+    domain_type: "aerial_buoyant"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a large buoyant fabric balloon envelope with a neat woven passenger basket suspended underneath"
+    default_orientation: "upright frontal or three-quarter view"
+    safeguards: "Strictly DO NOT draw wheels, wings, or engines."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "wings"
+      - "propellers"
+      - "road"
+
+vehicle_design_profiles:
+  rocket:
+    class: "spacecraft"
+    anatomy: "aerodynamic space rocket anatomy with a sleek rounded cylindrical fuselage tapering upward to a smooth conical nose cone, a circular round astronaut observation porthole, 3 to 4 bold symmetrical stabilizing fins flared at the bottom base, and a clean central propulsion exhaust nozzle"
+    support_override: "3 to 4 bold flared base stabilizing fins and a central propulsion nozzle, strictly NO wheels"
+    orientation: "upright vertical or dynamic slight upward angle displaying the complete rocket body, porthole, and base fins"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, or landing gear. The rocket is purely aerodynamic and fin-supported."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "road wheels"
+      - "landing gear"
+      - "road"
+      - "tracks"
+
+  helicopter:
+    class: "rotorcraft"
+    anatomy: "authentic rotary aircraft anatomy with a rounded aerodynamic cockpit cabin, large clear colorable windshield, a horizontal top main rotor mast with bold flat spinning blades, a slender tail boom with a small vertical tail rotor, and two horizontal parallel landing skids"
+    support_override: "two horizontal parallel landing skids (runner rails) attached beneath the cockpit cabin, strictly NO wheels"
+    orientation: "three-quarter side profile view displaying the cockpit bubble, top rotor blades, tail rotor, and twin landing skids"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, or airplane wings. Supported solely by twin runner skids."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear wheels"
+      - "airplane wings"
+      - "road"
+
+  sailboat:
+    class: "watercraft"
+    anatomy: "authentic watercraft anatomy with a smooth curved buoyant boat hull, a flat deck, a sturdy central vertical mast, large crisp triangular fabric sails, and a clean rudder outline"
+    support_override: "a smooth curved buoyant boat hull resting on a clean horizontal water baseline, strictly NO wheels"
+    orientation: "three-quarter side profile view displaying the buoyant hull, deck, mast, and sails"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, axles, or land vehicle parts."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "road"
+      - "pavement"
+
+  car:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler automobile anatomy with a smooth rounded car body, large chunky round wheels with clean hubcaps, front windshield, side windows, headlights, and clean bumpers"
+
+  bus:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler school bus anatomy with a long cheerful rectangular bus body, multiple large colorable square passenger windows, two large chunky round wheels along the visible side, front windshield, and front grille"
+
+  truck:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler pickup or transport truck anatomy with a sturdy front driver cab, clear windshield, an open rear cargo bed, and chunky round heavy-duty wheels"
+
+  bicycle:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler bicycle anatomy with exactly two clearly separated circular wheels, a simple sturdy diamond tubular frame, front handlebars, cozy seat, and pedals"
+    support_override: "exactly two clearly separated circular wheels connected by a clean frame"
+    orientation: "side profile view clearly displaying both wheels, handlebars, and seat"
+    safeguards_extra: "Show exactly two wheels. Do not draw four wheels or training wheels unless specified."
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+
+  motorcycle:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler motorcycle anatomy with two chunky round wheels, a sleek streamlined body frame, front handlebars with headlight, a cozy seat, and a clean simple exhaust pipe"
+    support_override: "two chunky round wheels supporting a streamlined cycle frame"
+    orientation: "side profile view clearly displaying both wheels and the streamlined frame"
+    safeguards_extra: "Show exactly two wheels. Do not draw a four-wheeled car body."
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+
+  taxi:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler city taxi cab anatomy with a rounded sedan body, large chunky round wheels, clean windows, and a cute classic taxi roof sign"
+
+  ambulance:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler ambulance anatomy with a sturdy van rescue body, chunky round wheels, clear windows, a clean medical cross emblem on the side, and a simple rooftop emergency light"
+
+  fire_truck:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler fire engine truck anatomy with a bold rescue cab, chunky round wheels, a clean folded extension ladder on the roof, side hose compartment, and rooftop emergency lights"
+
+  police_car:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler police patrol car anatomy with a sleek sedan body, chunky round wheels, clean windows, a friendly star emblem on the door, and a classic rooftop police light bar"
+
+  airplane:
+    class: "fixed_wing_aircraft"
+    anatomy: "classic toddler passenger airplane anatomy with a streamlined cylindrical fuselage, two wide horizontal wings, a vertical tail fin with horizontal stabilizers, round cockpit windshield, and oval cabin windows"
+    support_override: "streamlined flight stance with two wide wings, strictly NO car wheels"
+
+  train:
+    class: "rail_vehicles"
+    anatomy: "classic toddler steam locomotive train anatomy with a rounded engine boiler, cozy engineer cab, front cowcatcher grill, top smokestack, and multiple round train wheels aligned along the bottom"
+    support_override: "multiple round steel train wheels aligned neatly along the bottom baseline"
+
+  boat:
+    class: "watercraft"
+    anatomy: "classic toddler motorboat or tugboat anatomy with a buoyant rounded hull, a cozy steering cabin with windows, and a smooth deck"
+    support_override: "a buoyant rounded hull resting on a water baseline, strictly NO wheels"
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "road"
+
+  tractor:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler farm tractor anatomy with a high driver cab, very large chunky round rear wheels, smaller front wheels, a front engine hood, and an exhaust pipe"
+
+  wagon:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler pull wagon cart anatomy with a shallow open rectangular wagon bed, four small round wheels, and a long front pulling handle"
+
+  scooter:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler kick scooter anatomy with a low flat foot deck, two small round inline wheels, and a vertical steering column with handlebars"
+    support_override: "two small round wheels supporting a low foot deck"
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+

@@ -83,7 +83,19 @@ curiokraft-book ingest
 
 ---
 
-### Step 5: (Optional) Verify Visual Samples
+### Step 5: Render Special Pages (Page 001 Welcome & Page 110 Certificate)
+Page 001 and Page 110 are bookend milestone pages that use modular assets (`tiny_mascot`, `super_colorist_badge`, `welcome_scene`, `celebration_scene`, `crayons`, `stars`, `sparkles`) located in `inbox/special_assets/`.
+
+To render both pages with automated centering, white-background cleaning, and strict KDP 300 DPI typography:
+```powershell
+curiokraft-book generate special-pages
+```
+* **Output generated:** `output/interior_masters/page_001.png` & `output/interior_masters/page_110.png`
+* **Guide & Multi-Volume Customization:** See [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md)
+
+---
+
+### Step 6: (Optional) Verify Visual Samples
 To inspect sample pages before assembling the final book:
 ```powershell
 curiokraft-book sample generate --pages P002,P004,P006 --source inbox
@@ -92,8 +104,8 @@ Inspect the output in `output/samples/`.
 
 ---
 
-### Step 6: Build Cover & Assemble Interior PDF
-Once all pages are ingested:
+### Step 7: Build Cover & Assemble Interior PDF
+Once all pages are ingested and special pages are rendered:
 ```powershell
 # 1. Composite KDP Full-Wrap Cover (17.498 x 11.250 in with spine and barcode safe box)
 curiokraft-book cover build
@@ -106,13 +118,14 @@ curiokraft-book assemble interior
 
 ---
 
-### Step 7: Run Preflight Certification & Publish
+### Step 8: Run Preflight Certification & Publish
 ```powershell
 curiokraft-book preflight run
 ```
 * Runs the full 18-point KDP diagnostic check (margins, bleed, resolution, page count, barcode clearance).
 * Generates official certificate: `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`.
 * **Upload both files to Amazon KDP!**
+
 
 ---
 
@@ -209,6 +222,7 @@ curiokraft-book preflight run
 | `curiokraft-book sample generate` | Generate 1–5 sample master pages for review | Gate 2 visual check |
 | `curiokraft-book generate book` | Run full automated 110-page generation batch | **Track 2 (Automated API)** |
 | `curiokraft-book cover build` | Composite 17.498×11.250" cover PNG & PDF | After interior masters ready |
+| `curiokraft-book cover validate` | Validate KDP cover dimensions, spine, and barcode zone | Cover compliance verification |
 | `curiokraft-book assemble interior` | Compile 110 master PNGs into print interior PDF | After interior masters ready |
 | `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight | Final step before upload |
 | `curiokraft-book debate show -p P005` | Inspect 4-round agent debate log for a page | Debugging / Quality Audit |
@@ -221,7 +235,9 @@ For detailed mathematical specifications, prompt presets, multi-volume scaling, 
 
 * **[Google AI Studio Setup & Prompt Presets](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Aspect ratio, temperature, and copy-paste system instruction presets for web generation.
 * **[Amazon KDP Print Specifications & Barcode Rules](KDP_PRINT_SPECIFICATIONS.md)** — Official geometry tables, cover calculation formulas, spine thickness, safe margins, and barcode box positioning.
+* **[Amazon KDP Global Pricing & Royalty Strategy Guide](KDP_PRICING_AND_ROYALTY_GUIDE.md)** — Comprehensive analysis of the 60% vs. 50% royalty tier threshold, 14 regional marketplaces, European Fixed Price laws, and Expanded Distribution.
 * **[Multi-Volume Architecture & Scaling Guide (Vol 2, Vol 3)](MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, edit manifests, custom curriculum templates, and decouple data from code.
+* **[Upcoming Volumes Concept & Series Roadmap](UPCOMING_VOLUMES.md)** — Top 6 evaluated volume concepts (Ocean, Vehicles, Baby Animals, Dinos, Farm, Bedtime), mascot profiles, 110-page structures, and launch blueprint.
 * **[Multi-Agent System & Debate Engine](MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — Details on the 10 specialist agents, 4-round debate protocols, red-teaming, and debate log inspection.
 * **[Pre-Publish Checklist](ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md)** — Step-by-step 15-minute verification checklist before publishing to Amazon.
 * **[Image Inbox Naming Conventions](../inbox/raw_pages/README.md)** — Drop targets and naming fallback rules (`raw_p002_alphabet_a_to_m.png`, `raw_p006.png`, etc.).

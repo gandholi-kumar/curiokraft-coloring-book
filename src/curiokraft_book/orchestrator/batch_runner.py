@@ -8,7 +8,7 @@ from typing import Callable, Optional
 from PIL import Image, ImageDraw
 from pydantic import BaseModel, Field
 
-from curiokraft_book.orchestrator.model_client import ModelClient
+from curiokraft_book.orchestrator.model_client import ModelClient, DiskInboxProvider
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.state_manager import PipelineStateManager, PageStatus
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -39,15 +39,18 @@ class InteriorBatchRunner:
         manifest_path: str | Path = "manifest/pages.json",
         output_masters_dir: str | Path = "output/interior_masters",
         raw_generated_dir: str | Path = "generated/raw_pages",
+        inbox_dir: str | Path = "inbox/raw_pages",
         model_client: Optional[ModelClient] = None
     ):
         self.manifest_path = Path(manifest_path)
         self.output_masters_dir = Path(output_masters_dir)
         self.raw_generated_dir = Path(raw_generated_dir)
+        self.inbox_dir = Path(inbox_dir)
         self.model_client = model_client or ModelClient()
         self.debate_engine = DebateEngine(self.model_client)
         self.state_mgr = PipelineStateManager(manifest_path=self.manifest_path)
         self.retry_manager = RetryManager()
+        self.inbox_provider = DiskInboxProvider(inbox_dir=self.inbox_dir, raw_dir=self.raw_generated_dir)
 
         self.output_masters_dir.mkdir(parents=True, exist_ok=True)
         self.raw_generated_dir.mkdir(parents=True, exist_ok=True)
@@ -72,10 +75,22 @@ class InteriorBatchRunner:
         final_master_path = self.output_masters_dir / f"page_{page_num:03d}.png"
 
         if page_type == "welcome_page":
-            render_welcome_page(output_path=final_master_path)
+            raw_img_path = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.png"
+            found_inbox = self.inbox_provider.find_image(page_id=page_id, page_number=page_num, canonical_label=canonical)
+
+            if found_inbox and found_inbox.exists():
+                logger.info(f"Ingesting user welcome illustration from {found_inbox}")
+                with Image.open(found_inbox) as img:
+                    raw_canvas = img.convert("L")
+                    raw_canvas.save(raw_img_path, dpi=(300, 300))
+                self.state_mgr.update_page(page_id, status=PageStatus.GENERATED, raw_image_path=str(raw_img_path))
+
+            mascot_path = raw_img_path if raw_img_path.exists() else None
+            render_welcome_page(output_path=final_master_path, mascot_image_path=mascot_path)
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
+                raw_image_path=str(raw_img_path) if raw_img_path.exists() else None,
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -84,10 +99,22 @@ class InteriorBatchRunner:
             return final_master_path
             
         if page_type == "certificate_page":
-            render_certificate_page(output_path=final_master_path)
+            raw_img_path = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.png"
+            found_inbox = self.inbox_provider.find_image(page_id=page_id, page_number=page_num, canonical_label=canonical)
+
+            if found_inbox and found_inbox.exists():
+                logger.info(f"Ingesting user certificate illustration from {found_inbox}")
+                with Image.open(found_inbox) as img:
+                    raw_canvas = img.convert("L")
+                    raw_canvas.save(raw_img_path, dpi=(300, 300))
+                self.state_mgr.update_page(page_id, status=PageStatus.GENERATED, raw_image_path=str(raw_img_path))
+
+            award_path = raw_img_path if raw_img_path.exists() else None
+            render_certificate_page(output_path=final_master_path, award_image_path=award_path)
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
+                raw_image_path=str(raw_img_path) if raw_img_path.exists() else None,
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -108,28 +135,55 @@ class InteriorBatchRunner:
 
         # 2. Raw Raster Generation via Pluggable Image Provider Strategy
         raw_img_path = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.png"
+        raw_img_jpg = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.jpg"
 
-        raw_canvas = self.model_client.generate_illustration(
-            positive_prompt=debate_res.positive_prompt,
-            negative_prompt=debate_res.negative_prompt,
-            canonical_label=canonical,
-            section=section,
-            source_mode=source_mode,
-            page_id=page_id,
-            page_number=page_num,
-            force_fresh=force_fresh
-        )
+        found_inbox = self.inbox_provider.find_image(page_id=page_id, page_number=page_num, canonical_label=canonical)
+
+        if found_inbox and found_inbox.exists() and not force_fresh:
+            logger.info(f"Using fresh user illustration from inbox: {found_inbox}")
+            raw_canvas = Image.open(found_inbox).convert("L")
+        elif raw_img_path.exists() and raw_img_path.stat().st_size > 500 and not force_fresh:
+            logger.info(f"Using existing raw illustration from {raw_img_path}")
+            raw_canvas = Image.open(raw_img_path).convert("L")
+        elif raw_img_jpg.exists() and raw_img_jpg.stat().st_size > 500 and not force_fresh:
+            logger.info(f"Using existing raw illustration from {raw_img_jpg}")
+            raw_canvas = Image.open(raw_img_jpg).convert("L")
+        else:
+            raw_canvas = self.model_client.generate_illustration(
+                positive_prompt=debate_res.positive_prompt,
+                negative_prompt=debate_res.negative_prompt,
+                canonical_label=canonical,
+                section=section,
+                source_mode=source_mode,
+                page_id=page_id,
+                page_number=page_num,
+                force_fresh=force_fresh
+            )
+
+        page_type = page_data.get("type", "")
+        composition = page_data.get("composition", "")
+        is_spread = (page_type in ["educational_spread", "counting_spread"]) or (composition == "flashcard_grid")
 
         # Standardize canvas to 300 DPI master dimensions (2550 x 3300 px)
         if raw_canvas.size != (2550, 3300):
             canvas_300 = Image.new("L", (2550, 3300), 255)
-            scale_ratio = min(2000 / raw_canvas.width, 2300 / raw_canvas.height)
-            new_w = int(raw_canvas.width * scale_ratio)
-            new_h = int(raw_canvas.height * scale_ratio)
-            resized = raw_canvas.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            pos_x = (2550 - new_w) // 2
-            pos_y = 650 + (2300 - new_h) // 2
-            canvas_300.paste(resized, (pos_x, pos_y))
+            if is_spread:
+                # Spreads occupy the full safe printable area (2250 x 3000 max), centered, with 0.50 in safe margins
+                scale_ratio = min(2250 / raw_canvas.width, 3000 / raw_canvas.height)
+                new_w = int(raw_canvas.width * scale_ratio)
+                new_h = int(raw_canvas.height * scale_ratio)
+                resized = raw_canvas.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                pos_x = (2550 - new_w) // 2
+                pos_y = (3300 - new_h) // 2
+                canvas_300.paste(resized, (pos_x, pos_y))
+            else:
+                scale_ratio = min(2000 / raw_canvas.width, 2300 / raw_canvas.height)
+                new_w = int(raw_canvas.width * scale_ratio)
+                new_h = int(raw_canvas.height * scale_ratio)
+                resized = raw_canvas.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                pos_x = (2550 - new_w) // 2
+                pos_y = 650 + (2300 - new_h) // 2
+                canvas_300.paste(resized, (pos_x, pos_y))
             raw_canvas = canvas_300
 
         raw_canvas.save(raw_img_path, dpi=(300, 300))
@@ -139,7 +193,8 @@ class InteriorBatchRunner:
         rescued_img_path = self.output_masters_dir / f"temp_rescued_{page_num:03d}.png"
         rescue_ok, msg, violations = self.retry_manager.attempt_programmatic_rescue(
             raw_img_path,
-            rescued_img_path
+            rescued_img_path,
+            is_spread=is_spread
         )
 
         if not rescue_ok:
@@ -153,11 +208,16 @@ class InteriorBatchRunner:
 
         # 4. Programmatic Vector Typography Overlay
         final_master_path = self.output_masters_dir / f"page_{page_num:03d}.png"
-        typo_res = composite_typography(
-            image_input=rescued_img_path,
-            display_label=label,
-            output_path=final_master_path
-        )
+        if is_spread:
+            import shutil
+            shutil.copyfile(str(rescued_img_path), str(final_master_path))
+            logger.info(f"Bypassed external typography overlay for spread {page_id} ({canonical}).")
+        else:
+            typo_res = composite_typography(
+                image_input=rescued_img_path,
+                display_label=label,
+                output_path=final_master_path
+            )
 
         # Clean up temp file
         if rescued_img_path.exists():

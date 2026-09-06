@@ -343,6 +343,44 @@ flowchart TD
 
 ### Agent 8: Illustration Prompt Engineering Agent (`AGT-008-PROMPTGEN`)
 * **Role:** Master Illustration Prompt Engineer | **Temperature:** 0.2 | **Output Format:** JSON
+
+#### 🏛️ The 5-Tier Hierarchical Master Prompt Architecture
+Rather than maintaining rigid, run-on paragraph templates or disparate independent prompts per object, `AGT-008-PROMPTGEN` synthesizes prompts dynamically using a 5-tier composition hierarchy:
+```text
+┌────────────────────────────────────────────────────────┐
+│ 1. MASTER PROMPT v1.0                                  │
+│    Universal 2D toddler line art, extra-thick outlines,│
+│    wide open coloring zones, #FFFFFF background,       │
+│    strictly NO text, NO borders, NO shading.           │
+└───────────────────────────┬────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────┐
+│ 2. CATEGORY RULE (from config/taxonomy.yaml)           │
+│    9 clean behavioral rules (Fruits, Animals, Vehicles,│
+│    Household, etc.) describing how shapes simplify.    │
+└───────────────────────────┬────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────┐
+│ 3. SUBJECT NAME (from manifest/objects.json)           │
+│    Iconic canonical name and display label.            │
+└───────────────────────────┬────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────┐
+│ 4. OBJECT-SPECIFIC RULE (sparse, from objects.json)    │
+│    Only for items with physical ambiguity:             │
+│    - Grape: bunch of grapes with stem                  │
+│    - Watermelon: triangular wedge with rind & seeds    │
+│    - Bicycle: 2 wheels, simple frame, handlebars       │
+└───────────────────────────┬────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────┐
+│ 5. COMPACT NEGATIVE PROMPT                             │
+│    Targeted, category-aware, no contradictory tokens   │
+│    (e.g., animals retain natural eyes/ears/paws).      │
+└────────────────────────────────────────────────────────┘
+```
+This guarantees complete visual consistency across the entire book, eliminates prompt drift, and completely decouples per-volume object data from the generation engine.
+
 * **Output Schema:**
   ```json
   {

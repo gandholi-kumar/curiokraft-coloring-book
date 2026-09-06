@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from curiokraft_book.compositor.typography import composite_typography
-from curiokraft_book.compositor.brand import get_brand_logo, get_brand_emblem
+from curiokraft_book.compositor.brand import get_brand_logo, get_brand_emblem, create_publisher_badge
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.validators.pdf import validate_interior_pdf
@@ -55,6 +55,22 @@ def test_brand_logo_and_emblem():
     assert emblem.size == (180, 180)
 
 
+def test_create_publisher_badge():
+    badge_patch, pad_px = create_publisher_badge(
+        card_w=640,
+        card_h=420,
+        radius=28,
+        offset_x=16,
+        offset_y=20,
+        blur_radius=20,
+        shadow_alpha=95,
+    )
+    assert badge_patch is not None
+    assert pad_px > 0
+    assert badge_patch.width == 640 + pad_px * 2
+    assert badge_patch.height == 420 + pad_px * 2
+
+
 def test_composite_kdp_cover(temp_dir: Path):
     cover_png = temp_dir / "test_cover.png"
     cover_pdf = temp_dir / "test_cover.pdf"
@@ -89,3 +105,26 @@ def test_compile_interior_pdf(temp_dir: Path, sample_raw_page: Path):
     assert pdf_path.exists()
     assert result.total_pages_compiled == 3
     assert result.validation.passed is True
+
+
+def test_render_special_pages(temp_dir: Path):
+    from curiokraft_book.compositor.special_pages import render_welcome_page, render_certificate_page
+    
+    p001_out = temp_dir / "page_001.png"
+    res1 = render_welcome_page(output_path=str(p001_out))
+    assert res1.exists()
+    with Image.open(res1) as img1:
+        assert img1.size == (2550, 3300)
+        assert img1.mode == "L"
+        dpi = img1.info.get("dpi", (300, 300))
+        assert int(round(dpi[0])) >= 300
+
+    p110_out = temp_dir / "page_110.png"
+    res110 = render_certificate_page(output_path=str(p110_out))
+    assert res110.exists()
+    with Image.open(res110) as img110:
+        assert img110.size == (2550, 3300)
+        assert img110.mode == "L"
+        dpi = img110.info.get("dpi", (300, 300))
+        assert int(round(dpi[0])) >= 300
+

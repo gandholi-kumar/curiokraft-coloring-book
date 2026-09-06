@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 import yaml
 
 from curiokraft_book.compositor.fonts import get_typography_font
-from curiokraft_book.compositor.brand import get_brand_logo, get_brand_emblem
+from curiokraft_book.compositor.brand import get_brand_logo, get_brand_emblem, create_publisher_badge
 
 KDP_PAPER_MULTIPLIERS = {
     "white": 0.002252,
@@ -89,6 +89,7 @@ class CoverCompositorResult(BaseModel):
     spine_width_px: int
     spine_center_x_px: int
     barcode_box_px: tuple[int, int, int, int]
+    spine_mode: str = "clean_background"
     violations: list[str] = Field(default_factory=list)
 
 
@@ -331,6 +332,7 @@ def _draw_preview_card_icon(draw: ImageDraw.ImageDraw, obj: str, cx: int, cy: in
 
 def composite_kdp_cover(
     front_hero_art_path: Optional[str | Path] = None,
+    back_art_path: Optional[str | Path] = None,
     output_png_path: str | Path = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png",
     output_pdf_path: Optional[str | Path] = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf",
     manifest_path: str | Path = "manifest/pages.json",
@@ -367,6 +369,28 @@ def composite_kdp_cover(
     overall_h_in = dim_dict["overall_height_in"] # 11.250 in
     spine_w_in = dim_dict["spine_width_in"]      # 0.248 in
     
+    # Resolve Spine Display Configuration (Priority: book_config.yaml -> curriculum.yaml -> "clean_background")
+    spine_cfg = b_cfg.get("cover", {}).get("spine", {})
+    if not spine_cfg:
+        spine_cfg = c_cfg.get("spine", {})
+
+    spine_mode = str(spine_cfg.get("mode", "clean_background")).lower().strip()
+    if spine_mode in ["clean_background", "clean", "blank", "seamless", "none", "false"]:
+        spine_render_text = False
+        spine_render_emblem = False
+    elif spine_mode in ["full", "all", "true"]:
+        spine_render_text = True
+        spine_render_emblem = True
+    elif spine_mode in ["text_only", "text"]:
+        spine_render_text = True
+        spine_render_emblem = False
+    elif spine_mode in ["emblem_only", "emblem"]:
+        spine_render_text = False
+        spine_render_emblem = True
+    else:
+        spine_render_text = bool(spine_cfg.get("render_text", False))
+        spine_render_emblem = bool(spine_cfg.get("render_emblem", False))
+    
     spine_center_x = total_w_px // 2
     spine_left_x = spine_center_x - (spine_w_px // 2)
     spine_right_x = spine_left_x + spine_w_px
@@ -376,8 +400,20 @@ def composite_kdp_cover(
     front_candidates = [
         Path("inbox/front_cover.png"),
         Path("inbox/front_cover.jpg"),
+        Path("inbox/front_cover_raw.png"),
+        Path("inbox/front_cover_raw.jpg"),
+        Path("inbox/raw_front_cover.png"),
+        Path("inbox/raw_front_cover.jpg"),
+        Path("inbox/front_cover.png.jpg"),
+        Path("inbox/front_cover.jpg.png"),
         Path("inbox/cover_front.png"),
         Path("inbox/cover_front.jpg"),
+        Path("inbox/raw_pages/front_cover.png"),
+        Path("inbox/raw_pages/front_cover.jpg"),
+        Path("inbox/raw_pages/front_cover_raw.png"),
+        Path("inbox/raw_pages/front_cover_raw.jpg"),
+        Path("generated/cover/front_cover_raw.png"),
+        Path("generated/cover/front_cover_raw.jpg"),
         Path("assets/cover/front_cover_master.png"),
         Path("assets/cover/front_cover.png"),
         Path("dont-delete-alter/bkp/front cover 110.png")
@@ -395,12 +431,29 @@ def composite_kdp_cover(
     back_candidates = [
         Path("inbox/back_cover.png"),
         Path("inbox/back_cover.jpg"),
+        Path("inbox/back_cover_raw.png"),
+        Path("inbox/back_cover_raw.jpg"),
+        Path("inbox/raw_back_cover.png"),
+        Path("inbox/raw_back_cover.jpg"),
+        Path("inbox/back_cover.png.jpg"),
+        Path("inbox/back_cover.jpg.png"),
         Path("inbox/cover_back.png"),
         Path("inbox/cover_back.jpg"),
+        Path("inbox/raw_pages/back_cover.jpg"),
+        Path("inbox/raw_pages/back_cover.png"),
+        Path("inbox/raw_pages/back_cover_raw.jpg"),
+        Path("inbox/raw_pages/back_cover_raw.png"),
+        Path("inbox/raw_pages/cover_back.jpg"),
+        Path("inbox/raw_pages/cover_back.png"),
+        Path("generated/cover/back_cover_raw.png"),
+        Path("generated/cover/back_cover_raw.jpg"),
         Path("assets/cover/back_cover_master.png"),
         Path("assets/cover/back_cover.png"),
         Path("dont-delete-alter/bkp/back cover 110.png")
     ]
+    if back_art_path:
+        back_candidates.insert(0, Path(back_art_path))
+
     back_art_path = None
     for bc in back_candidates:
         if bc.exists() and bc.is_file() and bc.stat().st_size > 1000:
@@ -429,69 +482,90 @@ def composite_kdp_cover(
             cover.paste(back_panel, (0, 0))
             cover.paste(front_panel, (spine_right_x, 0))
 
-        # Dynamic Spine Panel with Seamless Vertical Gradient
-        spine_img = Image.new("RGBA", (spine_w_px, total_h_px), (0, 0, 0, 0))
-        sdraw = ImageDraw.Draw(spine_img)
-        
-        grad_cfg = c_cfg.get("gradient", {})
-        top_rgb = grad_cfg.get("top_color_rgb", [255, 224, 102])
-        bot_rgb = grad_cfg.get("bottom_color_rgb", [34, 211, 238])
-        
-        for y in range(total_h_px):
-            ratio = y / total_h_px
-            r = int(top_rgb[0] + ratio * (bot_rgb[0] - top_rgb[0]))
-            g = int(top_rgb[1] + ratio * (bot_rgb[1] - top_rgb[1]))
-            b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
-            sdraw.line([(0, y), (spine_w_px, y)], fill=(r, g, b, 255))
+        # Dynamic Spine Panel: Seamless Background Art Flow
+        # Interpolate horizontally between the rightmost edge of back cover and leftmost edge of front cover
+        # to guarantee 100% continuous gradient and texture flow with zero visible seams
+        try:
+            back_arr = np.array(back_panel, dtype=np.float32)
+            front_arr = np.array(front_panel, dtype=np.float32)
+            left_col = back_arr[:, -1, :4]
+            right_col = front_arr[:, 0, :4]
+            weights = np.linspace(0.0, 1.0, spine_w_px, dtype=np.float32).reshape(1, spine_w_px, 1)
+            spine_arr = (1.0 - weights) * left_col[:, np.newaxis, :] + weights * right_col[:, np.newaxis, :]
+            spine_img = Image.fromarray(np.clip(spine_arr, 0, 255).astype(np.uint8))
+        except Exception:
+            spine_img = Image.new("RGBA", (spine_w_px, total_h_px), (0, 0, 0, 0))
+            sdraw = ImageDraw.Draw(spine_img)
+            grad_cfg = c_cfg.get("gradient", {})
+            top_rgb = grad_cfg.get("top_color_rgb", [255, 224, 102])
+            bot_rgb = grad_cfg.get("bottom_color_rgb", [34, 211, 238])
+            for y in range(total_h_px):
+                ratio = y / total_h_px
+                r = int(top_rgb[0] + ratio * (bot_rgb[0] - top_rgb[0]))
+                g = int(top_rgb[1] + ratio * (bot_rgb[1] - top_rgb[1]))
+                b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
+                sdraw.line([(0, y), (spine_w_px, y)], fill=(r, g, b, 255))
 
-        # Vertical Rotated Spine Title
-        spine_font = get_typography_font(font_size_pt=38)
-        spine_text = title.upper()
-        
-        spine_strip = Image.new("RGBA", (2200, max(68, spine_w_px - 8)), (0, 0, 0, 0))
-        st_draw = ImageDraw.Draw(spine_strip)
-        
-        title_palette = c_cfg.get("title_styling", {}).get("palette", [
-            "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#3498DB", "#9B59B6"
-        ])
-        
-        _draw_3d_multicolor_title(
-            canvas=spine_strip,
-            text=spine_text,
-            font=spine_font,
-            center_x=1100,
-            y=10,
-            palette=title_palette,
-            stroke_color="#2C1810",
-            shadow_color="#1A0C06",
-            stroke_width=6,
-            shadow_offset=4,
-            letter_spacing=8
-        )
-        
-        rotated_spine_txt = spine_strip.rotate(270, expand=True, resample=Image.Resampling.BICUBIC)
-        sp_txt_x = (spine_w_px - rotated_spine_txt.width) // 2
-        sp_txt_y = (total_h_px - rotated_spine_txt.height) // 2 - 120
-        spine_img.paste(rotated_spine_txt, (sp_txt_x, sp_txt_y), rotated_spine_txt)
+        # Optional: Vertical Rotated Spine Title (rendered only when enabled by config)
+        if spine_render_text:
+            spine_font = get_typography_font(font_size_pt=38)
+            spine_text = title.upper()
+            spine_strip = Image.new("RGBA", (2600, max(68, spine_w_px - 8)), (0, 0, 0, 0))
+            title_palette = c_cfg.get("title_styling", {}).get("palette", [
+                "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#3498DB", "#9B59B6"
+            ])
+            _draw_3d_multicolor_title(
+                canvas=spine_strip,
+                text=spine_text,
+                font=spine_font,
+                center_x=1300,
+                y=10,
+                palette=title_palette,
+                stroke_color="#2C1810",
+                shadow_color="#1A0C06",
+                stroke_width=6,
+                shadow_offset=4,
+                letter_spacing=26
+            )
+            rotated_spine_txt = spine_strip.rotate(270, expand=True, resample=Image.Resampling.BICUBIC)
+            sp_txt_x = (spine_w_px - rotated_spine_txt.width) // 2
+            sp_txt_y = 300
+            spine_img.paste(rotated_spine_txt, (sp_txt_x, sp_txt_y), rotated_spine_txt)
+
+        # Optional: Brand Emblem at the base of the spine (rendered only when enabled by config)
+        if spine_render_emblem:
+            brand_emblem = get_brand_emblem(target_size_px=48, auto_remove_white_bg=True)
+            if brand_emblem:
+                emblem_x = (spine_w_px - brand_emblem.width) // 2
+                emblem_y = total_h_px - 420  # ~12.5% from bottom canvas edge
+                spine_img.paste(brand_emblem, (emblem_x, emblem_y), brand_emblem)
         
         # Paste Spine onto Cover Canvas
         cover.paste(spine_img, (spine_left_x, 0), spine_img)
 
-        # Barcode Box (Exact Amazon KDP Specification: 2.0 x 1.2 in = 600 x 360 px)
-        barcode_w_px = 600
-        barcode_h_px = 360
-        margin_from_spine = 150
-        margin_from_bottom = 150
-        
-        barcode_x2 = spine_left_x - margin_from_spine
-        barcode_x1 = barcode_x2 - barcode_w_px
-        barcode_y2 = total_h_px - margin_from_bottom
-        barcode_y1 = barcode_y2 - barcode_h_px
-        
-        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255), outline=(220, 220, 220, 255), width=2)
-        
-        f_bc = get_typography_font(font_size_pt=20)
-        draw.text(((barcode_x1 + barcode_x2) // 2, (barcode_y1 + barcode_y2) // 2), "BARCODE EXCLUSION ZONE", font=f_bc, fill=(200, 200, 200), anchor="mm")
+        # Draw Clean White Publisher Badge Container with Bottom/Right Box Shadow & Authentic Logo (Option H5)
+        badge_w = 640
+        badge_h = 420
+        badge_x = 180
+        badge_y = 2860  # Perfectly balanced vertically with bottom safe margin (barcode base at 3280 px)
+        badge_patch, pad_px = create_publisher_badge(
+            card_w=badge_w,
+            card_h=badge_h,
+            radius=28,
+            offset_x=16,
+            offset_y=20,
+            blur_radius=20,
+            shadow_alpha=95,
+        )
+        cover.paste(badge_patch, (badge_x - pad_px, badge_y - pad_px), badge_patch)
+
+        # Solid Pure White Barcode Box (Exact Frozen KDP Specification: 700 x 430 px @ 300 DPI)
+        # Amazon imprints barcode automatically at print time. Zero placeholder text or fake lines.
+        barcode_x1 = 1845
+        barcode_x2 = 2545
+        barcode_y1 = 2850
+        barcode_y2 = 3280
+        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255))
 
     else:
         # =====================================================================
@@ -508,14 +582,15 @@ def composite_kdp_cover(
             b = int(top_rgb[2] + ratio * (bot_rgb[2] - top_rgb[2]))
             draw.line([(0, y), (total_w_px, y)], fill=(r, g, b, 255))
             
-        sp_top = grad_cfg.get("spine_top_color_rgb", [255, 215, 80])
-        sp_bot = grad_cfg.get("spine_bottom_color_rgb", [250, 190, 60])
-        for y in range(total_h_px):
-            ratio = y / total_h_px
-            r = int(sp_top[0] + ratio * (sp_bot[0] - sp_top[0]))
-            g = int(sp_top[1] + ratio * (sp_bot[1] - sp_top[1]))
-            b = int(sp_top[2] + ratio * (sp_bot[2] - sp_top[2]))
-            draw.line([(spine_left_x, y), (spine_right_x, y)], fill=(r, g, b, 255))
+        if spine_mode not in ["clean_background", "clean", "blank", "seamless", "none", "false"]:
+            sp_top = grad_cfg.get("spine_top_color_rgb", [255, 215, 80])
+            sp_bot = grad_cfg.get("spine_bottom_color_rgb", [250, 190, 60])
+            for y in range(total_h_px):
+                ratio = y / total_h_px
+                r = int(sp_top[0] + ratio * (sp_bot[0] - sp_top[0]))
+                g = int(sp_top[1] + ratio * (sp_bot[1] - sp_top[1]))
+                b = int(sp_top[2] + ratio * (sp_bot[2] - sp_top[2]))
+                draw.line([(spine_left_x, y), (spine_right_x, y)], fill=(r, g, b, 255))
 
         # Floating Bubbles & Sparkling Stars
         watermark_layer = Image.new("RGBA", (total_w_px, total_h_px), (0, 0, 0, 0))
@@ -541,14 +616,20 @@ def composite_kdp_cover(
         # Procedural Hero Illustration
         _draw_procedural_hero_placeholder(cover, (spine_right_x + total_w_px) // 2, 1850)
         
-        # Barcode Box
-        barcode_w_px = 600
-        barcode_h_px = 360
-        barcode_x2 = spine_left_x - 150
-        barcode_x1 = barcode_x2 - barcode_w_px
-        barcode_y2 = total_h_px - 150
-        barcode_y1 = barcode_y2 - barcode_h_px
-        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255), outline=(203, 213, 225), width=2)
+        # Publisher Badge Container (Locked Multi-Volume Standard: 640 x 420 px @ 300 DPI)
+        badge_patch, pad_px = create_publisher_badge(
+            card_w=640,
+            card_h=420,
+            radius=28,
+            offset_x=16,
+            offset_y=20,
+            blur_radius=20,
+            shadow_alpha=95,
+        )
+        cover.paste(badge_patch, (180 - pad_px, 2860 - pad_px), badge_patch)
+
+        # Barcode Box (Locked Multi-Volume Standard: 700 x 430 px @ 300 DPI)
+        draw.rectangle([1845, 2850, 2545, 3280], fill=(255, 255, 255, 255))
 
     # =========================================================================
     # Final Export (Lossless RGB PNG & Press-Quality CMYK PDF)
@@ -578,6 +659,7 @@ def composite_kdp_cover(
         spine_width_in=spine_w_in,
         spine_width_px=spine_w_px,
         spine_center_x_px=spine_center_x,
-        barcode_box_px=(barcode_x1, barcode_y1, barcode_x2, barcode_y2)
+        barcode_box_px=(barcode_x1, barcode_y1, barcode_x2, barcode_y2),
+        spine_mode=spine_mode
     )
 

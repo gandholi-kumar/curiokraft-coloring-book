@@ -4,9 +4,12 @@
 > **THIS DOCUMENT IS ARCHIVED & OBSOLETE.**
 > Please use the new, streamlined publishing guide and modular documentation:
 > * 🚀 **Main Interactive Guide:** [docs/PUBLISHING_WORKFLOWS_GUIDE.md](PUBLISHING_WORKFLOWS_GUIDE.md) (Clear Track 1 Free Web UI vs. Track 2 Automated API separation)
+> * 🎨 **Special Pages & Mascot Guide:** [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md) (Welcome & Certificate bookends)
 > * ⚙️ **Google AI Studio Setup:** [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)
 > * 📐 **KDP Print Geometry & Barcode Rules:** [docs/KDP_PRINT_SPECIFICATIONS.md](KDP_PRINT_SPECIFICATIONS.md)
+> * 💵 **Amazon KDP Global Pricing & Royalty Guide:** [docs/KDP_PRICING_AND_ROYALTY_GUIDE.md](KDP_PRICING_AND_ROYALTY_GUIDE.md)
 > * 🏛️ **Multi-Volume Architecture (Vol 2, Vol 3):** [docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md](MULTI_VOLUME_ARCHITECTURE_GUIDE.md)
+> * 🗺️ **Upcoming Volumes Concept Roadmap:** [docs/UPCOMING_VOLUMES.md](UPCOMING_VOLUMES.md)
 > * 🧠 **Multi-Agent System & Debates:** [docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md](MULTI_AGENT_SYSTEM_AND_DEBATES.md)
 > * 📥 **Image Inbox Naming Conventions:** [inbox/raw_pages/README.md](../inbox/raw_pages/README.md)
 
@@ -42,6 +45,7 @@ The commands are divided into **three distinct operational tracks**:
 │   • curiokraft-book init               ──► Scaffold directories & templates │
 │   • curiokraft-book sample generate    ──► Visual check (1-5 pages, Gate 2) │
 │   • curiokraft-book generate book      ──► Full 110-page production batch   │
+│   • curiokraft-book generate special-pages ──► Page 001 Welcome & Page 110 Cert│
 │   • curiokraft-book cover build        ──► Build 17.498x11.250" cover       │
 │   • curiokraft-book assemble interior  ──► Compile 110-page print PDF       │
 │   • curiokraft-book preflight run      ──► Official 18-point certificate    │

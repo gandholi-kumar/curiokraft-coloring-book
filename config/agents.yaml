@@ -19,8 +19,10 @@ agents:
 
       COVER PRODUCTION GOVERNANCE (CHECKPOINT GATE 3):
       Ensure full-wrap cover conforms to exact 17.498 x 11.250 in geometry at 300 DPI (5249 x 3375 px) with 0.248 in spine.
-      Enforce blank white barcode box (2.0 x 1.2 in, zero barcode lines, zero placeholder text).
-      Enforce unadorned logo and emblem rendering with strict aspect ratio preservation and safe margins (>= 0.50 in).
+      Enforce full-wrap wraparound continuity: Front Cover left edge and Back Cover right edge directly touch the spine and must be 100% borderless, sharing the identical butter-cream canvas and baseline wave height without horizon drift.
+      Enforce blank white barcode box (locked standard: 700 x 430 px @ 300 DPI, zero barcode lines, zero placeholder text, zero printed text messages).
+      Enforce programmatic brand logo card (locked standard: 640 x 420 px @ 300 DPI) with bottom/right box shadow, strict locked aspect ratio, zero printed text messages, and zero AI-generated logo badges.
+      Enforce continuous background asset flow (butter-cream canvas #FFF9E6, turquoise waves, stardust, doodles) across both bottom corners across all volumes.
 
       OBJECT PURITY ENFORCEMENT:
       Before dispatching any spread prompt to the image generator, consult config/curriculum.yaml under
@@ -30,6 +32,7 @@ agents:
       PROMPT COHERENCE AUDIT:
       Verify the final prompt contains no contradictions, no ambiguous count words ("a bunch", "some", "several"),
       and no missing fill-style specifications for numerals (hollow vs solid).
+      Enforce that all vehicle prompts strictly obey docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and the vehicle-prompt-crafting skill (non-wheeled vehicles must never receive wheel tokens, and must include anti-wheel negatives).
 
   design_specialist:
     id: "AGT-002-DESIGN"
@@ -45,21 +48,28 @@ agents:
       DATA SOURCE:
       All per-card object assignments are defined in config/curriculum.yaml and manifest/pages.json.
       All category visual templates are defined in config/taxonomy.yaml under "categories".
-      Cover styling guidelines are defined in config/curriculum.yaml under "cover_styling".
+      Cover styling guidelines are defined in config/curriculum.yaml under "cover_styling" and .agents/rules/cover_wraparound_continuity.md.
 
       PAGE ARCHETYPE A: SINGLE-OBJECT COLORING PAGES (Pages 5-110)
       1. PRIMARY OBJECT ONLY: One centered iconic subject occupying 60-70% of safe canvas.
       2. MARGIN BREATHING ROOM: Generous 25% empty white margin space around the centered subject on all four sides.
       3. CATEGORY-AUTHENTIC PERSPECTIVE & POSE (from taxonomy.yaml category visual templates):
-         - Living Animals: Adorable chubby preschool proportions, joyful lively posing, big friendly round eyes, happy gentle smiles.
-         - Vehicles: Three-quarter side profile view — complete body, chunky round wheels, big clear colorable windows.
+         - Living Animals: Natural species-appropriate anatomy and locomotion (quadrupedal standing on all 4 legs for 4-legged mammals, bipedal standing on two feet for birds, streamlined swimming for aquatic). Default to three-quarter front view to clearly reveal all limbs without perspective distortion. Cuteness is strictly expressed via friendly smiling round eyes, chubby cheeks, and simplified bold contours — NEVER through humanoid posture, upright standing on hind legs, human arms, or human clothing.
+         - Vehicles: Domain-authentic propulsion and support anatomy (from docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and vehicle_domain_matrix):
+           * Wheeled 4-Wheel (Cars, Buses, Trucks): Three-quarter profile, 4 chunky round wheels with clean hubcaps, colorable windows.
+           * Wheeled 2-Wheel (Bicycles, Motorcycles, Scooters): Side profile, exactly two wheels, tubular frame, handlebars, seat.
+           * Rail Vehicles (Trains): Locomotive cabin, cowcatcher, multiple steel rail wheels aligned along track baseline.
+           * Rotorcraft (Helicopters): Cockpit cabin, top main rotor, tail boom rotor, twin horizontal landing skids (strictly NO wheels).
+           * Fixed-Wing Aircraft (Airplanes): Fuselage, two symmetric wings, tail fin, clear windows, flight stance.
+           * Spacecraft (Rockets): Upright aerodynamic cylindrical fuselage, conical nose cone, circular observation porthole, 3-4 flared base stabilizer fins, rocket nozzle (strictly NO wheels).
+           * Watercraft (Sailboats, Boats): Buoyant curved boat hull, deck, mast with sails or cabin (strictly NO wheels).
          - Clothing: Clean 2D flat-lay with neat smooth seams, rounded collar and cuffs, large open coloring zones.
-         - Household/Furniture: Three-quarter isometric perspective — sturdy legs, smooth surface, cozy preschool scale.
+         - Household & Daily Living: Iconic simplified physical silhouette with smooth surfaces and cozy preschool proportions; sturdy legs restricted strictly to furniture (chairs, tables, cribs), never on daily items (combs, towels, soap).
          - Musical Instruments: Three-quarter angle view — simplified body, wide open coloring zones.
          - Foods/Fruits: Authentic simplified shape with 4-6 large chunky coloring segments, zero micro-textures.
          - Nature: Standalone isolated central vignette with clean rounded contours, strictly zero horizon.
          - Toys: Chunky physical contours with large bold colorable geometric zones.
-      4. STRICT LIVING VS. NON-LIVING TAXONOMY: Living animals/characters have smiles/eyes; inanimate objects are 100% faceless.
+      4. STRICT LIVING VS. NON-LIVING TAXONOMY: Living animals have sweet friendly smiling eyes; inanimate objects are 100% faceless.
       5. STROKE & ISOLATION: Bold 5pt vector outlines, pure stark white background (#FFFFFF), strictly zero text on artwork.
 
       PAGE ARCHETYPE B: EDUCATIONAL OVERVIEW SPREADS (Pages 1-4)
@@ -68,11 +78,13 @@ agents:
       3. VERTICAL CENTERING: Content centered at Y=50% filling 75% of card height with zero empty top voids.
 
       PAGE ARCHETYPE C: KDP FULL-WRAP PAPERBACK COVER (17.498 x 11.250 in)
-      1. ATMOSPHERIC BACKDROP: Sunny golden-yellow (#FFE066) to vibrant cyan/sky blue (#22D3EE) vertical gradient with translucent floating bubbles, sparkling stars, and soft watermark doodles.
-      2. 3D MULTI-COLOR BUBBLY TYPOGRAPHY: 'TINY HANDS' with joyful alternating preschool colors, dark 3D contour stroke, and extruded shadow. 'COLOR & LEARN' in white bubbly letters with 3D drop shadow.
-      3. FRONT COVER HERO SCENE: Cute chubby teddy bear half-colored holding yellow crayon + smiling apple with feet + crayons on play mat, isolated on transparent background.
-      4. BACK COVER 6-CARD PREVIEW SHOWCASE: 2x3 grid of discrete rounded white cards showcasing representative interior objects with mini crayon color guides.
-      5. BRAND INTEGRITY: Official logo and emblem rendered as-is (strict aspect ratio preservation, no enclosing pill boxes or circles).
+      1. UNIFIED WRAPAROUND CONTINUITY: Both Front and Back cover share the exact same cheerful warm butter-cream canvas (#FFF9E6) with a continuous rolling pastel turquoise/mint wave across the lower 15-20% of the canvas at identical horizontal height.
+      2. SPINE BORDERLESS CLEARANCE: Front Cover left edge and Back Cover right edge directly touch the spine and must be 100% borderless, with ZERO corner frames and ZERO vertical decorative borders on the spine folds. Decorative corner frames are strictly restricted to outer perimeter corners (Back Cover outer-left, Front Cover outer-right).
+      3. 3D MULTI-COLOR BUBBLY TYPOGRAPHY: 'TINY HANDS' with joyful alternating candy colors, white puffy contour outline, and glossy highlights. 'COLOR & LEARN' in large multi-colored 3D puffy bubble letters.
+      4. FRONT COVER HERO SCENE: Cute chubby cartoon baby elephant clutching blue crayon surrounded by friendly preschool companions (smiling banana, friendly dog, toy car, rainbow with clouds).
+      5. BACK COVER FLASHCARD SHOWCASE: 1 row by 3 columns of clean white rounded cards showcasing Apple, Cat, and 1 2 3 with thick 2D black-and-white coloring book line art.
+      6. BRAND INTEGRITY & LOGO BADGE: Back cover prompt strictly contains NO white logo box or cutout. The brand logo container is rendered programmatically in code as an elevated white rounded card (640 x 420 px @ 300 DPI) with box shadow on bottom and right, preserving the logo's authentic aspect ratio and preventing printing color bleed.
+      7. FROZEN BOTTOM CORNER STANDARDS & ZERO TEXT RULE: Both bottom-left (Publisher Badge: 640 x 420 px) and bottom-right (Barcode: 700 x 430 px) are locked multi-volume standards across all volumes. Strictly ZERO text messages, blurbs, or labels may be printed in either position. Seamless background assets (warm butter-cream #FFF9E6, rolling waves, star dust, doodles) must flow continuously across both bottom positions.
 
   kdp_specialist:
     id: "AGT-003-KDP"
@@ -90,11 +102,14 @@ agents:
       2. INTERIOR MARGINS: Gutter >= 0.50 in (150 px); Outside/Bottom >= 0.50 in; Top Header >= 0.80 in (240 px).
       3. COVER SPECIFICATIONS: Total = 17.498 x 11.250 in (5249 x 3375 px @ 300 DPI); Spine width = 0.248 in (74 px).
       4. SPINE SAFE AREA: 0.123 in (37 px) with >= 0.0625 in (19 px) safe margins on each side.
-      5. BARCODE SAFE ZONE (STRICT): 2.000 x 1.200 in (600 x 360 px) clean white box in lower right of back cover.
+      5. BARCODE SAFE ZONE (FROZEN MULTI-VOLUME STANDARD): 2.000 x 1.200 in (700 x 430 px @ 300 DPI) clean white box in lower right of back cover.
          - Strictly NO barcode lines (Amazon imprints automatically).
          - Strictly NO placeholder text (e.g. '[ KDP Barcode Zone ]' = REJECT).
+         - Strictly NO text messages printed in this zone.
          - Clearance >= 0.250 in (75 px) from spine and trim edges.
-      6. LOGO & EMBLEM SAFETY: Logo and emblem must maintain >= 0.50 in margin clearance from all trim edges.
+      6. PUBLISHER BADGE ZONE (FROZEN MULTI-VOLUME STANDARD): 640 x 420 px @ 300 DPI at x1: 180, y1: 2860, x2: 820, y2: 3280.
+         - Strictly NO text messages printed in this zone.
+         - Margin clearance >= 0.60 in from canvas left trim edge.
 
   market_specialist:
     id: "AGT-004-MARKET"
@@ -113,6 +128,7 @@ agents:
       3. INANIMATE REALISM: Clean, iconic physical silhouettes without unnatural cartoon faces on food, tools, or objects.
       4. NUMERACY INTEGRITY: Exact 1-to-1 matching between numerals and objects.
       5. TYPOGRAPHY STYLE STANDARD: All bubble numerals and letters throughout the book MUST be consistent hollow outline preschool bubble style with white interior.
+      6. ANIMAL AUTHENTICITY STANDARD: Strictly ban 'animal character' terminology. Refer to subjects as authentic baby animal illustrations. Commercial appeal comes from real-world animal recognition paired with friendly expressions, not humanoid cartoon anthropomorphism.
 
   pedagogy_specialist:
     id: "AGT-005-EDU"
@@ -151,6 +167,9 @@ agents:
       2. BARCODE COMPLIANCE AUDIT: Verify barcode box is 100% clean white with ZERO barcode lines and ZERO placeholder text.
       3. SPINE AUDIT: Verify spine text fits within 0.123 in safe area with >= 0.0625 in margins on both folds.
       4. LOGO & EMBLEM AUDIT: Verify logo and emblem preserve strict aspect ratio with >= 0.50 in margin clearance, rendered as-is.
+      5. WRAPAROUND CONTINUITY & ANTI-DRIFT AUDIT: Verify Front Cover left edge and Back Cover right edge are 100% borderless with zero corner frames at the spine folds. Verify both covers share identical butter-cream palette (#FFF9E6) and matching lower baseline wave heights (15-20%) so background flows seamlessly across the spine without horizon drift.
+      6. LOGO BADGE AUDIT: Verify Back Cover prompt strictly DOES NOT contain any white logo box, badge, or cutout in the bottom-left; verify the bottom-left remains continuous background for programmatic logo stamping in code.
+      7. ZERO-TEXT EXCLUSION AUDIT: Verify strictly ZERO text messages, labels, or words are printed or prompted in bottom-left (publisher badge) and bottom-right (barcode) zones across all volumes, while background color, waves, stardust, and doodles flow continuously across both.
 
       MANDATORY INTERIOR AUDIT PROTOCOL:
       1. NUMERAL FILL AUDIT: Verify hollow bubble outlines with white interior.
@@ -158,6 +177,8 @@ agents:
       3. PER-CARD COUNT AUDIT: Verify exact 1-to-1 count arithmetic.
       4. CONTAINER UNIFORMITY AUDIT: Verify 100% equal dimensions and Y=50% vertical centering.
       5. CATEGORY LEAK AUDIT: Verify no cartoon faces on inanimate items.
+      6. ANIMAL ANATOMY & POSTURE AUDIT: Verify quadrupedal animals explicitly stand on all four legs; verify birds use two-legged bipedal rules without quadrupedal leakage; verify three-quarter front view is specified; verify mandatory anti-anthropomorphic negative tokens ('standing on two legs', 'upright on hind legs', 'bipedal stance', 'human arms', 'human hands') are present; verify zero positive/negative contradictions.
+      7. VEHICLE ANATOMY & PROPULSION AUDIT: Verify non-wheeled vehicles (rockets, helicopters, sailboats, boats, submarines, hot air balloons) strictly contain ZERO wheel mentions in positive prompts and include mandatory anti-wheel negative tokens ('wheels', 'tires', 'car wheels', 'landing gear wheels'); verify cycles specify exactly two wheels; verify automobiles specify four chunky round wheels.
 
   judge:
     id: "AGT-007-JUDGE"
@@ -194,6 +215,9 @@ agents:
       1. Cover Hero Art: "Ultra-clean 2D preschool toddler coloring book hero illustration, isolated on a 100% pure transparent background (alpha PNG)... strictly NO text, NO letters, NO words, NO titles, NO logos, NO barcode."
       2. Interior Single Pages: "Ultra-clean 2D preschool toddler coloring book line art vector illustration... bold clean 5pt stroke, pure stark white background (#FFFFFF), strictly NO text."
       3. Educational Spreads: Hollow bubble numeral mandate + container uniformity + vertical centering.
+      4. Animal Anatomy & Posture 11-Block Sequence: For all living creatures, prompts must strictly follow the 11-block hierarchy (Subject -> Species Anatomy & Limbs -> Posture & Orientation -> Safeguards -> Expression -> Style -> Line Art -> Composition -> Background -> Prohibitions -> Negative Bundle). Never use unqualified 'standing'.
+      5. Back Cover Master Illustration: Enforce continuous background across both bottom corners with gentle rolling turquoise waves, stardust, and doodles. Mandate strictly NO text, NO words, NO letters, NO numbers, and NO white cutout boxes in the bottom-left (publisher logo) or bottom-right (barcode) zones across all volumes.
+      6. Vehicle Structural Anatomy & Domain Hierarchy: For all vehicles and transport objects, prompts must follow the vehicle domain standard (docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md). Never inject wheels into non-wheeled vehicles (rockets, helicopters, boats, submarines); ensure twin runner skids for helicopters, base fins/nozzles for rockets, and exactly two wheels for cycles.
 
   vision_qa:
     id: "AGT-009-VISIONQA"
@@ -215,6 +239,9 @@ agents:
       6. COVER HERO TRANSPARENCY: Hero artwork isolated on clean transparent background with sharp outlines.
       7. BARCODE PURITY: Barcode box is 100% clean white with zero lines and zero text.
       8. MARGIN CLEARANCE: Generous safe margins exceeding KDP minimums.
+      9. COVER WRAPAROUND CONTINUITY: Front Cover left edge and Back Cover right edge are borderless and blend seamlessly at the spine with matching background horizon and no distorted layout seams.
+      10. ZERO-TEXT IN EXCLUSION ZONES: Verify strictly no text or labels appear behind or inside the bottom-left publisher badge zone and bottom-right barcode zone, while background color, rolling waves, star dust, and doodles flow seamlessly.
+      11. VEHICLE STRUCTURAL INTEGRITY: Verify non-wheeled vehicles have zero wheels (e.g. rocket stands on fins with nozzle, helicopter on twin skids, sailboat on hull); verify cycles have exactly two wheels; verify automobiles have clean chunky wheels.
 
   book_qa:
     id: "AGT-010-BOOKQA"

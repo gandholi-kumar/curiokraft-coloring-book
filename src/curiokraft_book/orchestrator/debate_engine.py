@@ -9,6 +9,7 @@ Works universally for Volume 1, Volume 2, Volume 3, and specialized themed editi
 To create a new volume: provide a new manifest with different "cards" arrays — no code changes.
 """
 
+import json
 import logging
 from typing import Any, Optional
 from pathlib import Path
@@ -22,7 +23,7 @@ logger = logging.getLogger("curiokraft.debate_engine")
 
 
 # =============================================================================
-# Config Loader — reads taxonomy + curriculum once at module startup
+# Config Loader — reads taxonomy + curriculum + objects once at module startup
 # =============================================================================
 
 def _load_yaml(path: str) -> dict:
@@ -43,9 +44,32 @@ def _load_yaml(path: str) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def _load_json(path: str) -> dict:
+    """Load a JSON manifest file relative to cwd or package root."""
+    p = Path(path)
+    if not p.is_absolute():
+        candidates = [
+            Path.cwd() / path,
+            Path(__file__).parent.parent.parent.parent / path,
+        ]
+        for c in candidates:
+            if c.exists():
+                p = c
+                break
+    if not p.exists():
+        return {}
+    with open(p, "r", encoding="utf-8") as f:
+        return json.load(f) or {}
+
+
 # Loaded once at import time — cached for the process lifetime
 _TAXONOMY: dict = _load_yaml("config/taxonomy.yaml")
 _CURRICULUM: dict = _load_yaml("config/curriculum.yaml")
+_OBJECTS_DATA: dict = _load_json("manifest/objects.json")
+_OBJECTS_REGISTRY: dict[str, dict] = {
+    obj.get("canonical_name", "").lower(): obj
+    for obj in _OBJECTS_DATA.get("objects", [])
+}
 
 
 # =============================================================================
@@ -215,7 +239,228 @@ def classify_living_taxonomy(canonical: str, section: str) -> bool:
 # Dynamic Visual Spec Generator — reads category rules from taxonomy.yaml
 # =============================================================================
 
-def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool) -> str:
+def _find_category_config(canonical: str, section: str, category: str = "") -> tuple[dict, str]:
+    """Find the category config dictionary and key for a given object and section."""
+    categories = _TAXONOMY.get("categories", {})
+    canon_lower = canonical.lower()
+    sec_lower = section.lower()
+    cat_lower = category.lower()
+
+    # 1. Direct match by category_name (from manifest/objects.json or section)
+    for key, cfg in categories.items():
+        if key in ["state_dependent", "fallback"]:
+            continue
+        c_name = cfg.get("category_name", "").lower()
+        if c_name and (c_name == cat_lower or c_name == sec_lower):
+            return cfg, key
+
+    # 2. Match section hints
+    for key, cfg in categories.items():
+        if key in ["state_dependent", "fallback"]:
+            continue
+        hints = [h.lower() for h in cfg.get("section_hints", [])]
+        if any(h in sec_lower or h in cat_lower for h in hints):
+            return cfg, key
+
+    # 3. Match keywords in canonical name
+    for key, cfg in categories.items():
+        if key in ["state_dependent", "fallback"]:
+            continue
+        keywords = set(cfg.get("keywords", []))
+        if any(k in canon_lower for k in keywords):
+            return cfg, key
+
+    # 4. Fallback
+    return categories.get("fallback", {}), "fallback"
+
+
+def resolve_animal_anatomy_profile(canonical: str) -> dict:
+    """Resolve species-specific anatomy, locomotion, posture, orientation, and safeguards.
+
+    Queries config/taxonomy.yaml:
+      1. animal_species_profiles for species-specific anatomy & overrides
+      2. animal_locomotion_matrix for locomotion class defaults & negative tokens
+    Falls back gracefully to natural quadrupedal mammal defaults if not found.
+    """
+    canon_lower = canonical.lower().strip()
+    matrix = _TAXONOMY.get("animal_locomotion_matrix", {})
+    profiles = _TAXONOMY.get("animal_species_profiles", {})
+
+    # Check for direct match or substring in canonical
+    matched_profile = None
+    for key, prof in profiles.items():
+        if key in canon_lower or canon_lower in key:
+            matched_profile = prof
+            break
+
+    readable = canonical.replace("_", " ").lower()
+
+    if matched_profile:
+        cls_key = matched_profile.get("class", "quadrupeds")
+        cls_matrix = matrix.get(cls_key, matrix.get("quadrupeds", {}))
+        anatomy = matched_profile.get("anatomy", f"natural {readable} anatomy with recognizable baby {readable} proportions")
+        posture = matched_profile.get("posture_override", cls_matrix.get("default_posture", "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body"))
+        orientation = matched_profile.get("default_orientation", cls_matrix.get("default_orientation", "three-quarter front view showing the complete body and limbs"))
+        safeguards = cls_matrix.get("safeguards", "")
+        if "safeguards_extra" in matched_profile:
+            safeguards = f"{safeguards} {matched_profile['safeguards_extra']}".strip()
+        negative_tokens = list(cls_matrix.get("negative_tokens", []))
+        return {
+            "class": cls_key,
+            "anatomy": anatomy,
+            "posture": posture,
+            "orientation": orientation,
+            "safeguards": safeguards,
+            "negative_tokens": negative_tokens,
+        }
+
+    # Infer class from general keywords if not in specific species profile
+    bird_words = ["bird", "chicken", "duck", "chick", "hen", "rooster", "penguin", "flamingo", "ostrich", "owl", "parrot", "swan", "peacock"]
+    aquatic_words = ["fish", "dolphin", "whale", "shark", "octopus", "crab"]
+    insect_words = ["butterfly", "bee", "bug", "ant", "ladybug", "dragonfly"]
+    reptile_amphibian_words = ["frog", "toad", "turtle", "lizard", "alligator", "snake"]
+    arboreal_words = ["monkey", "chimpanzee", "gorilla", "sloth", "koala", "squirrel"]
+
+    if any(w in canon_lower for w in bird_words):
+        cls_key = "bipeds"
+    elif any(w in canon_lower for w in aquatic_words):
+        cls_key = "aquatic"
+    elif any(w in canon_lower for w in insect_words):
+        cls_key = "insects"
+    elif any(w in canon_lower for w in reptile_amphibian_words):
+        cls_key = "amphibians"
+    elif any(w in canon_lower for w in arboreal_words):
+        cls_key = "arboreal"
+    else:
+        cls_key = "quadrupeds"
+
+    cls_matrix = matrix.get(cls_key, matrix.get("quadrupeds", {}))
+    anatomy = f"natural {readable} anatomy with recognizable baby {readable} body proportions and species silhouette"
+    posture = cls_matrix.get("default_posture", "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body")
+    orientation = cls_matrix.get("default_orientation", "three-quarter front view showing the complete body and limbs")
+    safeguards = cls_matrix.get("safeguards", "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture.")
+    negative_tokens = list(cls_matrix.get("negative_tokens", []))
+
+    return {
+        "class": cls_key,
+        "anatomy": anatomy,
+        "posture": posture,
+        "orientation": orientation,
+        "safeguards": safeguards,
+        "negative_tokens": negative_tokens,
+    }
+
+
+def resolve_vehicle_design_profile(canonical: str) -> dict:
+    """Resolve authoritative vehicle structural anatomy, support mechanics, orientation, and safeguards.
+
+    Queries config/taxonomy.yaml:
+      1. vehicle_design_profiles for vehicle-specific anatomy & overrides
+      2. vehicle_domain_matrix for domain defaults and negative tokens
+    Falls back gracefully to wheeled automotive defaults if not found.
+    """
+    canon_lower = canonical.lower().strip()
+    matrix = _TAXONOMY.get("vehicle_domain_matrix", {})
+    profiles = _TAXONOMY.get("vehicle_design_profiles", {})
+
+    matched_profile = None
+    for key, prof in profiles.items():
+        if key in canon_lower or canon_lower in key:
+            matched_profile = prof
+            break
+
+    readable = canonical.replace("_", " ").lower()
+
+    if matched_profile:
+        cls_key = matched_profile.get("class", "wheeled_four_wheel")
+        cls_matrix = matrix.get(cls_key, matrix.get("wheeled_four_wheel", {}))
+        anatomy = matched_profile.get("anatomy", f"classic toddler {readable} anatomy with clear preschool proportions")
+        support = matched_profile.get("support_override", cls_matrix.get("default_support", "supported cleanly by wheels"))
+        orientation = matched_profile.get("orientation", cls_matrix.get("default_orientation", "three-quarter side profile view displaying the complete vehicle body"))
+        safeguards = cls_matrix.get("safeguards", "")
+        if "safeguards_extra" in matched_profile:
+            safeguards = f"{safeguards} {matched_profile['safeguards_extra']}".strip()
+        negative_tokens = list(cls_matrix.get("negative_tokens", []))
+        if "negative_tokens" in matched_profile:
+            for tok in matched_profile["negative_tokens"]:
+                if tok not in negative_tokens:
+                    negative_tokens.append(tok)
+        return {
+            "class": cls_key,
+            "has_wheels": cls_matrix.get("has_wheels", True),
+            "anatomy": anatomy,
+            "support": support,
+            "orientation": orientation,
+            "safeguards": safeguards,
+            "negative_tokens": negative_tokens,
+        }
+
+    # Infer domain from keywords if not in specific profiles
+    rotor_words = ["helicopter", "chopper", "gyrocopter"]
+    space_words = ["rocket", "spaceship", "shuttle"]
+    water_words = ["boat", "sailboat", "ship", "yacht", "canoe", "kayak", "tugboat", "ferry"]
+    sub_words = ["submarine", "submersible"]
+    cycle_words = ["bicycle", "bike", "motorcycle", "scooter", "tricycle"]
+    rail_words = ["train", "locomotive", "subway", "tram", "trolley"]
+    air_words = ["plane", "airplane", "jet", "biplane"]
+    balloon_words = ["balloon", "blimp", "airship"]
+
+    if any(w in canon_lower for w in rotor_words):
+        cls_key = "rotorcraft"
+    elif any(w in canon_lower for w in space_words):
+        cls_key = "spacecraft"
+    elif any(w in canon_lower for w in water_words):
+        cls_key = "watercraft"
+    elif any(w in canon_lower for w in sub_words):
+        cls_key = "submersible"
+    elif any(w in canon_lower for w in cycle_words):
+        cls_key = "wheeled_two_wheel"
+    elif any(w in canon_lower for w in rail_words):
+        cls_key = "rail_vehicles"
+    elif any(w in canon_lower for w in air_words):
+        cls_key = "fixed_wing_aircraft"
+    elif any(w in canon_lower for w in balloon_words):
+        cls_key = "lighter_than_air"
+    else:
+        cls_key = "wheeled_four_wheel"
+
+    cls_matrix = matrix.get(cls_key, matrix.get("wheeled_four_wheel", {}))
+    anatomy = f"classic toddler {readable} anatomy with recognizable preschool proportions"
+    support = cls_matrix.get("default_support", "supported cleanly")
+    orientation = cls_matrix.get("default_orientation", "three-quarter side profile view")
+    safeguards = cls_matrix.get("safeguards", "")
+    negative_tokens = list(cls_matrix.get("negative_tokens", []))
+
+    return {
+        "class": cls_key,
+        "has_wheels": cls_matrix.get("has_wheels", True),
+        "anatomy": anatomy,
+        "support": support,
+        "orientation": orientation,
+        "safeguards": safeguards,
+        "negative_tokens": negative_tokens,
+    }
+
+
+def is_vehicle_object(canonical: str, section: str, category: str = "") -> bool:
+    """Check if object belongs to the vehicle and transportation category."""
+    c = canonical.lower().strip()
+    sec = section.lower()
+    cat = category.lower()
+    if "vehicle" in sec or "transport" in sec or "vehicle" in cat or "transport" in cat:
+        return True
+    if c in _TAXONOMY.get("vehicle_design_profiles", {}):
+        return True
+    vehicle_keywords = {
+        "car", "bus", "truck", "bike", "bicycle", "motorcycle", "scooter", "tricycle",
+        "helicopter", "rocket", "sailboat", "boat", "ship", "yacht", "submarine",
+        "plane", "airplane", "jet", "train", "locomotive", "tractor", "wagon",
+        "taxi", "ambulance", "fire_truck", "police_car", "hot_air_balloon"
+    }
+    return any(k in c for k in vehicle_keywords)
+
+
+def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool, category: str = "") -> str:
     """Autonomously generate object geometry and toddler feature simplification.
 
     All category keyword sets and visual template strings are read from
@@ -224,11 +469,18 @@ def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool) 
     readable = canonical.replace("_", " ").lower()
     categories = _TAXONOMY.get("categories", {})
 
-    # 1. Living animals & characters — checked first
+    # 1. Living animals & characters — resolved via authoritative anatomy profiles
     if is_living:
+        prof = resolve_animal_anatomy_profile(canonical)
         return (
-            f"a cute friendly baby {readable}, adorable chubby preschool proportions, "
-            "joyful lively posing with sweet smiling round eyes and happy gentle expression"
+            f"a cute friendly baby {readable}, {prof['anatomy']}, {prof['posture']}, {prof['orientation']}"
+        )
+
+    # 2. Vehicles & Transportation — resolved via authoritative vehicle structural profiles
+    if is_vehicle_object(canonical, section, category):
+        veh_prof = resolve_vehicle_design_profile(canonical)
+        return (
+            f"a cute classic {readable}, {veh_prof['anatomy']}, {veh_prof['orientation']}"
         )
 
     # 2. State-dependent items — resolved before generic category matching
@@ -237,16 +489,11 @@ def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool) 
         if key in canonical.lower():
             return cfg.get("visual_template", "").format(readable=readable)
 
-    # 3. Ordered category matching
-    ordered = ["vehicles", "paired_items", "clothing", "household", "music", "toys", "nature", "food"]
-    for cat_name in ordered:
-        cat = categories.get(cat_name, {})
-        keywords = set(cat.get("keywords", []))
-        section_hints = cat.get("section_hints", [])
-        if any(k in canonical.lower() for k in keywords) or any(h in section.lower() for h in section_hints):
-            tmpl = cat.get("visual_template", "")
-            if tmpl:
-                return tmpl.format(readable=readable)
+    # 3. Dynamic category matching using _find_category_config
+    cat_cfg, _ = _find_category_config(canonical, section, category)
+    tmpl = cat_cfg.get("visual_template", "")
+    if tmpl:
+        return tmpl.format(readable=readable)
 
     # 4. Fallback
     fallback_tmpl = categories.get("fallback", {}).get("visual_template",
@@ -272,6 +519,40 @@ def _join_negative(token_lists: list[list]) -> str:
                 seen_set.add(t_clean)
                 seen.append(t_clean)
     return ", ".join(seen)
+
+
+def _filter_contradictions(positive: str, negative_tokens: list[str]) -> list[str]:
+    """Ensure no negative tokens contradict requirements in the positive prompt (Rule 10B.18)."""
+    pos_lower = positive.lower()
+    is_biped = "two legs" in pos_lower or "two feet" in pos_lower or "bipedal" in pos_lower
+    is_quadruped = "four legs" in pos_lower or "four paws" in pos_lower or "four hooves" in pos_lower or "quadrupedal" in pos_lower
+
+    biped_conflicts = {"two legs", "standing on two legs", "two-legged stance", "bipedal", "bipedal stance", "upright on hind legs", "upright"}
+    quadruped_conflicts = {"four legs", "four-legged stance", "quadrupedal", "quadrupedal stance"}
+
+    # Vehicle-specific conflict resolution
+    has_wheels_positive = (
+        ("round wheels" in pos_lower or "two wheels" in pos_lower or "train wheels" in pos_lower or "chunky wheels" in pos_lower)
+        and ("no wheels" not in pos_lower and "without wheels" not in pos_lower)
+    )
+    has_wings_positive = "wings" in pos_lower and ("no wings" not in pos_lower and "without wings" not in pos_lower)
+
+    filtered = []
+    for tok in negative_tokens:
+        tok_clean = tok.strip()
+        t_lower = tok_clean.lower()
+        if not t_lower:
+            continue
+        if is_biped and t_lower in biped_conflicts:
+            continue
+        if is_quadruped and t_lower in quadruped_conflicts:
+            continue
+        if has_wings_positive and t_lower in {"wings", "bird wings", "symmetrical wings"}:
+            continue
+        if has_wheels_positive and t_lower in {"wheels", "tires", "rubber tires", "round wheels"}:
+            continue
+        filtered.append(tok_clean)
+    return filtered
 
 
 def _detect_spread_layout_key(canonical: str, label: str) -> str:
@@ -440,8 +721,13 @@ class DebateEngine:
 
         is_spread = (page_type in ["educational_spread", "counting_spread"]) or (composition == "flashcard_grid")
         is_living = classify_living_taxonomy(canonical, section)
+        obj_meta = _OBJECTS_REGISTRY.get(canonical.lower(), {})
+        object_category = obj_meta.get("category", section)
+        is_veh = is_vehicle_object(canonical, section, object_category) and not is_living
         readable_name = canonical.replace("_", " ").lower()
-        object_desc = generate_dynamic_visual_spec(canonical, section, is_living)
+
+        object_rule = obj_meta.get("object_rule", "")
+        object_desc = generate_dynamic_visual_spec(canonical, section, is_living, category=object_category)
 
         logger.info(f"Initiating 4-Round Debate for Page {page_id} [{label}] ({section}) [type={page_type}]...")
         rounds: list[DebateRound] = []
@@ -486,19 +772,20 @@ class DebateEngine:
                 }
             }
         elif is_living:
+            prof = resolve_animal_anatomy_profile(canonical)
             r1_outputs = {
                 "AGT-002-DESIGN": {
-                    "composition": f"Centered single illustration of {object_desc} occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
+                    "composition": f"Centered single illustration of baby {readable_name} in {prof['orientation']}. {prof['posture']}. Occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
                     "line_weight": "Thick 5pt bold black vector outlines enclosing large, smooth coloring surfaces.",
-                    "prohibited": ["thin hair lines", "cross-hatching", "intricate fur patterns", "widescreen 16:9 crop"]
+                    "prohibited": prof["negative_tokens"][:4] + ["thin hair lines", "cross-hatching", "intricate fur patterns", "widescreen 16:9 crop"]
                 },
                 "AGT-003-KDP": {
                     "geometry": "Strict 0.50in (150px) margin safety clearance, 2550x3300px at 300 DPI, zero interior bleed.",
                     "compliance": "Pure binary monochrome black & white. Typography added separately at top."
                 },
                 "AGT-004-MARKET": {
-                    "commercial_appeal": f"Cute friendly {readable_name} animal character with charming big round eyes, sweet happy smiling face, and joyful preschool expression.",
-                    "prohibited": ["scary/creepy expressions", "sharp fangs/claws", "over-detailed realistic textures"]
+                    "commercial_appeal": f"Authentic baby {readable_name} illustration preserving natural {prof['class']} anatomy with charming big round eyes and sweet gentle preschool expression.",
+                    "prohibited": ["anthropomorphic cartoon character", "human-like standing", "scary/creepy expressions", "sharp fangs/claws"]
                 },
                 "AGT-005-EDU": {
                     "pedagogical_hook": f"Iconic, unmistakable canonical {readable_name} silhouette for instant recognition by a 2-year-old child.",
@@ -506,17 +793,56 @@ class DebateEngine:
                 }
             }
             r2_outputs = {
-                "cross_consensus": f"Agreed on charming single {readable_name} animal with big round eyes, bold 5pt outlines, and 0.50in margin safety clearance."
+                "cross_consensus": f"Agreed on charming single {readable_name} animal with big round eyes, authentic {prof['class']} anatomy, bold 5pt outlines, and 0.50in margin safety clearance."
             }
             r3_outputs = {
                 "AGT-006-CRITIC": {
                     "stress_test_findings": [
+                        f"Verify strict {prof['class']} anatomy: ensure AI does not render {readable_name} standing upright on two legs or like a human cartoon mascot.",
+                        f"Verify limb grounding and orientation: complete body visible in {prof['orientation']} with limbs naturally positioned.",
                         f"Ensure AI does not draw background habitat, floor, or grass behind the {readable_name}.",
                         "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing.",
                         "Ensure typography is NOT drawn on canvas (handled by compositor)."
                     ],
                     "risk_level": "LOW",
-                    "recommended_hardening": "Add negative tokens: background, floor, horizon, shading, gray, shadows, text, letters, words, 16:9, widescreen."
+                    "recommended_hardening": f"Enforce species safeguards: {prof['safeguards']}. Add negative tokens: " + ", ".join(prof["negative_tokens"][:4])
+                }
+            }
+        elif is_veh:
+            veh_prof = resolve_vehicle_design_profile(canonical)
+            r1_outputs = {
+                "AGT-002-DESIGN": {
+                    "composition": f"Centered single illustration of {readable_name} in {veh_prof['orientation']}. {veh_prof['anatomy']}. Occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
+                    "line_weight": "Thick 5pt bold black vector outlines enclosing large, smooth coloring surfaces.",
+                    "prohibited": veh_prof["negative_tokens"][:4] + ["thin hair lines", "cross-hatching", "intricate engine parts", "widescreen 16:9 crop"]
+                },
+                "AGT-003-KDP": {
+                    "geometry": "Strict 0.50in (150px) margin safety clearance, 2550x3300px at 300 DPI, zero interior bleed.",
+                    "compliance": "Pure binary monochrome black & white. Typography added separately at top."
+                },
+                "AGT-004-MARKET": {
+                    "commercial_appeal": f"Authentic simplified {readable_name} preserving {veh_prof['class']} domain structure with bold preschool contours, large colorable panels, and strictly NO human driver or cartoon faces.",
+                    "prohibited": ["human driver", "cartoon eyes on vehicle", "road scenery", "complex mechanical clutter"]
+                },
+                "AGT-005-EDU": {
+                    "pedagogical_hook": f"Iconic, unmistakable canonical {readable_name} silhouette for instant recognition by a 2-year-old child.",
+                    "target_milestone": f"Object identification in category '{section}'."
+                }
+            }
+            r2_outputs = {
+                "cross_consensus": f"Agreed on authentic {readable_name} ({veh_prof['class']}) with {veh_prof['support']}, bold 5pt outlines, and 0.50in margin safety clearance."
+            }
+            r3_outputs = {
+                "AGT-006-CRITIC": {
+                    "stress_test_findings": [
+                        f"Verify {veh_prof['class']} domain rules: {veh_prof['safeguards']}",
+                        f"Verify structural support: {veh_prof['support']}.",
+                        "Ensure AI does not draw road, street, or background scenery.",
+                        "Ensure AI does not draw human driver, operator, or passengers.",
+                        "Ensure AI renders pure flat 2D line art with zero shading or gray gradients."
+                    ],
+                    "risk_level": "LOW",
+                    "recommended_hardening": f"Enforce vehicle safeguards: {veh_prof['safeguards']}. Add negative tokens: " + ", ".join(veh_prof["negative_tokens"][:4])
                 }
             }
         else:
@@ -564,24 +890,49 @@ class DebateEngine:
         if is_spread:
             positive_prompt, negative_prompt = generate_dynamic_spread_prompt(page_record)
         else:
-            if is_living:
-                positive_prompt = (
-                    f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of {object_desc}, "
-                    "charming simple round eyes, sweet gentle happy expression, bold clean black vector outline, 5pt stroke, "
-                    "wide open coloring areas, perfectly centered, vertical portrait 3:4 aspect ratio framing, "
-                    "leave generous 25% empty white margin space around the centered subject on all four sides, wide breathing room, "
-                    "pure stark white background (#FFFFFF), zero shading, zero grayscale, zero gradients, zero shadows, "
-                    "no background elements, strictly NO text, NO letters, NO words."
-                )
-                negative_prompt = (
-                    "shading, shadows, gradients, gray, grayscale, color, textures, 3d, photorealistic, intricate patterns, "
-                    "multiple objects, background scenery, floor, ground, sky, horizon, borders, frames, text, letters, "
-                    "words, alphabet, typography, watermarks, labels, writing, cross-hatching, thin lines, scary expression, "
-                    "widescreen, 16:9, landscape orientation, horizontal cropping, cut off edges"
-                )
+            cat_cfg, _ = _find_category_config(canonical, section, object_category)
+            cat_rule = cat_cfg.get("category_rule", "").strip()
+            cat_neg = cat_cfg.get("negative_tokens", [])
+
+            if object_rule:
+                subject_instruction = f"{readable_name.title()}. {object_rule}".strip().rstrip(".") + "."
             else:
+                subject_instruction = f"{object_desc}".strip().rstrip(".") + "."
+
+            if is_living:
+                prof = resolve_animal_anatomy_profile(canonical)
                 positive_prompt = (
-                    f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of {object_desc}, "
+                    f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of a cute friendly baby {readable_name}. "
+                    f"{prof['anatomy'].capitalize()}. "
+                    f"{prof['posture'].capitalize()}. {prof['orientation'].capitalize()}. "
+                    f"{prof['safeguards']} "
+                    "Sweet, gentle, friendly expression with simple round eyes and a happy approachable face. "
+                    "Simplified preschool-friendly proportions while preserving natural animal anatomy and species silhouette. "
+                    "Bold clean black vector outline, 5pt stroke, wide open coloring areas, perfectly centered, "
+                    "vertical portrait 3:4 aspect ratio framing, leave generous 25% empty white margin space around "
+                    "the centered subject on all four sides, wide breathing room, pure stark white background (#FFFFFF), "
+                    "zero shading, zero grayscale, zero gradients, zero shadows, no background elements, "
+                    "strictly NO text, NO letters, NO words."
+                )
+                base_neg = [
+                    "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures", "3d", "photorealistic",
+                    "intricate patterns", "multiple objects", "background scenery", "floor", "ground", "sky", "horizon",
+                    "borders", "frames", "separator lines", "text", "letters", "words", "alphabet", "typography",
+                    "watermarks", "labels", "writing", "cross-hatching", "thin lines", "scary expression",
+                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                ]
+                unfiltered_neg = _join_negative([prof["negative_tokens"], base_neg, cat_neg])
+                neg_tokens_list = [t.strip() for t in unfiltered_neg.split(",") if t.strip()]
+                filtered_neg = _filter_contradictions(positive_prompt, neg_tokens_list)
+                negative_prompt = ", ".join(filtered_neg)
+            elif is_veh:
+                veh_prof = resolve_vehicle_design_profile(canonical)
+                positive_prompt = (
+                    f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of a cute classic {readable_name}. "
+                    f"{veh_prof['anatomy'].capitalize()}. "
+                    f"Supported by {veh_prof['support']}. {veh_prof['orientation'].capitalize()}. "
+                    f"{veh_prof['safeguards']} "
+                    f"Category Guidance: {cat_rule} "
                     "authentic simplified physical object silhouette, pure inanimate object, strictly NO eyes, NO mouth, "
                     "NO face, NO facial features, non-anthropomorphic, thick bold clean black vector outline, 5pt stroke, "
                     "wide open coloring spaces, perfectly centered, vertical portrait 3:4 aspect ratio framing, "
@@ -589,19 +940,44 @@ class DebateEngine:
                     "pure stark white background (#FFFFFF), zero shading, zero grayscale, zero gradients, zero shadows, "
                     "no background elements, strictly NO text, NO letters, NO words."
                 )
-                negative_prompt = (
-                    "face, eyes, mouth, smile, facial features, anthropomorphic, cartoon character face, human features, "
-                    "shading, shadows, gradients, gray, grayscale, color, textures, 3d, photorealistic, intricate patterns, "
-                    "multiple objects, background scenery, floor, ground, sky, horizon, borders, frames, text, letters, "
-                    "words, alphabet, typography, watermarks, labels, writing, cross-hatching, thin lines, "
-                    "widescreen, 16:9, landscape orientation, horizontal cropping, cut off edges"
+                base_neg = [
+                    "face", "eyes", "mouth", "smile", "facial features", "anthropomorphic", "cartoon character face",
+                    "human features", "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures",
+                    "3d", "photorealistic", "intricate patterns", "multiple objects", "background scenery", "floor",
+                    "ground", "sky", "horizon", "borders", "frames", "separator lines", "text", "letters", "words",
+                    "alphabet", "typography", "watermarks", "labels", "writing", "cross-hatching", "thin lines",
+                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                ]
+                unfiltered_neg = _join_negative([veh_prof["negative_tokens"], base_neg, cat_neg])
+                neg_tokens_list = [t.strip() for t in unfiltered_neg.split(",") if t.strip()]
+                filtered_neg = _filter_contradictions(positive_prompt, neg_tokens_list)
+                negative_prompt = ", ".join(filtered_neg)
+            else:
+                positive_prompt = (
+                    f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of {subject_instruction} "
+                    f"Category Guidance: {cat_rule} "
+                    "authentic simplified physical object silhouette, pure inanimate object, strictly NO eyes, NO mouth, "
+                    "NO face, NO facial features, non-anthropomorphic, thick bold clean black vector outline, 5pt stroke, "
+                    "wide open coloring spaces, perfectly centered, vertical portrait 3:4 aspect ratio framing, "
+                    "leave generous 25% empty white margin space around the centered subject on all four sides, wide breathing room, "
+                    "pure stark white background (#FFFFFF), zero shading, zero grayscale, zero gradients, zero shadows, "
+                    "no background elements, strictly NO text, NO letters, NO words."
                 )
+                base_neg = [
+                    "face", "eyes", "mouth", "smile", "facial features", "anthropomorphic", "cartoon character face",
+                    "human features", "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures",
+                    "3d", "photorealistic", "intricate patterns", "multiple objects", "background scenery", "floor",
+                    "ground", "sky", "horizon", "borders", "frames", "separator lines", "text", "letters", "words",
+                    "alphabet", "typography", "watermarks", "labels", "writing", "cross-hatching", "thin lines",
+                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                ]
+                negative_prompt = _join_negative([base_neg, cat_neg])
 
         judge_verdict = "APPROVED"
         judge_rationale = (
             f"Synthesized hybrid specification for {label}. Locked bold outline style with zero shading, "
             f"enforced vertical portrait 3:4 framing, preserved 0.50in margin clearance, enforced container uniformity, and enforced "
-            f"{'living animal face' if is_living else 'pure inanimate object (no facial features)'} rule."
+            f"{'living animal face' if is_living else ('domain-accurate vehicle structure' if is_veh else 'pure inanimate object (no facial features)')} rule."
         )
 
         r4_outputs = {
@@ -743,10 +1119,16 @@ def generate_front_cover_prompt(
     subtitle = b_cfg.get("subtitle", "FUN & EASY FIRST WORDS")
     brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
     age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
-    age_max = b_cfg.get("target_audience", {}).get("age_max", 3)
+    age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
 
-    hero_char = "cute chubby baby cartoon teddy bear"
-    hero_obj = "happy smiling cartoon red apple"
+    # Discover primary hero animal from manifest (priority: elephant, teddy bear, puppy, kitten, lion)
+    hero_char = "an adorable chubby baby cartoon elephant with sweet smiling round eyes, blushing pink cheeks, and large soft ears, sitting joyfully while clutching a chunky wax crayon with little sparkle motion lines"
+    companion_items = [
+        "a shiny smiling cartoon red apple with round eyes, rosy cheeks, and a green leaf",
+        "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds",
+        "a happy smiling yellow cartoon flower with cute round face and soft green leaves",
+        "a cheerful chunky preschool toy beetle car with round cartoon headlights and smiling bumper"
+    ]
     page_count = 100
     
     m_p = Path(manifest_path)
@@ -757,43 +1139,67 @@ def generate_front_cover_prompt(
                 pages = data.get("pages", [])
                 page_count = len(pages)
                 
-                # Discover primary hero animal from manifest
+                # Check for hero animal in manifest
+                found_animal = None
                 for p in pages:
                     canon = p.get("canonical_object", "").lower()
                     sec = p.get("section", "").lower()
-                    if "animal" in sec or "pet" in sec or canon in ["bear", "teddy_bear", "cat", "dog", "lion", "elephant"]:
-                        label = p.get("display_label", canon.replace("_", " ")).title()
-                        hero_char = f"cute chubby cartoon {label}"
+                    if canon == "elephant":
+                        found_animal = "an adorable chubby baby cartoon elephant with sweet smiling round eyes, blushing pink cheeks, and large soft ears, sitting joyfully while clutching a chunky wax crayon with little sparkle motion lines"
                         break
-                        
-                # Discover primary hero fruit/toy from manifest
+                    elif ("animal" in sec or "pet" in sec) and not found_animal:
+                        label = p.get("display_label", canon.replace("_", " ")).title()
+                        found_animal = f"an adorable chubby cartoon baby {label.lower()} with sweet smiling round eyes and rosy cheeks, sitting joyfully while holding a bright wax crayon"
+                if found_animal:
+                    hero_char = found_animal
+                
+                # Discover dynamic companion objects across manifest categories
+                dynamic_companions = []
                 for p in pages:
                     canon = p.get("canonical_object", "").lower()
                     sec = p.get("section", "").lower()
-                    if ("fruit" in sec or "toy" in sec or "food" in sec) and canon not in ["teddy_bear", "cat", "dog", "lion", "elephant"]:
-                        label = p.get("display_label", canon.replace("_", " ")).title()
-                        hero_obj = f"adorable smiling cartoon {label}"
-                        break
+                    label = p.get("display_label", canon.replace("_", " ")).title()
+                    if ("fruit" in sec or canon in ["apple", "banana", "strawberry"]) and len(dynamic_companions) < 1:
+                        dynamic_companions.append(f"a shiny cute smiling cartoon {label.lower()} with big sweet round eyes, rosy cheeks, and leafy stem")
+                    elif ("nature" in sec or canon in ["flower", "sun", "tree"]) and len(dynamic_companions) < 2:
+                        dynamic_companions.append(f"a cute happy smiling cartoon {label.lower()} with cheerful sunny face and soft petals")
+                    elif ("vehicle" in sec or canon in ["car", "bus", "train", "truck"]) and len(dynamic_companions) < 3:
+                        dynamic_companions.append(f"a cheerful chunky preschool toy {label.lower()} with round cartoon headlights and friendly smiling details")
+                
+                # Always include iconic preschool rainbow staple
+                if len(dynamic_companions) >= 3:
+                    dynamic_companions.append("a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds")
+                    companion_items = dynamic_companions
         except Exception:
             pass
 
+    companions_desc = ", ".join(companion_items)
+
     pos = (
         f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
-        f"Top banner with small dark blue publisher credit '{brand} Presents' and clean white rounded pill badge '{subtitle}'. "
-        f"Main title '{title}' rendered in large, chunky 3D multi-colored bubbly glossy letters: 'TINY HANDS' with colorful pastel-saturated letter faces (red, orange, yellow, green, blue, brown) with dark bold outline and soft 3D extrusion shadow, followed below by 'COLOR & LEARN' in large white bubbly letters with dark outline. "
-        f"Central joyful illustration: an {hero_char} sitting joyfully on a colorful rainbow-striped fringed play mat. "
-        "The character is creatively half-colored in warm pastel hues and half clean black-and-white coloring book line art with bold contours, holding a bright wax crayon. "
-        f"Beside it sits an {hero_obj} with big sweet round eyes, rosy cheeks, and tiny cartoon feet (half colored with crayon gloss, half coloring line art). "
-        "Three chunky floating/tilted wax crayons surround them in the air. "
-        "Background: cheerful smooth gradient from warm sunny golden-yellow at the top softly blending down to vibrant bright sky-turquoise blue at the bottom, decorated with subtle translucent floating bubbles, sparkles, and starbursts. "
-        f"Bottom layout: wide white rounded pill banner with navy bold text '{page_count}+ EVERYDAY OBJECTS' / 'FIRST WORDS • LETTERS & NUMBERS', and a circular white roundel badge on the right reading 'AGES {age_min}-{age_max} YEARS'. "
+        f"Generous top safety margin: leave the top 10-12% of the canvas as clean sunny golden-cream background. Position the top text banner '{brand} Presents' comfortably inside the safe live area, centered at least 1.0 inch / 300px below the top canvas edge in clean, bold navy preschool lettering so it will not be cut off during physical trimming. "
+        "Directly below, main title 'TINY HANDS' rendered in a joyful upward rainbow arch in large, chunky 3D puffy inflated bubble jelly/candy letters with high-gloss specular reflections (white highlight curves on the top surfaces). "
+        "Each letter in 'TINY HANDS' has an individual vibrant saturated candy color: T (warm orange), I (sunny yellow), N (electric cyan blue), Y (peach orange), H (hot pink), A (golden yellow), N (bright red/coral), D (sky blue), S (tangerine orange). "
+        "The letters feature a clean bright white puffy die-cut contour outline with soft warm pastel depth (strictly NO dark black drop shadows, NO harsh black outlines). "
+        "Directly below 'TINY HANDS', the words 'COLOR & LEARN' are also rendered in large, vibrant multi-colored 3D puffy bubble letters (NOT plain white): C (hot pink), O (bright yellow), L (cyan blue), O (lime green), R (vibrant purple), & (golden orange), L (hot pink), E (sunny yellow), A (electric blue), R (lime green), N (violet purple), with glossy candy highlights and a clean thick puffy white contour outline. "
+        f"Directly underneath the arched title lockup, clean bold dark navy rounded lettering reading '{subtitle}', flanked by cute little decorative stars. "
+        f"Central joyful toddler illustration: {hero_char}. "
+        f"Surrounding the hero character is a rich ensemble of adorable, chunky preschool objects: {companions_desc}, plus a curved floating rainbow wax crayon with colorful motion lines in the sky. "
+        "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
+        "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6) with a gentle, smooth pastel turquoise and mint rolling wave across the lower 15-20% of the canvas. "
+        "WRAPAROUND SPINE CONTINUITY MANDATE: The LEFT edge of this front cover directly abuts the book spine — keep the entire LEFT edge completely clean, borderless, and horizontally flat with zero corner frames and zero vertical decorative borders, allowing the butter-cream sky and bottom turquoise wave to flow seamlessly and continuously into the spine without any seams or step jumps. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER RIGHT corners only. "
+        "The entire atmosphere is filled with celebratory toddler star dust and magical confetti: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue; soft pastel floating love hearts in pink and lilac; and colorful tiny confetti dots, sparkles, and sprinkles floating merrily through the air. "
+        f"Bottom layout: a wide clean white rounded pill banner with bold navy text '{page_count}+ EVERYDAY OBJECTS' and 'FIRST WORDS • LETTERS & NUMBERS', accompanied on the right by a circular sunny yellow roundel badge reading 'AGES {age_min}-{age_max} YEARS'. "
         "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
     )
 
     neg = (
-        "blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
-        "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, "
-        "distorted anatomy, barcode on front cover, spine lines across front cover"
+        "corner frame on left edge, border on left edge, left vertical border, clean pastel floor, text on floor, words on floor, "
+        "floor label, dark black shadows, heavy black shadows, black drop shadows, dark ground shadows, harsh contact shadows, "
+        "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, "
+        "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
+        "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, "
+        "barcode on front cover, spine lines across front cover"
     )
     return pos, neg
 
@@ -807,66 +1213,53 @@ def generate_back_cover_prompt(
     title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
     brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
     age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
-    age_max = b_cfg.get("target_audience", {}).get("age_max", 3)
+    age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
+    page_count = 110
 
-    preview_cards = [
-        ("APPLE", "red"),
-        ("BANANA", "yellow"),
-        ("TOY CAR", "blue"),
-        ("GUITAR", "orange"),
-        ("CARROT", "orange"),
-        ("MILK", "blue")
-    ]
-    
     m_p = Path(manifest_path)
     if m_p.exists():
         try:
             with open(m_p, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                pages = [p for p in data.get("pages", []) if p.get("type") in ["coloring_page", None] or p.get("page_number", 0) > 5]
-                
-                # Group pages by section to sample across 6 distinct sections
-                sections_dict: dict[str, list[dict]] = {}
-                for p in pages:
-                    sec = p.get("section", "General")
-                    sections_dict.setdefault(sec, []).append(p)
-                    
-                selected_samples = []
-                for sec, sec_pages in sections_dict.items():
-                    if len(selected_samples) >= 6:
-                        break
-                    p_sample = sec_pages[0]
-                    lbl = p_sample.get("display_label", p_sample.get("canonical_object", "")).upper()
-                    canon = p_sample.get("canonical_object", "")
-                    color = _get_crayon_color_for_object(canon)
-                    selected_samples.append((lbl, color))
-                    
-                if len(selected_samples) >= 6:
-                    preview_cards = selected_samples[:6]
+                pages = data.get("pages", [])
+                if pages:
+                    page_count = len(pages)
         except Exception:
             pass
 
-    cards_text_parts = []
-    for idx, (lbl, color) in enumerate(preview_cards, 1):
-        cards_text_parts.append(f"Card {idx}: clean line-art {lbl} ({color} crayon corner)")
-    cards_desc = "; ".join(cards_text_parts)
-
     pos = (
-        f"Professional cohesive 2D preschool coloring book back cover illustration for '{title}'. "
-        "Background: smooth vertical gradient from warm soft sunny golden-yellow at the top softly blending down to vibrant bright sky-turquoise blue at the bottom, with subtle translucent floating bubbles and twinkling stars, matching the front cover. "
-        "Top section: large clean white rounded card containing header in bold navy 'LITTLE HANDS, BIG DISCOVERIES!', yellow roundel badge in upper right 'AGES 1-3', and 3 bullet points with cute preschool icons: "
-        f"🍎 '100+ Everyday Objects, First Words, Letters & Numbers', 🖍️ 'Extra-Thick Bold Outlines for Tiny Hands & Motor Skills', ⭐ 'Simple Wax-Crayon Color Guides on Every Page'. "
-        f"Middle section: 6 clean rounded white flashcard preview boxes arranged in a neat 2-row by 3-column grid, showcasing sample toddler coloring pages with small colored crayon icons in their top-left corners: "
-        f"{cards_desc}. Every card has its bold uppercase label below the drawing. "
-        f"Bottom section: rounded white publisher badge on bottom-left with cute logo and text '{brand} / COLOR BOOKS & CREATIVE KITS'. "
-        "Continuous clean turquoise background on bottom-right (DO NOT draw any barcode, barcode space will be stamped programmatically by compositor). "
-        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly aligned balanced typography and cards."
+        f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
+        "perfectly matching and continuing the visual style, color palette, and organic framing of the front cover. "
+        "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6), perfectly matching the front cover. "
+        "Bottom baseline features the exact same smooth, gentle rolling wave in pastel turquoise and mint across the lower 15-20% of the canvas at the exact same horizontal height. "
+        "WRAPAROUND SPINE CONTINUITY MANDATE: The RIGHT edge of this back cover directly abuts the book spine — keep the entire RIGHT edge completely clean, borderless, and horizontally flat with zero corner frames, zero diagonal rivers, and zero vertical decorative borders, ensuring a 100% continuous, uninterrupted horizontal flow across the spine into the front cover. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER LEFT corners only. "
+        "The entire canvas is sprinkled with subtle celebratory toddler star dust: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue, and soft pastel floating love hearts in pink and lilac. "
+        "Top section: bold uppercase headline in dark navy 'EXPLORE & COLOR!'. "
+        "Directly below the headline, a friendly 3-line parent description in clean, dark navy rounded typography: "
+        "'Introduce your little one to a world of creativity and learning with this fun coloring book. Packed with simple illustrations and basic words, it's perfect for developing motor skills and vocabulary!' "
+        "Middle section: exactly 3 clean, upright white rounded flashcard preview boxes arranged in a single neat horizontal row (1 row by 3 columns), showcasing authentic black-and-white coloring book sample pages from inside the book. "
+        "Each card is a clean rounded white rectangle with a thin dark charcoal border. (CRITICAL: Strictly NO crayons on cards, NO angled crayons, and NO coloring tools—display pure, clean coloring pages). "
+        "Inside each card is pure 2D black-and-white coloring book line art with thick bold outlines and large open spaces for toddlers to color: "
+        "Card 1 (First Words & Fruit): hollow bubble-letter coloring title 'APPLE' across the top, a bold outline smiling cartoon apple in the center, bold outline letter 'E', letters 'A' and 'B', and word 'fruits' below; "
+        "Card 2 (Cute Animals): hollow bubble-letter coloring title 'CAT' across the top, an adorable sitting cartoon kitten with smiling eyes, whiskers, paws, and playful outline paw prints; "
+        "Card 3 (Numbers & Counting): hollow bubble-letter coloring numbers '1 2 3' across the top, surrounded by cute mini outline counting objects (apples, cookies, carrots, cupcakes, little hearts, and paw prints). "
+        "Bottom layout: The bottom-left and bottom-right corners feature clean, unbroken continuous pastel background artwork with the gentle wavy turquoise baseline, delicate twinkling star dust, soft floating hearts, and subtle playful doodles. "
+        "(CRITICAL MULTI-VOLUME INVIOLABLE MANDATE: Strictly NO text, NO words, NO letters, NO numbers, NO labels, NO typography, and NO white cutout boxes or placeholder badges anywhere in the bottom-left or bottom-right positions. Background color (#FFF9E6), rolling waves, star dust, and doodles MUST flow continuously and seamlessly across both bottom positions; strictly ZERO text is to be printed in these two locations, as the publisher logo badge and barcode are programmatically composited in code post-generation). "
+        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly balanced typography, cards, and colors."
     )
 
     neg = (
-        "blurry, low resolution, dark moody colors, photographic, realistic textures, jagged lines, "
-        "distorted cards, uneven grid, messy text, printed barcode, fake barcode, cut-off cards, "
-        "horizontal landscape, 16:9, cut off edges"
+        "text in bottom corners, words near bottom, barcode numbers, publisher text, bottom labels, letters in bottom left, letters in bottom right, text in lower region, typography at bottom, "
+        "white badge on left, white box on left, logo badge, empty white rectangle on left, white badge cutout, placeholder box, "
+        "corner frame on right edge, border on right edge, right vertical border, diagonal river across right edge, "
+        "bullet points, bullet list, text list, feature list, 110 High-Quality Pages, Large 8.5x11, "
+        "Easy-to-Color Drawings, Perfect for Ages, Single-Sided Pages, text below cards, paragraph below cards, "
+        "numbers, dimensions, measurements, margin text, technical annotations, labels, 0.60 in, 180px, "
+        "white rectangle on right, barcode box, barcode placeholder, printed barcode, barcode lines, qr code, "
+        "fake logo, gibberish text in badge, text inside white badge, crayons on cards, wax crayons, "
+        "colored drawings inside cards, colored line art inside cards, realistic shading, grayscale shading in cards, "
+        "2x3 grid, 6 cards, blurry, low resolution, dark moody colors, photographic, realistic textures, "
+        "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges"
     )
     return pos, neg
 

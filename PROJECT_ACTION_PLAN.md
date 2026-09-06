@@ -275,9 +275,44 @@ Overall Publication Readiness: [██████████] 100% Completed (
   - *Deliverable:* `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`
   - *Status:* **COMPLETED**
 
-- [x] **Task 8.6: Human Approval Gate 4 Sign-Off (Final Complete Package)**
-  - *Action:* Deliver final Interior PDF, Cover PDF, and Preflight Report to user for publishing approval.
+- [x] **Task 8.7: Human Approval Gate 4 Sign-Off (Final KDP Release Package)**
+  - *Action:* Deliver certified, press-ready PDFs, preflight certificates, and release notes to human publisher.
   - *Status:* **APPROVED BY USER**
+
+---
+
+## Phase 9: Animal Anatomy & Posture Governance Architecture
+
+- [x] **Task 9.1: Authoritative Standard Documentation**
+  - *Deliverable:* `docs/ANIMAL_ANATOMY_AND_POSTURE_STANDARD.md`
+  - *Action:* Consolidate 10B Resolution Hierarchy, 10A Posture Decision Table, and 11-block prompt architecture into repository standard.
+  - *Status:* **COMPLETED**
+
+- [x] **Task 9.2: IDE & Workspace Agent Rules / Skills**
+  - *Deliverable:* `.agents/rules/animal_anatomy_and_posture.md` & `.agents/skills/animal-prompt-crafting/SKILL.md`
+  - *Action:* Bind all current and future AI coding assistants and agents to strict animal zoology, locomotion classes, and prompt templates.
+  - *Status:* **COMPLETED**
+
+- [x] **Task 9.3: Multi-Agent System Prompts Hardening**
+  - *Deliverable:* `config/agents.yaml`
+  - *Action:* Update AGT-002 (Design), AGT-004 (Market), AGT-006 (Critic), and AGT-008 (PromptGen) to prohibit lively posing, ban character mascots, and enforce Checkpoint 6 Anatomy Validation Gate.
+  - *Status:* **COMPLETED**
+
+- [x] **Task 9.4: Authoritative Taxonomy Locomotion Matrix**
+  - *Deliverable:* `config/taxonomy.yaml`
+  - *Action:* Add `animal_locomotion_matrix` and `animal_species_profiles` mapping quadruped, biped, aquatic, amphibian, invertebrate, insect, and arboreal classes with explicit limb counts, postures, orientations, and negative tokens.
+  - *Status:* **COMPLETED**
+
+- [x] **Task 9.5: Deterministic Debate Engine Integration**
+  - *Deliverable:* `src/curiokraft_book/orchestrator/debate_engine.py`
+  - *Action:* Implement `resolve_animal_anatomy_profile()`, wire species profiles into Round 1–4 debates, and implement `_filter_contradictions()` to prevent positive/negative contradictions.
+  - *Status:* **COMPLETED** (19/19 pytest suite passed).
+
+- [x] **Task 9.6: Volume 1 Manifest & Prompt Export Regeneration**
+  - *Deliverable:* `generated/prompts_export.json` & `generated/prompts_export.md`
+  - *Action:* Regenerate all 18 animal entries (`P048` to `P065`) with locked quadrupedal/bipedal anatomy, 3/4 perspective, and species-specific safeguards.
+  - *Status:* **COMPLETED**
+
 
 - [x] **Task 8.7: Publication Archive & KDP Submission Package Ready**
   - *Status:* **COMPLETED**

@@ -30,12 +30,14 @@ def fit_to_safe_margins(
     dpi: int = 300,
     safe_margin_in: float = 0.50,
     header_reservation_in: float = 1.20,
-    target_coverage_ratio: float = 0.72
+    target_coverage_ratio: float = 0.72,
+    is_spread: bool = False
 ) -> MarginFitResult:
     """Crop artwork to its tight bounding box, center, scale, and place on a pristine 300 DPI canvas.
     
-    Guarantees that artwork strictly satisfies KDP inside/outside margins and preserves the
-    top header space for vector typography rendering.
+    Guarantees that artwork strictly satisfies KDP inside/outside margins. For standard pages,
+    preserves the top header space for vector typography rendering. For spreads, uses the entire
+    safe area (>= 0.50 in safe margins on all 4 sides) with zero header reservation.
     
     Args:
         input_path: Path to the source image.
@@ -46,6 +48,7 @@ def fit_to_safe_margins(
         safe_margin_in: Safe margin boundary in inches (default: 0.50 in = 150 px).
         header_reservation_in: Top margin reserved for typography in inches (default: 1.20 in = 360 px).
         target_coverage_ratio: Target coverage of the usable artwork zone (default: 0.72).
+        is_spread: If True, bypasses header reservation and uses full safe margin canvas.
         
     Returns:
         MarginFitResult with repositioning coordinates and scale factor.
@@ -100,15 +103,23 @@ def fit_to_safe_margins(
 
     # Define usable artwork envelope
     margin_px = int(safe_margin_in * dpi)
-    header_px = int(header_reservation_in * dpi)
-
-    usable_w = canvas_width - (2 * margin_px)
-    usable_h = canvas_height - (margin_px + header_px)
+    if is_spread or header_reservation_in <= 0.0:
+        header_px = 0
+        usable_w = canvas_width - (2 * margin_px)
+        usable_h = canvas_height - (2 * margin_px)
+        eff_coverage = 1.0 if target_coverage_ratio == 0.72 else target_coverage_ratio
+        max_upscale = 3.5
+    else:
+        header_px = int(header_reservation_in * dpi)
+        usable_w = canvas_width - (2 * margin_px)
+        usable_h = canvas_height - (margin_px + header_px)
+        eff_coverage = target_coverage_ratio
+        max_upscale = 1.25
 
     # Calculate optimal uniform scale factor
-    scale_w = (usable_w * target_coverage_ratio) / crop_w if crop_w > 0 else 1.0
-    scale_h = (usable_h * target_coverage_ratio) / crop_h if crop_h > 0 else 1.0
-    scale_factor = min(scale_w, scale_h, 1.25)  # Cap upscaling at 1.25 to prevent pixelation
+    scale_w = (usable_w * eff_coverage) / crop_w if crop_w > 0 else 1.0
+    scale_h = (usable_h * eff_coverage) / crop_h if crop_h > 0 else 1.0
+    scale_factor = min(scale_w, scale_h, max_upscale)
 
     new_w = max(1, int(round(crop_w * scale_factor)))
     new_h = max(1, int(round(crop_h * scale_factor)))
@@ -119,9 +130,12 @@ def fit_to_safe_margins(
     # Create pristine pure white canvas (#FFFFFF)
     canvas = Image.new("L", (canvas_width, canvas_height), 255)
 
-    # Calculate centered position within usable zone below header
+    # Calculate centered position within usable zone
     pos_x = margin_px + (usable_w - new_w) // 2
-    pos_y = header_px + (usable_h - new_h) // 2
+    if header_px > 0:
+        pos_y = header_px + (usable_h - new_h) // 2
+    else:
+        pos_y = margin_px + (usable_h - new_h) // 2
 
     canvas.paste(resized_artwork, (pos_x, pos_y))
 

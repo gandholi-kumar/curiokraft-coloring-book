@@ -20,7 +20,7 @@ from curiokraft_book.validators.kdp_preflight import run_full_preflight
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.typography import composite_typography
-from curiokraft_book.orchestrator.model_client import ModelClient
+from curiokraft_book.orchestrator.model_client import ModelClient, DiskInboxProvider
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.state_manager import PipelineStateManager
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -485,6 +485,31 @@ def generate_full_book(
         )
 
 
+@generate_app.command("special-pages")
+def generate_special_pages(
+    asset_dir: str = typer.Option("inbox/special_assets", "--assets", "-a", help="Directory containing special page assets"),
+    output_dir: str = typer.Option("output/interior_masters", "--output", "-o", help="Output directory for interior masters"),
+    guides: bool = typer.Option(False, "--guides", "-g", help="Overlay print-safety guides (dev mode)")
+):
+    """[Stage 3: Production] Programmatically render Page 001 (Welcome) and Page 110 (Certificate)."""
+    console.print(Panel.fit("[bold cyan]CurioKraft Special Publication Pages Compositor[/bold cyan]"))
+    from curiokraft_book.compositor.special_pages import render_welcome_page, render_certificate_page
+    
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    p001_path = out_dir / "page_001.png"
+    p110_path = out_dir / "page_110.png"
+    
+    console.print(f"[dim]• Reading modular assets from:[/dim] [cyan]{asset_dir}[/cyan]")
+    render_welcome_page(output_path=str(p001_path), asset_dir=asset_dir, show_guides=guides)
+    console.print(f"[bold green][PASS] Page 001 (Welcome & Ownership):[/bold green] {p001_path}")
+    
+    render_certificate_page(output_path=str(p110_path), asset_dir=asset_dir, show_guides=guides)
+    console.print(f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}")
+    
+    console.print(f"\n[bold green]Both special pages successfully rendered at 300 DPI compliant with KDP specifications![/bold green]\n")
+
+
 @cover_app.command("build")
 def build_cover():
     """[Stage 3: Production] Programmatically assemble complete 17.498x11.250 in KDP paperback cover."""
@@ -495,6 +520,8 @@ def build_cover():
         console.print(f"[bold green][PASS] Cover CMYK PDF Created:[/] {res.output_cmyk_pdf_path}")
         console.print(f"  • Dimensions: {res.overall_width_in} x {res.overall_height_in} in ({res.canvas_dimensions_px[0]} x {res.canvas_dimensions_px[1]} px @ 300 DPI)")
         console.print(f"  • Spine Width: {res.spine_width_in} in ({res.spine_width_px} px)")
+        spine_desc = "Continuous Background Art Flow (Zero Text, Zero Emblem)" if res.spine_mode in ["clean_background", "clean", "blank", "seamless", "none", "false"] else f"Mode: {res.spine_mode}"
+        console.print(f"  • Spine Styling: [bold cyan]{spine_desc}[/bold cyan]")
 
         print_hint(
             "KDP Cover Master Assembly",
@@ -708,9 +735,13 @@ def show_prompt(
 def export_prompts(
     pages: Optional[str] = typer.Option(None, "--pages", "-p", help="Comma-separated page IDs (e.g. P001,P005) or all if omitted"),
     count: Optional[int] = typer.Option(None, "--count", "-c", help="Number of pages to export"),
-    output_file: str = typer.Option("generated/prompts_export.md", "--out", "-o", help="Output markdown file path")
+    output_file: str = typer.Option("generated/prompts_export.md", "--out", "-o", help="Output markdown file path"),
+    json_out: str = typer.Option("generated/prompts_export.json", "--json-out", "-j", help="Output JSON file path"),
+    format_type: str = typer.Option("all", "--format", "-f", help="Export format: 'all', 'json', or 'md'")
 ):
-    """[Free Web Workflow] Export all or selected page prompts into a ready-to-use markdown document."""
+    """[Free Web Workflow] Export all or selected page prompts into a ready-to-use markdown document and/or JSON manifest."""
+    from curiokraft_book.schemas import CurioKraftPromptManifest, PromptItem, PromptDefaults
+
     manifest_path = Path("manifest/pages.json")
     if not manifest_path.exists():
         console.print("[red]manifest/pages.json not found.[/red]")
@@ -732,7 +763,9 @@ def export_prompts(
     debate = DebateEngine(client)
 
     out_p = Path(output_file)
+    json_p = Path(json_out)
     out_p.parent.mkdir(parents=True, exist_ok=True)
+    json_p.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [
         "# CurioKraft Preschool Coloring Book — Master Prompt Export",
@@ -742,7 +775,7 @@ def export_prompts(
         "",
         "> [!TIP]",
         "> ⚙️ **Optimal Google AI Studio Configuration:**",
-        "> - **Aspect Ratio:** `3:4` (Vertical Portrait) | **Output Format:** `Images only` | **Temperature:** `0.5` (Interior) / `0.9` (Covers)",
+        "> - **Aspect Ratio:** `3:4` (Vertical Portrait) | **Output Format:** `Images only` | **Temperature:** `0.9` (Interior & Covers)",
         "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
         "> - 🧠 **Multi-Agent Pre-Generation Debate Audit:** See [logs/agent_debates_log.md](../logs/agent_debates_log.md) for full specialist proposals and Judge scoring.",
         "",
@@ -758,6 +791,25 @@ def export_prompts(
     f_pos, f_neg = generate_front_cover_prompt()
     b_pos, b_neg = generate_back_cover_prompt()
 
+    prompt_items: list[PromptItem] = []
+
+    # Front Cover
+    prompt_items.append(PromptItem(
+        id="COVER_FRONT",
+        page_number=None,
+        label="FRONT COVER MASTER ARTWORK",
+        type="front_cover",
+        section="Covers",
+        drop_target="inbox/front_cover.png",
+        preset_name="CurioKraft - Cover Art Master",
+        aspect_ratio="3:4",
+        output_format="Images only",
+        temperature=0.9,
+        top_p=0.95,
+        positive_prompt=f_pos,
+        negative_prompt=f_neg,
+    ))
+
     lines.append("## 🎨 FRONT COVER MASTER ARTWORK")
     lines.append("- **Drop Target:** `inbox/front_cover.png` (or `inbox/front_cover.jpg`)")
     lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
@@ -769,6 +821,23 @@ def export_prompts(
     lines.append("")
     lines.append("---")
     lines.append("")
+
+    # Back Cover
+    prompt_items.append(PromptItem(
+        id="COVER_BACK",
+        page_number=None,
+        label="BACK COVER MASTER ARTWORK",
+        type="back_cover",
+        section="Covers",
+        drop_target="inbox/back_cover.png",
+        preset_name="CurioKraft - Cover Art Master",
+        aspect_ratio="3:4",
+        output_format="Images only",
+        temperature=0.9,
+        top_p=0.95,
+        positive_prompt=b_pos,
+        negative_prompt=b_neg,
+    ))
 
     lines.append("## 📄 BACK COVER MASTER ARTWORK")
     lines.append("- **Drop Target:** `inbox/back_cover.png` (or `inbox/back_cover.jpg`)")
@@ -801,6 +870,22 @@ def export_prompts(
             neg_prompt = res.negative_prompt
             prompt_source = "🤖 Multi-Agent Debate Engine"
 
+        prompt_items.append(PromptItem(
+            id=p_id,
+            page_number=num,
+            label=label,
+            type="interior_page",
+            section=p.get("section", "General"),
+            drop_target=f"inbox/raw_pages/{save_name}",
+            preset_name="CurioKraft - Interior Coloring Pages",
+            aspect_ratio="3:4",
+            output_format="Images only",
+            temperature=0.9,
+            top_p=0.95,
+            positive_prompt=pos_prompt,
+            negative_prompt=neg_prompt,
+        ))
+
         lines.append(f"## Page {num:03d} ({p_id}): {label}")
         lines.append(f"- **Drop Target:** `inbox/raw_pages/{save_name}` (or `inbox/raw_pages/{canon}.png`)")
         lines.append(f"- **Section:** {p.get('section', 'General')}")
@@ -808,13 +893,29 @@ def export_prompts(
         lines.append(f"- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
         lines.append(f"- **Positive Prompt (Copy & Paste):**")
         lines.append(f"  ```text\n  {pos_prompt}\n  ```")
-        lines.append(f"- **Negative Prompt:**")
+        lines.append("- **Negative Prompt:**")
         lines.append(f"  ```text\n  {neg_prompt}\n  ```")
         lines.append("")
 
-    out_p.write_text("\n".join(lines), encoding="utf-8")
-    console.print(f"[bold green][PASS] Exported {len(target_pages)} prompts to:[/] [cyan]{output_file}[/cyan]")
-    
+    # Construct Pydantic Manifest
+    manifest = CurioKraftPromptManifest(
+        manifest_version="1.0.0",
+        book_title=data.get("book_title", "TINY HANDS COLOR & LEARN"),
+        book_id=data.get("book_id", "curiokraft-vol1"),
+        total_prompts=len(prompt_items),
+        defaults=PromptDefaults(aspect_ratio="3:4", output_format="Images only", top_p=0.95),
+        prompts=prompt_items
+    )
+
+    fmt = format_type.lower()
+    if fmt in ("all", "md"):
+        out_p.write_text("\n".join(lines), encoding="utf-8")
+        console.print(f"[bold green][PASS] Exported {len(target_pages)} prompts to:[/] [cyan]{output_file}[/cyan]")
+
+    if fmt in ("all", "json"):
+        json_p.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
+        console.print(f"[bold green][PASS] Exported JSON manifest ({len(prompt_items)} items) to:[/] [cyan]{json_out}[/cyan]")
+
     # Auto-synchronize full multi-agent debate log
     debate_log_path = Path("logs/agent_debates_log.md")
     debate.export_full_debate_log(output_file=str(debate_log_path))
@@ -912,51 +1013,89 @@ def ingest_raw_images(
     generated_dir.mkdir(parents=True, exist_ok=True)
     
     found_count = 0
+    inbox_provider = DiskInboxProvider(inbox_dir=inbox_p, raw_dir=generated_dir)
+
     for p in pages:
         num = p["page_number"]
         p_id = p["page_id"]
         canon = p["canonical_object"]
         
-        candidates = []
-        extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"]
-        for ext in extensions:
-            candidates.append(inbox_p / f"raw_p{num:03d}_{canon}{ext}")
-            candidates.append(inbox_p / f"p{num:03d}_{canon}{ext}")
-            candidates.append(inbox_p / f"{p_id}_{canon}{ext}")
-            candidates.append(inbox_p / f"{p_id}{ext}")
-            candidates.append(inbox_p / f"{canon}{ext}")
-            candidates.append(generated_dir / f"raw_p{num:03d}_{canon}{ext}")
-            candidates.append(generated_dir / f"{p_id}_{canon}{ext}")
-            candidates.append(generated_dir / f"{canon}{ext}")
-        
-        matched = None
-        for c in candidates:
-            if c.exists() and c.is_file() and c.stat().st_size > 500:
-                matched = c
-                break
+        # Strictly inspect inbox/raw_pages/ — never match generated_dir
+        matched = inbox_provider.find_image(page_id=p_id, page_number=num, canonical_label=canon)
 
         if matched:
             console.print(f"  [green][INGEST][/green] Processing Page {num:03d} ({canon}) from [cyan]{matched}[/cyan]...")
             master_path = runner.generate_single_page(p, source_mode="inbox", force_fresh=True)
             found_count += 1
             
-            # Archive from inbox to generated/raw_pages to keep inbox clean
-            if clear_inbox and matched.parent == inbox_p:
-                target_dest = generated_dir / f"raw_p{num:03d}_{canon}{matched.suffix}"
-                import shutil
-                shutil.move(str(matched), str(target_dest))
-                console.print(f"    [dim]-> Archived to: {target_dest}[/dim]")
+            # Canonical standard naming in generated/raw_pages/
+            target_dest = generated_dir / f"raw_p{num:03d}_{canon}.png"
+            if not target_dest.exists() or target_dest.stat().st_size == 0:
+                from PIL import Image
+                try:
+                    with Image.open(matched) as img:
+                        img.convert("L").save(target_dest, dpi=(300, 300))
+                except Exception as e:
+                    console.print(f"    [bold red][ERROR] Failed to convert/save canonical raw {target_dest}: {e}[/bold red]")
+
+            if clear_inbox and matched.parent == inbox_p and matched.exists():
+                if target_dest.exists() and target_dest.stat().st_size > 500:
+                    matched.unlink()
+                    console.print(f"    [dim]-> Cleaned from inbox: {matched.name}[/dim]")
+                    console.print(f"    [dim]-> Canonical raw preserved: {target_dest}[/dim]")
+                else:
+                    console.print(f"    [bold red][WARNING] Preserved in inbox: {matched.name} (target {target_dest} not confirmed)[/bold red]")
             
     # Check for cover artwork in inbox
-    cover_inbox = Path("inbox")
-    front_found = any((cover_inbox / f).exists() for f in ["front_cover.png", "front_cover.jpg", "cover_front.png", "cover_front.jpg"])
-    back_found = any((cover_inbox / f).exists() for f in ["back_cover.png", "back_cover.jpg", "cover_back.png", "cover_back.jpg"])
+    def find_cover_candidate(cover_type: str) -> Optional[Path]:
+        prefixes = [f"{cover_type}_cover", f"cover_{cover_type}", f"{cover_type}_cover_raw", f"raw_{cover_type}_cover"]
+        search_dirs = [Path("inbox"), Path("inbox/raw_pages")]
+        for d in search_dirs:
+            if not d.exists():
+                continue
+            for f in d.iterdir():
+                if not f.is_file() or f.stat().st_size < 1000:
+                    continue
+                clean_name = f.name.lower()
+                for ext in [".png.jpg", ".jpg.png", ".jpeg.jpg", ".jpeg.png", ".png", ".jpg", ".jpeg", ".webp"]:
+                    if clean_name.endswith(ext):
+                        clean_name = clean_name[:-len(ext)]
+                        break
+                if any(clean_name == pfx or clean_name.startswith(f"{pfx}_") or clean_name.startswith(f"{pfx}-") for pfx in prefixes):
+                    return f
+        return None
+
+    front_found = find_cover_candidate("front")
+    back_found = find_cover_candidate("back")
+
     if front_found or back_found:
         console.print("\n[bold cyan]Detected new Cover Artwork in inbox/ — Rebuilding KDP Full-Wrap Cover...[/bold cyan]")
-        c_res = composite_kdp_cover()
+        c_res = composite_kdp_cover(front_hero_art_path=front_found, back_art_path=back_found)
         if c_res.success:
             console.print(f"[bold green][PASS] Cover Rebuilt Successfully:[/] {c_res.output_png_path}")
             found_count += 1
+
+            # Archive covers from inbox to generated/cover/
+            cover_gen_dir = Path("generated/cover")
+            cover_gen_dir.mkdir(parents=True, exist_ok=True)
+            from PIL import Image
+            if front_found and front_found.exists():
+                front_dest = cover_gen_dir / "front_cover_raw.png"
+                with Image.open(front_found) as img:
+                    img.convert("RGB").save(front_dest, dpi=(300, 300))
+                if clear_inbox and front_dest.exists() and front_dest.stat().st_size > 1000:
+                    front_found.unlink()
+                    console.print(f"    [dim]-> Cleaned from inbox: {front_found.name}[/dim]")
+                    console.print(f"    [dim]-> Canonical front cover preserved: {front_dest}[/dim]")
+
+            if back_found and back_found.exists():
+                back_dest = cover_gen_dir / "back_cover_raw.png"
+                with Image.open(back_found) as img:
+                    img.convert("RGB").save(back_dest, dpi=(300, 300))
+                if clear_inbox and back_dest.exists() and back_dest.stat().st_size > 1000:
+                    back_found.unlink()
+                    console.print(f"    [dim]-> Cleaned from inbox: {back_found.name}[/dim]")
+                    console.print(f"    [dim]-> Canonical back cover preserved: {back_dest}[/dim]")
 
     if found_count > 0:
         console.print(f"\n[bold green][PASS] Successfully ingested & certified {found_count} items![/bold green]")

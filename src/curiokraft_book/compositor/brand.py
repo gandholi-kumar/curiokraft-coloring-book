@@ -52,14 +52,31 @@ def get_brand_logo(
     Returns:
         PIL Image with RGBA transparency.
     """
-    path = Path(logo_path)
-    if path.exists():
+    candidates = [
+        Path(logo_path),
+        Path("assets/logo/curiokraft_logo.PNG"),
+        Path("assets/logo/curiokraft_logo.png"),
+        Path("assets/logo/logo.png"),
+        Path("assets/logo/logo.PNG"),
+    ]
+    path = None
+    for c in candidates:
+        if c.exists() and c.is_file():
+            path = c
+            break
+
+    if path is not None:
         try:
             with Image.open(path) as img:
+                img = img.convert("RGBA")
+                # Crop to visible ink to eliminate empty padding
+                bbox = img.getbbox()
+                if bbox:
+                    img = img.crop(bbox)
                 orig_w, orig_h = img.size
                 scale = target_width_px / orig_w
                 new_h = max(1, int(round(orig_h * scale)))
-                resized = img.convert("RGBA").resize((target_width_px, new_h), Image.Resampling.LANCZOS)
+                resized = img.resize((target_width_px, new_h), Image.Resampling.LANCZOS)
                 
                 # If image has a solid white background, make it transparent
                 if auto_remove_white_bg:
@@ -87,6 +104,131 @@ def get_brand_logo(
     return badge
 
 
+def create_publisher_badge(
+    card_w: int = 640,
+    card_h: int = 420,
+    radius: int = 28,
+    offset_x: int = 16,
+    offset_y: int = 20,
+    blur_radius: int = 20,
+    shadow_alpha: int = 95,
+    logo_padding_h: int = 60,
+    logo_padding_v: int = 50,
+) -> tuple[Image.Image, int]:
+    """Creates an authentic publisher badge card with a soft bottom/right drop shadow and CurioKraft logo.
+
+    Guarantees:
+    - Dedicated pure white rounded background (#FFFFFF) to eliminate color spill from cover background.
+    - Soft, realistic multi-pass box shadow offset to bottom and right side.
+    - CurioKraft brand logo scaled prominently while strictly preserving its original aspect ratio.
+
+    Args:
+        card_w: Width of the white card in pixels (default: 640 px for Option H5).
+        card_h: Height of the white card in pixels (default: 420 px).
+        radius: Corner radius of the rounded card.
+        offset_x: Horizontal shadow offset (positive = right side).
+        offset_y: Vertical shadow offset (positive = bottom side).
+        blur_radius: Gaussian blur radius for shadow softness.
+        shadow_alpha: Opacity of the shadow mask (0-255).
+        logo_padding_h: Horizontal breathing margin inside card for logo.
+        logo_padding_v: Vertical breathing margin inside card for logo.
+
+    Returns:
+        tuple[Image.Image, int]: (badge_patch_rgba, pad_px)
+        To place the card at (x, y), paste badge_patch_rgba at (x - pad_px, y - pad_px).
+    """
+    from PIL import ImageFilter
+
+    pad = max(offset_x, offset_y) + blur_radius * 2
+    patch_w = card_w + pad * 2
+    patch_h = card_h + pad * 2
+
+    # 1. Generate bottom/right drop shadow
+    shadow_mask = Image.new("L", (patch_w, patch_h), 0)
+    s_draw = ImageDraw.Draw(shadow_mask)
+    s_draw.rounded_rectangle(
+        [pad + offset_x, pad + offset_y, pad + offset_x + card_w, pad + offset_y + card_h],
+        radius=radius,
+        fill=shadow_alpha,
+    )
+    blurred_shadow = shadow_mask.filter(ImageFilter.GaussianBlur(blur_radius))
+    shadow_layer = Image.new("RGBA", (patch_w, patch_h), (0, 0, 0, 0))
+    shadow_layer.putalpha(blurred_shadow)
+
+    # 2. Generate pure white card with subtle protective border
+    card_layer = Image.new("RGBA", (patch_w, patch_h), (0, 0, 0, 0))
+    c_draw = ImageDraw.Draw(card_layer)
+    c_draw.rounded_rectangle(
+        [pad, pad, pad + card_w, pad + card_h],
+        radius=radius,
+        fill=(255, 255, 255, 255),
+        outline=(230, 233, 238, 255),
+        width=2,
+    )
+
+    # 3. Load & tightly crop authentic CurioKraft brand logo
+    max_logo_w = max(10, card_w - logo_padding_h)
+    max_logo_h = max(10, card_h - logo_padding_v)
+
+    candidates = [
+        Path("assets/logo/curiokraft_logo.PNG"),
+        Path("assets/logo/curiokraft_logo.png"),
+        Path("assets/logo/logo.png"),
+        Path("assets/logo/logo.PNG"),
+    ]
+    logo_file = None
+    for c in candidates:
+        if c.exists() and c.is_file():
+            logo_file = c
+            break
+
+    if logo_file is not None:
+        try:
+            with Image.open(logo_file) as l_img:
+                l_img = l_img.convert("RGBA")
+                bbox = l_img.getbbox()
+                if bbox:
+                    l_img = l_img.crop(bbox)
+
+                cw, ch = l_img.size
+                # Option H5 Lockup (Wide Card 640 x 420 px with 1.85x Uniform Subtitle):
+                # - Bird & Book: natural aspect ratio (310 x 212 px)
+                # - "CURIOKRAFT": prominent bold brand name (480 px wide)
+                # - Line: 540 px wide divider line
+                # - Subtitle: full 1.85x uniform scale on single line (540 x 22 px) with authentic Option 3 letter proportions
+                bird = l_img.crop((0, 0, cw, 514))
+                brand_text = l_img.crop((0, 546, cw, 625))
+                line = l_img.crop((0, 643, cw, 649))
+                subtitle = l_img.crop((0, 665, cw, 692))
+                sub_ink = subtitle.crop(subtitle.getbbox())
+
+                b_img = bird.resize((310, int(round(310 * 514 / cw))), Image.Resampling.LANCZOS)
+                brand_img = brand_text.resize((480, int(round(480 * 79 / cw))), Image.Resampling.LANCZOS)
+                line_img = line.resize((540, 4), Image.Resampling.LANCZOS)
+                sub_img = sub_ink.resize((540, 22), Image.Resampling.LANCZOS)
+
+                tot_h = b_img.height + 10 + brand_img.height + 6 + line_img.height + 8 + sub_img.height
+                cur_y = pad + (card_h - tot_h) // 2
+
+                card_layer.paste(b_img, (pad + (card_w - b_img.width) // 2, cur_y), b_img)
+                cur_y += b_img.height + 10
+                card_layer.paste(brand_img, (pad + (card_w - brand_img.width) // 2, cur_y), brand_img)
+                cur_y += brand_img.height + 6
+                card_layer.paste(line_img, (pad + (card_w - line_img.width) // 2, cur_y), line_img)
+                cur_y += line_img.height + 8
+                card_layer.paste(sub_img, (pad + (card_w - sub_img.width) // 2, cur_y), sub_img)
+        except Exception:
+            pass
+    else:
+        fallback = get_brand_logo(target_width_px=max_logo_w)
+        lx = pad + (card_w - fallback.width) // 2
+        ly = pad + (card_h - fallback.height) // 2
+        card_layer.paste(fallback, (lx, ly), fallback)
+
+    badge_patch = Image.alpha_composite(shadow_layer, card_layer)
+    return badge_patch, pad
+
+
 def get_brand_emblem(
     emblem_path: str | Path = "assets/emblem/curiokraft_emblem.png",
     target_size_px: int = 200,
@@ -102,8 +244,19 @@ def get_brand_emblem(
     Returns:
         PIL Image with RGBA transparency.
     """
-    path = Path(emblem_path)
-    if path.exists():
+    candidates = [
+        Path(emblem_path),
+        Path("assets/emblem/curiokraft_emblem.png"),
+        Path("assets/emblem/curiokraft_emblem.PNG"),
+        Path("assets/emblem/emblem.png"),
+    ]
+    path = None
+    for c in candidates:
+        if c.exists() and c.is_file():
+            path = c
+            break
+
+    if path is not None:
         try:
             with Image.open(path) as img:
                 resized = img.convert("RGBA").resize((target_size_px, target_size_px), Image.Resampling.LANCZOS)
