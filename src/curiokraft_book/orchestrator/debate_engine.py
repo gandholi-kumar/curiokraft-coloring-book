@@ -11,8 +11,8 @@ To create a new volume: provide a new manifest with different "cards" arrays —
 
 import json
 import logging
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
@@ -25,6 +25,7 @@ logger = logging.getLogger("curiokraft.debate_engine")
 # =============================================================================
 # Config Loader — reads taxonomy + curriculum + objects once at module startup
 # =============================================================================
+
 
 def _load_yaml(path: str) -> dict:
     """Load a YAML config file relative to the project root (cwd) or an absolute path."""
@@ -40,7 +41,7 @@ def _load_yaml(path: str) -> dict:
                 break
     if not p.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
-    with open(p, "r", encoding="utf-8") as f:
+    with open(p, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 
@@ -58,7 +59,7 @@ def _load_json(path: str) -> dict:
                 break
     if not p.exists():
         return {}
-    with open(p, "r", encoding="utf-8") as f:
+    with open(p, encoding="utf-8") as f:
         return json.load(f) or {}
 
 
@@ -67,8 +68,7 @@ _TAXONOMY: dict = _load_yaml("config/taxonomy.yaml")
 _CURRICULUM: dict = _load_yaml("config/curriculum.yaml")
 _OBJECTS_DATA: dict = _load_json("manifest/objects.json")
 _OBJECTS_REGISTRY: dict[str, dict] = {
-    obj.get("canonical_name", "").lower(): obj
-    for obj in _OBJECTS_DATA.get("objects", [])
+    obj.get("canonical_name", "").lower(): obj for obj in _OBJECTS_DATA.get("objects", [])
 }
 
 
@@ -78,6 +78,7 @@ _OBJECTS_REGISTRY: dict[str, dict] = {
 # Returns the filled prompt verbatim — no AI generation involved.
 # For Vol 2/3: swap in a different alphabet_spreads.yaml with new words.
 # =============================================================================
+
 
 def _find_config_file(name: str) -> Path | None:
     """Locate a config file relative to cwd or package root."""
@@ -112,7 +113,7 @@ def _build_alphabet_spread_prompt(section_key: str) -> str | None:
 
     template = template_path.read_text(encoding="utf-8")
 
-    with open(data_path, "r", encoding="utf-8") as f:
+    with open(data_path, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     section = data.get(section_key)
@@ -183,8 +184,10 @@ def get_custom_alphabet_spread_prompt(page_record: dict) -> tuple[str, str] | No
 # Pydantic models
 # =============================================================================
 
+
 class DebateProposal(BaseModel):
     """Proposal from an individual specialist agent."""
+
     agent_id: str
     perspective: str
     suggested_features: list[str] = Field(default_factory=list)
@@ -194,6 +197,7 @@ class DebateProposal(BaseModel):
 
 class DebateRound(BaseModel):
     """Transcript of an individual round in the debate."""
+
     round_number: int
     round_name: str
     agent_outputs: dict[str, Any]
@@ -201,6 +205,7 @@ class DebateRound(BaseModel):
 
 class DebateResult(BaseModel):
     """Final decision and locked prompt specification from the 4-round debate."""
+
     page_id: str
     canonical_object: str
     display_label: str
@@ -217,6 +222,7 @@ class DebateResult(BaseModel):
 # =============================================================================
 # Living Taxonomy Classifier — reads from taxonomy.yaml
 # =============================================================================
+
 
 def classify_living_taxonomy(canonical: str, section: str) -> bool:
     """Dynamically determine if a subject is a living creature/character or inanimate.
@@ -239,6 +245,7 @@ def classify_living_taxonomy(canonical: str, section: str) -> bool:
 # Dynamic Visual Spec Generator — reads category rules from taxonomy.yaml
 # =============================================================================
 
+
 def _find_category_config(canonical: str, section: str, category: str = "") -> tuple[dict, str]:
     """Find the category config dictionary and key for a given object and section."""
     categories = _TAXONOMY.get("categories", {})
@@ -251,7 +258,7 @@ def _find_category_config(canonical: str, section: str, category: str = "") -> t
         if key in ["state_dependent", "fallback"]:
             continue
         c_name = cfg.get("category_name", "").lower()
-        if c_name and (c_name == cat_lower or c_name == sec_lower):
+        if c_name and c_name in (cat_lower, sec_lower):
             return cfg, key
 
     # 2. Match section hints
@@ -298,9 +305,23 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
     if matched_profile:
         cls_key = matched_profile.get("class", "quadrupeds")
         cls_matrix = matrix.get(cls_key, matrix.get("quadrupeds", {}))
-        anatomy = matched_profile.get("anatomy", f"natural {readable} anatomy with recognizable baby {readable} proportions")
-        posture = matched_profile.get("posture_override", cls_matrix.get("default_posture", "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body"))
-        orientation = matched_profile.get("default_orientation", cls_matrix.get("default_orientation", "three-quarter front view showing the complete body and limbs"))
+        anatomy = matched_profile.get(
+            "anatomy", f"natural {readable} anatomy with recognizable baby {readable} proportions"
+        )
+        posture = matched_profile.get(
+            "posture_override",
+            cls_matrix.get(
+                "default_posture",
+                "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body",
+            ),
+        )
+        orientation = matched_profile.get(
+            "default_orientation",
+            cls_matrix.get(
+                "default_orientation",
+                "three-quarter front view showing the complete body and limbs",
+            ),
+        )
         safeguards = cls_matrix.get("safeguards", "")
         if "safeguards_extra" in matched_profile:
             safeguards = f"{safeguards} {matched_profile['safeguards_extra']}".strip()
@@ -315,7 +336,21 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
         }
 
     # Infer class from general keywords if not in specific species profile
-    bird_words = ["bird", "chicken", "duck", "chick", "hen", "rooster", "penguin", "flamingo", "ostrich", "owl", "parrot", "swan", "peacock"]
+    bird_words = [
+        "bird",
+        "chicken",
+        "duck",
+        "chick",
+        "hen",
+        "rooster",
+        "penguin",
+        "flamingo",
+        "ostrich",
+        "owl",
+        "parrot",
+        "swan",
+        "peacock",
+    ]
     aquatic_words = ["fish", "dolphin", "whale", "shark", "octopus", "crab"]
     insect_words = ["butterfly", "bee", "bug", "ant", "ladybug", "dragonfly"]
     reptile_amphibian_words = ["frog", "toad", "turtle", "lizard", "alligator", "snake"]
@@ -336,9 +371,17 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
 
     cls_matrix = matrix.get(cls_key, matrix.get("quadrupeds", {}))
     anatomy = f"natural {readable} anatomy with recognizable baby {readable} body proportions and species silhouette"
-    posture = cls_matrix.get("default_posture", "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body")
-    orientation = cls_matrix.get("default_orientation", "three-quarter front view showing the complete body and limbs")
-    safeguards = cls_matrix.get("safeguards", "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture.")
+    posture = cls_matrix.get(
+        "default_posture",
+        "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body",
+    )
+    orientation = cls_matrix.get(
+        "default_orientation", "three-quarter front view showing the complete body and limbs"
+    )
+    safeguards = cls_matrix.get(
+        "safeguards",
+        "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture.",
+    )
     negative_tokens = list(cls_matrix.get("negative_tokens", []))
 
     return {
@@ -374,9 +417,19 @@ def resolve_vehicle_design_profile(canonical: str) -> dict:
     if matched_profile:
         cls_key = matched_profile.get("class", "wheeled_four_wheel")
         cls_matrix = matrix.get(cls_key, matrix.get("wheeled_four_wheel", {}))
-        anatomy = matched_profile.get("anatomy", f"classic toddler {readable} anatomy with clear preschool proportions")
-        support = matched_profile.get("support_override", cls_matrix.get("default_support", "supported cleanly by wheels"))
-        orientation = matched_profile.get("orientation", cls_matrix.get("default_orientation", "three-quarter side profile view displaying the complete vehicle body"))
+        anatomy = matched_profile.get(
+            "anatomy", f"classic toddler {readable} anatomy with clear preschool proportions"
+        )
+        support = matched_profile.get(
+            "support_override", cls_matrix.get("default_support", "supported cleanly by wheels")
+        )
+        orientation = matched_profile.get(
+            "orientation",
+            cls_matrix.get(
+                "default_orientation",
+                "three-quarter side profile view displaying the complete vehicle body",
+            ),
+        )
         safeguards = cls_matrix.get("safeguards", "")
         if "safeguards_extra" in matched_profile:
             safeguards = f"{safeguards} {matched_profile['safeguards_extra']}".strip()
@@ -452,15 +505,40 @@ def is_vehicle_object(canonical: str, section: str, category: str = "") -> bool:
     if c in _TAXONOMY.get("vehicle_design_profiles", {}):
         return True
     vehicle_keywords = {
-        "car", "bus", "truck", "bike", "bicycle", "motorcycle", "scooter", "tricycle",
-        "helicopter", "rocket", "sailboat", "boat", "ship", "yacht", "submarine",
-        "plane", "airplane", "jet", "train", "locomotive", "tractor", "wagon",
-        "taxi", "ambulance", "fire_truck", "police_car", "hot_air_balloon"
+        "car",
+        "bus",
+        "truck",
+        "bike",
+        "bicycle",
+        "motorcycle",
+        "scooter",
+        "tricycle",
+        "helicopter",
+        "rocket",
+        "sailboat",
+        "boat",
+        "ship",
+        "yacht",
+        "submarine",
+        "plane",
+        "airplane",
+        "jet",
+        "train",
+        "locomotive",
+        "tractor",
+        "wagon",
+        "taxi",
+        "ambulance",
+        "fire_truck",
+        "police_car",
+        "hot_air_balloon",
     }
     return any(k in c for k in vehicle_keywords)
 
 
-def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool, category: str = "") -> str:
+def generate_dynamic_visual_spec(
+    canonical: str, section: str, is_living: bool, category: str = ""
+) -> str:
     """Autonomously generate object geometry and toddler feature simplification.
 
     All category keyword sets and visual template strings are read from
@@ -472,16 +550,12 @@ def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool, 
     # 1. Living animals & characters — resolved via authoritative anatomy profiles
     if is_living:
         prof = resolve_animal_anatomy_profile(canonical)
-        return (
-            f"a cute friendly baby {readable}, {prof['anatomy']}, {prof['posture']}, {prof['orientation']}"
-        )
+        return f"a cute friendly baby {readable}, {prof['anatomy']}, {prof['posture']}, {prof['orientation']}"
 
     # 2. Vehicles & Transportation — resolved via authoritative vehicle structural profiles
     if is_vehicle_object(canonical, section, category):
         veh_prof = resolve_vehicle_design_profile(canonical)
-        return (
-            f"a cute classic {readable}, {veh_prof['anatomy']}, {veh_prof['orientation']}"
-        )
+        return f"a cute classic {readable}, {veh_prof['anatomy']}, {veh_prof['orientation']}"
 
     # 2. State-dependent items — resolved before generic category matching
     state_items = categories.get("state_dependent", {}).get("items", {})
@@ -496,9 +570,11 @@ def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool, 
         return tmpl.format(readable=readable)
 
     # 4. Fallback
-    fallback_tmpl = categories.get("fallback", {}).get("visual_template",
+    fallback_tmpl = categories.get("fallback", {}).get(
+        "visual_template",
         "a single {readable}, clear three-quarter or frontal view displaying its most iconic, "
-        "authentic simplified physical silhouette with wide open coloring zones")
+        "authentic simplified physical silhouette with wide open coloring zones",
+    )
     return fallback_tmpl.format(readable=readable)
 
 
@@ -507,6 +583,7 @@ def generate_dynamic_visual_spec(canonical: str, section: str, is_living: bool, 
 # Reads ALL card content from page_record["cards"] (manifest-driven).
 # Reads style rules and layout templates from curriculum.yaml (volume-agnostic).
 # =============================================================================
+
 
 def _join_negative(token_lists: list[list]) -> str:
     """Flatten and deduplicate multiple negative token lists into a single string."""
@@ -525,17 +602,34 @@ def _filter_contradictions(positive: str, negative_tokens: list[str]) -> list[st
     """Ensure no negative tokens contradict requirements in the positive prompt (Rule 10B.18)."""
     pos_lower = positive.lower()
     is_biped = "two legs" in pos_lower or "two feet" in pos_lower or "bipedal" in pos_lower
-    is_quadruped = "four legs" in pos_lower or "four paws" in pos_lower or "four hooves" in pos_lower or "quadrupedal" in pos_lower
+    is_quadruped = (
+        "four legs" in pos_lower
+        or "four paws" in pos_lower
+        or "four hooves" in pos_lower
+        or "quadrupedal" in pos_lower
+    )
 
-    biped_conflicts = {"two legs", "standing on two legs", "two-legged stance", "bipedal", "bipedal stance", "upright on hind legs", "upright"}
+    biped_conflicts = {
+        "two legs",
+        "standing on two legs",
+        "two-legged stance",
+        "bipedal",
+        "bipedal stance",
+        "upright on hind legs",
+        "upright",
+    }
     quadruped_conflicts = {"four legs", "four-legged stance", "quadrupedal", "quadrupedal stance"}
 
     # Vehicle-specific conflict resolution
     has_wheels_positive = (
-        ("round wheels" in pos_lower or "two wheels" in pos_lower or "train wheels" in pos_lower or "chunky wheels" in pos_lower)
-        and ("no wheels" not in pos_lower and "without wheels" not in pos_lower)
+        "round wheels" in pos_lower
+        or "two wheels" in pos_lower
+        or "train wheels" in pos_lower
+        or "chunky wheels" in pos_lower
+    ) and ("no wheels" not in pos_lower and "without wheels" not in pos_lower)
+    has_wings_positive = "wings" in pos_lower and (
+        "no wings" not in pos_lower and "without wings" not in pos_lower
     )
-    has_wings_positive = "wings" in pos_lower and ("no wings" not in pos_lower and "without wings" not in pos_lower)
 
     filtered = []
     for tok in negative_tokens:
@@ -587,8 +681,6 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
     style = cur.get("spread_style", {})
     layout_templates = cur.get("layout_templates", {})
 
-    # Style strings from curriculum.yaml (volume-agnostic)
-    numeral_mandate = style.get("numeral_fill_mandate", "")
     container_rule = style.get("container_uniformity", "")
     centering_rule = style.get("vertical_centering", "")
     base_style = style.get("base_style", "")
@@ -604,14 +696,14 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
     taxonomy_rule = tmpl.get("taxonomy_rule", "")
     sequence_rule = tmpl.get("sequence_rule", "")
     shared_neg = tmpl.get("shared_negative_tokens", [])
-
     is_alphabet = layout_key.startswith("alphabet")
-    numeral_type = "letter" if is_alphabet else "numeral"
 
     # Build per-card descriptions from manifest data
     if not cards:
-        logger.warning(f"No 'cards' array found in page_record for {page_record.get('page_id')}. "
-                       "Add a 'cards' array to this spread page in manifest/pages.json.")
+        logger.warning(
+            f"No 'cards' array found in page_record for {page_record.get('page_id')}. "
+            "Add a 'cards' array to this spread page in manifest/pages.json."
+        )
 
     card_descriptions: list[str] = []
     per_card_neg: list[str] = []
@@ -634,7 +726,9 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
         else:
             numeral = card.get("numeral", "")
             pos_desc = str(card.get("positive_description", "")).strip()
-            clean_desc = pos_desc.replace("HOLLOW BUBBLE", "bubble").replace("hollow bubble", "bubble")
+            clean_desc = pos_desc.replace("HOLLOW BUBBLE", "bubble").replace(
+                "hollow bubble", "bubble"
+            )
             card_descriptions.append(
                 f"Card {numeral}: large bubble numeral {numeral} on left, {clean_desc} (numeral and objects MUST be in the SAME Card {numeral} box)"
             )
@@ -673,8 +767,10 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
             f"Educational preschool toddler alphabet flashcard coloring poster. {row_layout_rule}",
             "CRITICAL: Every single flashcard box must be a SQUARE shape (height equals width). Strictly NO wide landscape-orientation rectangular boxes. Strictly NO boxes that are wider than they are tall.",
             f"{container_rule} {centering_rule}",
-            (f"Inside each of the {total_cards_count} square rounded flashcard boxes, render the large single bubble uppercase letter "
-             f"on the left (clean black outline with white center), its cute line art drawing on the right, and the object label word centered below the drawing: {cards_str}"),
+            (
+                f"Inside each of the {total_cards_count} square rounded flashcard boxes, render the large single bubble uppercase letter "
+                f"on the left (clean black outline with white center), its cute line art drawing on the right, and the object label word centered below the drawing: {cards_str}"
+            ),
             "STRICT ONE-OBJECT-PER-BOX RULE: Each box contains EXACTLY ONE letter and EXACTLY ONE drawing. Strictly NO two drawings in one box, strictly NO drawing bleeding into the adjacent box, strictly NO content overflow between boxes.",
             "Strictly DO NOT write 'HOLLOW' or any header text at the top of any box.",
             taxonomy_rule,
@@ -684,8 +780,10 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
         pos_parts = [
             f"Educational preschool toddler counting coloring poster. {layout_desc}",
             f"{container_rule} {centering_rule}",
-            (f"Inside each discrete flashcard box, strictly render the large single bubble numeral "
-             f"on the left (clean black outline with white center) and its countable items on the right: {cards_str}"),
+            (
+                f"Inside each discrete flashcard box, strictly render the large single bubble numeral "
+                f"on the left (clean black outline with white center) and its countable items on the right: {cards_str}"
+            ),
             "CRITICAL: The numeral digit AND its countable objects MUST be inside the SAME single card. Never place objects in a separate standalone box. Never create an extra card for objects.",
             "Strictly DO NOT create extra empty boxes, DO NOT split numerals and items into separate boxes.",
             "Strictly DO NOT write 'HOLLOW' or any header text at the top of any box.",
@@ -703,10 +801,15 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
 # DebateEngine
 # =============================================================================
 
+
 class DebateEngine:
     """Orchestrates the 4-round adversarial debate between specialist agents and Judge."""
 
-    def __init__(self, model_client: Optional[ModelClient] = None, agents_config_path: str = "config/agents.yaml"):
+    def __init__(
+        self,
+        model_client: ModelClient | None = None,
+        agents_config_path: str = "config/agents.yaml",
+    ):
         self.client = model_client or ModelClient()
         self.agents_config_path = agents_config_path
 
@@ -719,7 +822,9 @@ class DebateEngine:
         page_type = page_record.get("type", "single_page")
         composition = page_record.get("composition", "single_centered_object")
 
-        is_spread = (page_type in ["educational_spread", "counting_spread"]) or (composition == "flashcard_grid")
+        is_spread = (page_type in ["educational_spread", "counting_spread"]) or (
+            composition == "flashcard_grid"
+        )
         is_living = classify_living_taxonomy(canonical, section)
         obj_meta = _OBJECTS_REGISTRY.get(canonical.lower(), {})
         object_category = obj_meta.get("category", section)
@@ -727,9 +832,13 @@ class DebateEngine:
         readable_name = canonical.replace("_", " ").lower()
 
         object_rule = obj_meta.get("object_rule", "")
-        object_desc = generate_dynamic_visual_spec(canonical, section, is_living, category=object_category)
+        object_desc = generate_dynamic_visual_spec(
+            canonical, section, is_living, category=object_category
+        )
 
-        logger.info(f"Initiating 4-Round Debate for Page {page_id} [{label}] ({section}) [type={page_type}]...")
+        logger.info(
+            f"Initiating 4-Round Debate for Page {page_id} [{label}] ({section}) [type={page_type}]..."
+        )
         rounds: list[DebateRound] = []
 
         # ------------------------------------------------------------------
@@ -740,20 +849,32 @@ class DebateEngine:
                 "AGT-002-DESIGN": {
                     "composition": f"Balanced educational flashcard spread for {label}. 100% equal-sized uniform rounded-corner cards across all rows, vertically centered content with balanced margins.",
                     "line_weight": "Thick 6pt bold black vector outlines enclosing large, open coloring shapes.",
-                    "prohibited": ["empty grid boxes", "blank cells", "intersecting table grid", "widescreen 16:9 crop", "unequal box heights", "empty top voids"]
+                    "prohibited": [
+                        "empty grid boxes",
+                        "blank cells",
+                        "intersecting table grid",
+                        "widescreen 16:9 crop",
+                        "unequal box heights",
+                        "empty top voids",
+                    ],
                 },
                 "AGT-003-KDP": {
                     "geometry": "Strict 0.50in (150px) margin safety clearance from canvas boundary, 2550x3300px at 300 DPI, zero interior bleed.",
-                    "compliance": "Pure binary black & white (#000000 / #FFFFFF). Zero grayscale or drop-shadows."
+                    "compliance": "Pure binary black & white (#000000 / #FFFFFF). Zero grayscale or drop-shadows.",
                 },
                 "AGT-004-MARKET": {
                     "commercial_appeal": "High parent perceived value for early childhood literacy. All living animals/characters MUST feature sweet smiling faces, while inanimate objects must remain clean and faceless. Exact 1-to-1 counting accuracy.",
-                    "prohibited": ["faceless animals", "faces on fruits/objects", "scary silhouettes", "counting mismatches"]
+                    "prohibited": [
+                        "faceless animals",
+                        "faces on fruits/objects",
+                        "scary silhouettes",
+                        "counting mismatches",
+                    ],
                 },
                 "AGT-005-EDU": {
                     "pedagogical_hook": "Direct letter/numeral-to-illustration correspondence. Card assignments sourced from manifest/pages.json cards array.",
-                    "target_milestone": "Ages 1-4 early phonetic awareness and numeracy."
-                }
+                    "target_milestone": "Ages 1-4 early phonetic awareness and numeracy.",
+                },
             }
             r2_outputs = {
                 "cross_consensus": "Consensus on discrete equal-sized rounded-corner flashcards in centered balanced rows, hollow bubble letters/numerals paired with cute icons, vertically centered content, and zero empty cells or voids."
@@ -765,10 +886,10 @@ class DebateEngine:
                         "Ensure AI centers content vertically inside cards without empty top voids.",
                         "Ensure AI renders exact object counts per card as specified in manifest cards array.",
                         "Ensure AI does not draw cartoon eyes on inanimate food/objects.",
-                        "Ensure all numerals rendered as HOLLOW BUBBLE OUTLINES with white interior, not solid black."
+                        "Ensure all numerals rendered as HOLLOW BUBBLE OUTLINES with white interior, not solid black.",
                     ],
                     "risk_level": "LOW",
-                    "recommended_hardening": "Merge negative tokens from curriculum.yaml spread_style.common_negative_tokens + layout_templates.shared_negative_tokens + per-card negative_tokens."
+                    "recommended_hardening": "Merge negative tokens from curriculum.yaml spread_style.common_negative_tokens + layout_templates.shared_negative_tokens + per-card negative_tokens.",
                 }
             }
         elif is_living:
@@ -777,20 +898,31 @@ class DebateEngine:
                 "AGT-002-DESIGN": {
                     "composition": f"Centered single illustration of baby {readable_name} in {prof['orientation']}. {prof['posture']}. Occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
                     "line_weight": "Thick 5pt bold black vector outlines enclosing large, smooth coloring surfaces.",
-                    "prohibited": prof["negative_tokens"][:4] + ["thin hair lines", "cross-hatching", "intricate fur patterns", "widescreen 16:9 crop"]
+                    "prohibited": prof["negative_tokens"][:4]
+                    + [
+                        "thin hair lines",
+                        "cross-hatching",
+                        "intricate fur patterns",
+                        "widescreen 16:9 crop",
+                    ],
                 },
                 "AGT-003-KDP": {
                     "geometry": "Strict 0.50in (150px) margin safety clearance, 2550x3300px at 300 DPI, zero interior bleed.",
-                    "compliance": "Pure binary monochrome black & white. Typography added separately at top."
+                    "compliance": "Pure binary monochrome black & white. Typography added separately at top.",
                 },
                 "AGT-004-MARKET": {
                     "commercial_appeal": f"Authentic baby {readable_name} illustration preserving natural {prof['class']} anatomy with charming big round eyes and sweet gentle preschool expression.",
-                    "prohibited": ["anthropomorphic cartoon character", "human-like standing", "scary/creepy expressions", "sharp fangs/claws"]
+                    "prohibited": [
+                        "anthropomorphic cartoon character",
+                        "human-like standing",
+                        "scary/creepy expressions",
+                        "sharp fangs/claws",
+                    ],
                 },
                 "AGT-005-EDU": {
                     "pedagogical_hook": f"Iconic, unmistakable canonical {readable_name} silhouette for instant recognition by a 2-year-old child.",
-                    "target_milestone": f"Vocabulary expansion in category '{section}'."
-                }
+                    "target_milestone": f"Vocabulary expansion in category '{section}'.",
+                },
             }
             r2_outputs = {
                 "cross_consensus": f"Agreed on charming single {readable_name} animal with big round eyes, authentic {prof['class']} anatomy, bold 5pt outlines, and 0.50in margin safety clearance."
@@ -802,10 +934,11 @@ class DebateEngine:
                         f"Verify limb grounding and orientation: complete body visible in {prof['orientation']} with limbs naturally positioned.",
                         f"Ensure AI does not draw background habitat, floor, or grass behind the {readable_name}.",
                         "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing.",
-                        "Ensure typography is NOT drawn on canvas (handled by compositor)."
+                        "Ensure typography is NOT drawn on canvas (handled by compositor).",
                     ],
                     "risk_level": "LOW",
-                    "recommended_hardening": f"Enforce species safeguards: {prof['safeguards']}. Add negative tokens: " + ", ".join(prof["negative_tokens"][:4])
+                    "recommended_hardening": f"Enforce species safeguards: {prof['safeguards']}. Add negative tokens: "
+                    + ", ".join(prof["negative_tokens"][:4]),
                 }
             }
         elif is_veh:
@@ -814,20 +947,31 @@ class DebateEngine:
                 "AGT-002-DESIGN": {
                     "composition": f"Centered single illustration of {readable_name} in {veh_prof['orientation']}. {veh_prof['anatomy']}. Occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
                     "line_weight": "Thick 5pt bold black vector outlines enclosing large, smooth coloring surfaces.",
-                    "prohibited": veh_prof["negative_tokens"][:4] + ["thin hair lines", "cross-hatching", "intricate engine parts", "widescreen 16:9 crop"]
+                    "prohibited": veh_prof["negative_tokens"][:4]
+                    + [
+                        "thin hair lines",
+                        "cross-hatching",
+                        "intricate engine parts",
+                        "widescreen 16:9 crop",
+                    ],
                 },
                 "AGT-003-KDP": {
                     "geometry": "Strict 0.50in (150px) margin safety clearance, 2550x3300px at 300 DPI, zero interior bleed.",
-                    "compliance": "Pure binary monochrome black & white. Typography added separately at top."
+                    "compliance": "Pure binary monochrome black & white. Typography added separately at top.",
                 },
                 "AGT-004-MARKET": {
                     "commercial_appeal": f"Authentic simplified {readable_name} preserving {veh_prof['class']} domain structure with bold preschool contours, large colorable panels, and strictly NO human driver or cartoon faces.",
-                    "prohibited": ["human driver", "cartoon eyes on vehicle", "road scenery", "complex mechanical clutter"]
+                    "prohibited": [
+                        "human driver",
+                        "cartoon eyes on vehicle",
+                        "road scenery",
+                        "complex mechanical clutter",
+                    ],
                 },
                 "AGT-005-EDU": {
                     "pedagogical_hook": f"Iconic, unmistakable canonical {readable_name} silhouette for instant recognition by a 2-year-old child.",
-                    "target_milestone": f"Object identification in category '{section}'."
-                }
+                    "target_milestone": f"Object identification in category '{section}'.",
+                },
             }
             r2_outputs = {
                 "cross_consensus": f"Agreed on authentic {readable_name} ({veh_prof['class']}) with {veh_prof['support']}, bold 5pt outlines, and 0.50in margin safety clearance."
@@ -839,10 +983,11 @@ class DebateEngine:
                         f"Verify structural support: {veh_prof['support']}.",
                         "Ensure AI does not draw road, street, or background scenery.",
                         "Ensure AI does not draw human driver, operator, or passengers.",
-                        "Ensure AI renders pure flat 2D line art with zero shading or gray gradients."
+                        "Ensure AI renders pure flat 2D line art with zero shading or gray gradients.",
                     ],
                     "risk_level": "LOW",
-                    "recommended_hardening": f"Enforce vehicle safeguards: {veh_prof['safeguards']}. Add negative tokens: " + ", ".join(veh_prof["negative_tokens"][:4])
+                    "recommended_hardening": f"Enforce vehicle safeguards: {veh_prof['safeguards']}. Add negative tokens: "
+                    + ", ".join(veh_prof["negative_tokens"][:4]),
                 }
             }
         else:
@@ -850,20 +995,31 @@ class DebateEngine:
                 "AGT-002-DESIGN": {
                     "composition": f"Centered single illustration of {object_desc} occupying 70% of safe canvas. Vertical portrait 3:4 aspect ratio.",
                     "line_weight": "Thick 5pt bold black vector outlines enclosing wide, open coloring shapes.",
-                    "prohibited": ["thin hair lines", "cross-hatching", "intricate patterns", "widescreen 16:9 crop", "cartoon faces on non-living objects"]
+                    "prohibited": [
+                        "thin hair lines",
+                        "cross-hatching",
+                        "intricate patterns",
+                        "widescreen 16:9 crop",
+                        "cartoon faces on non-living objects",
+                    ],
                 },
                 "AGT-003-KDP": {
                     "geometry": "Strict 0.50in (150px) margin safety clearance, 2550x3300px at 300 DPI, zero interior bleed.",
-                    "compliance": "Pure binary monochrome black & white. Reserve top header for programmatic typography."
+                    "compliance": "Pure binary monochrome black & white. Reserve top header for programmatic typography.",
                 },
                 "AGT-004-MARKET": {
                     "commercial_appeal": f"Clean, authentic simplified physical {readable_name} silhouette. Pure inanimate object with strictly NO cartoon eyes, NO mouth, NO face, and NO anthropomorphic features.",
-                    "prohibited": ["cartoon eyes", "smiling mouth", "face on non-living object", "unnatural distortions"]
+                    "prohibited": [
+                        "cartoon eyes",
+                        "smiling mouth",
+                        "face on non-living object",
+                        "unnatural distortions",
+                    ],
                 },
                 "AGT-005-EDU": {
                     "pedagogical_hook": f"Universal real-world {readable_name} object identification for early childhood cognitive development.",
-                    "target_milestone": f"Object recognition in category '{section}'."
-                }
+                    "target_milestone": f"Object recognition in category '{section}'.",
+                },
             }
             r2_outputs = {
                 "cross_consensus": f"Agreed on authentic inanimate {readable_name} object, strictly NO facial features, bold 5pt outlines, and 0.50in margin buffer."
@@ -873,16 +1029,26 @@ class DebateEngine:
                     "stress_test_findings": [
                         f"Ensure AI does not hallucinate cartoon eyes or a mouth on the {readable_name}.",
                         "Ensure AI does not draw table, kitchen, or background scenery.",
-                        "Ensure AI does not render widescreen landscape 16:9 crop."
+                        "Ensure AI does not render widescreen landscape 16:9 crop.",
                     ],
                     "risk_level": "LOW",
-                    "recommended_hardening": "Add negative tokens: face, eyes, mouth, smile, facial features, anthropomorphic, cartoon character face, background, floor, text, letters, words, 16:9, widescreen."
+                    "recommended_hardening": "Add negative tokens: face, eyes, mouth, smile, facial features, anthropomorphic, cartoon character face, background, floor, text, letters, words, 16:9, widescreen.",
                 }
             }
 
-        rounds.append(DebateRound(round_number=1, round_name="Specialist Proposals", agent_outputs=r1_outputs))
-        rounds.append(DebateRound(round_number=2, round_name="Cross-Specialist Review", agent_outputs=r2_outputs))
-        rounds.append(DebateRound(round_number=3, round_name="Adversarial Red-Team Critique", agent_outputs=r3_outputs))
+        rounds.append(
+            DebateRound(round_number=1, round_name="Specialist Proposals", agent_outputs=r1_outputs)
+        )
+        rounds.append(
+            DebateRound(
+                round_number=2, round_name="Cross-Specialist Review", agent_outputs=r2_outputs
+            )
+        )
+        rounds.append(
+            DebateRound(
+                round_number=3, round_name="Adversarial Red-Team Critique", agent_outputs=r3_outputs
+            )
+        )
 
         # ------------------------------------------------------------------
         # Round 4: Judge Synthesis & Prompt Generation
@@ -895,7 +1061,9 @@ class DebateEngine:
             cat_neg = cat_cfg.get("negative_tokens", [])
 
             if object_rule:
-                subject_instruction = f"{readable_name.title()}. {object_rule}".strip().rstrip(".") + "."
+                subject_instruction = (
+                    f"{readable_name.title()}. {object_rule}".strip().rstrip(".") + "."
+                )
             else:
                 subject_instruction = f"{object_desc}".strip().rstrip(".") + "."
 
@@ -915,11 +1083,41 @@ class DebateEngine:
                     "strictly NO text, NO letters, NO words."
                 )
                 base_neg = [
-                    "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures", "3d", "photorealistic",
-                    "intricate patterns", "multiple objects", "background scenery", "floor", "ground", "sky", "horizon",
-                    "borders", "frames", "separator lines", "text", "letters", "words", "alphabet", "typography",
-                    "watermarks", "labels", "writing", "cross-hatching", "thin lines", "scary expression",
-                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                    "shading",
+                    "shadows",
+                    "gradients",
+                    "gray",
+                    "grayscale",
+                    "color",
+                    "textures",
+                    "3d",
+                    "photorealistic",
+                    "intricate patterns",
+                    "multiple objects",
+                    "background scenery",
+                    "floor",
+                    "ground",
+                    "sky",
+                    "horizon",
+                    "borders",
+                    "frames",
+                    "separator lines",
+                    "text",
+                    "letters",
+                    "words",
+                    "alphabet",
+                    "typography",
+                    "watermarks",
+                    "labels",
+                    "writing",
+                    "cross-hatching",
+                    "thin lines",
+                    "scary expression",
+                    "widescreen",
+                    "16:9",
+                    "landscape orientation",
+                    "horizontal cropping",
+                    "cut off edges",
                 ]
                 unfiltered_neg = _join_negative([prof["negative_tokens"], base_neg, cat_neg])
                 neg_tokens_list = [t.strip() for t in unfiltered_neg.split(",") if t.strip()]
@@ -941,12 +1139,48 @@ class DebateEngine:
                     "no background elements, strictly NO text, NO letters, NO words."
                 )
                 base_neg = [
-                    "face", "eyes", "mouth", "smile", "facial features", "anthropomorphic", "cartoon character face",
-                    "human features", "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures",
-                    "3d", "photorealistic", "intricate patterns", "multiple objects", "background scenery", "floor",
-                    "ground", "sky", "horizon", "borders", "frames", "separator lines", "text", "letters", "words",
-                    "alphabet", "typography", "watermarks", "labels", "writing", "cross-hatching", "thin lines",
-                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                    "face",
+                    "eyes",
+                    "mouth",
+                    "smile",
+                    "facial features",
+                    "anthropomorphic",
+                    "cartoon character face",
+                    "human features",
+                    "shading",
+                    "shadows",
+                    "gradients",
+                    "gray",
+                    "grayscale",
+                    "color",
+                    "textures",
+                    "3d",
+                    "photorealistic",
+                    "intricate patterns",
+                    "multiple objects",
+                    "background scenery",
+                    "floor",
+                    "ground",
+                    "sky",
+                    "horizon",
+                    "borders",
+                    "frames",
+                    "separator lines",
+                    "text",
+                    "letters",
+                    "words",
+                    "alphabet",
+                    "typography",
+                    "watermarks",
+                    "labels",
+                    "writing",
+                    "cross-hatching",
+                    "thin lines",
+                    "widescreen",
+                    "16:9",
+                    "landscape orientation",
+                    "horizontal cropping",
+                    "cut off edges",
                 ]
                 unfiltered_neg = _join_negative([veh_prof["negative_tokens"], base_neg, cat_neg])
                 neg_tokens_list = [t.strip() for t in unfiltered_neg.split(",") if t.strip()]
@@ -964,12 +1198,48 @@ class DebateEngine:
                     "no background elements, strictly NO text, NO letters, NO words."
                 )
                 base_neg = [
-                    "face", "eyes", "mouth", "smile", "facial features", "anthropomorphic", "cartoon character face",
-                    "human features", "shading", "shadows", "gradients", "gray", "grayscale", "color", "textures",
-                    "3d", "photorealistic", "intricate patterns", "multiple objects", "background scenery", "floor",
-                    "ground", "sky", "horizon", "borders", "frames", "separator lines", "text", "letters", "words",
-                    "alphabet", "typography", "watermarks", "labels", "writing", "cross-hatching", "thin lines",
-                    "widescreen", "16:9", "landscape orientation", "horizontal cropping", "cut off edges"
+                    "face",
+                    "eyes",
+                    "mouth",
+                    "smile",
+                    "facial features",
+                    "anthropomorphic",
+                    "cartoon character face",
+                    "human features",
+                    "shading",
+                    "shadows",
+                    "gradients",
+                    "gray",
+                    "grayscale",
+                    "color",
+                    "textures",
+                    "3d",
+                    "photorealistic",
+                    "intricate patterns",
+                    "multiple objects",
+                    "background scenery",
+                    "floor",
+                    "ground",
+                    "sky",
+                    "horizon",
+                    "borders",
+                    "frames",
+                    "separator lines",
+                    "text",
+                    "letters",
+                    "words",
+                    "alphabet",
+                    "typography",
+                    "watermarks",
+                    "labels",
+                    "writing",
+                    "cross-hatching",
+                    "thin lines",
+                    "widescreen",
+                    "16:9",
+                    "landscape orientation",
+                    "horizontal cropping",
+                    "cut off edges",
                 ]
                 negative_prompt = _join_negative([base_neg, cat_neg])
 
@@ -985,14 +1255,20 @@ class DebateEngine:
                 "verdict": judge_verdict,
                 "winner": "AGT-002-DESIGN",
                 "score": 97.5,
-                "rationale": judge_rationale
+                "rationale": judge_rationale,
             },
             "AGT-008-PROMPT": {
                 "positive_prompt": positive_prompt,
-                "negative_prompt": negative_prompt
-            }
+                "negative_prompt": negative_prompt,
+            },
         }
-        rounds.append(DebateRound(round_number=4, round_name="Judge Synthesis & Specification Lock", agent_outputs=r4_outputs))
+        rounds.append(
+            DebateRound(
+                round_number=4,
+                round_name="Judge Synthesis & Specification Lock",
+                agent_outputs=r4_outputs,
+            )
+        )
 
         return DebateResult(
             page_id=page_id,
@@ -1005,16 +1281,17 @@ class DebateEngine:
             negative_prompt=negative_prompt,
             rounds=rounds,
             judge_verdict=judge_verdict,
-            judge_rationale=judge_rationale
+            judge_rationale=judge_rationale,
         )
 
     def export_full_debate_log(
         self,
         manifest_path: str | Path = "manifest/pages.json",
-        output_file: str | Path = "logs/agent_debates_log.md"
+        output_file: str | Path = "logs/agent_debates_log.md",
     ) -> str:
         """Synthesize and export the complete 4-round debate transcript across all manifest pages."""
         import json
+
         m_path = Path(manifest_path)
         out_p = Path(output_file)
         out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -1022,7 +1299,7 @@ class DebateEngine:
         if not m_path.exists():
             raise FileNotFoundError(f"Manifest file not found at: {manifest_path}")
 
-        with open(m_path, "r", encoding="utf-8") as f:
+        with open(m_path, encoding="utf-8") as f:
             manifest_data = json.load(f)
 
         pages = manifest_data.get("pages", [])
@@ -1038,7 +1315,7 @@ class DebateEngine:
             "> This log records the complete pre-generation reasoning, independent specialist proposals, cross-agent debate, adversarial stress-testing, and Judge synthesis for every single page.",
             "",
             "---",
-            ""
+            "",
         ]
 
         for p in pages:
@@ -1047,18 +1324,24 @@ class DebateEngine:
             lines.append(f"## \U0001f4c4 Page {num:03d} ({res.page_id}): {res.display_label}")
             lines.append(f"- **Section:** {res.section}")
             lines.append(f"- **Canonical Object:** `{res.canonical_object}`")
-            lines.append(f"- **Judge Verdict:** `{res.judge_verdict}` (Score: `{res.final_score}/100` | Winner: `{res.winner_agent}`)")
+            lines.append(
+                f"- **Judge Verdict:** `{res.judge_verdict}` (Score: `{res.final_score}/100` | Winner: `{res.winner_agent}`)"
+            )
             lines.append(f"- **Judge Rationale:** {res.judge_rationale}")
             lines.append("")
 
             r1 = next((r for r in res.rounds if r.round_number == 1), None)
             if r1:
                 lines.append("### \U0001f4ac Round 1: Specialist Agent Proposals")
-                lines.append("| Specialist Agent | Perspective & Proposals | Constraints / Prohibitions |")
+                lines.append(
+                    "| Specialist Agent | Perspective & Proposals | Constraints / Prohibitions |"
+                )
                 lines.append("| :--- | :--- | :--- |")
                 for agent_id, out in r1.agent_outputs.items():
                     if isinstance(out, dict):
-                        props = "<br/>".join([f"**{k}:** {v}" for k, v in out.items() if k != "prohibited"])
+                        props = "<br/>".join(
+                            [f"**{k}:** {v}" for k, v in out.items() if k != "prohibited"]
+                        )
                         prohib = "<br/>".join(out.get("prohibited", []))
                         lines.append(f"| **{agent_id}** | {props} | {prohib} |")
                 lines.append("")
@@ -1070,13 +1353,15 @@ class DebateEngine:
                 lines.append("**Stress-Test Findings:**")
                 for f_item in critic_out.get("stress_test_findings", []):
                     lines.append(f"- {f_item}")
-                lines.append(f"**Recommended Hardening:** {critic_out.get('recommended_hardening', 'N/A')}")
+                lines.append(
+                    f"**Recommended Hardening:** {critic_out.get('recommended_hardening', 'N/A')}"
+                )
                 lines.append("")
 
             lines.append("### \u2696\ufe0f Round 4: Judge Decision & Locked Prompts")
-            lines.append(f"- **Positive Prompt (Copy & Paste):**")
+            lines.append("- **Positive Prompt (Copy & Paste):**")
             lines.append(f"  ```text\n  {res.positive_prompt}\n  ```")
-            lines.append(f"- **Negative Prompt:**")
+            lines.append("- **Negative Prompt:**")
             lines.append(f"  ```text\n  {res.negative_prompt}\n  ```")
             lines.append("")
             lines.append("---")
@@ -1091,6 +1376,7 @@ class DebateEngine:
 # Dynamic Cover Artwork Prompt Generators (Manifest-Driven Agent Synthesis)
 # =============================================================================
 
+
 def _get_crayon_color_for_object(obj_name: str) -> str:
     """Helper to determine preschool crayon color guide based on object semantics."""
     obj = obj_name.lower()
@@ -1098,11 +1384,16 @@ def _get_crayon_color_for_object(obj_name: str) -> str:
         return "red"
     if any(k in obj for k in ["banana", "sun", "lemon", "duck", "cheese", "corn", "star"]):
         return "yellow"
-    if any(k in obj for k in ["car", "boat", "ship", "train", "plane", "whale", "dolphin", "milk", "water"]):
+    if any(
+        k in obj
+        for k in ["car", "boat", "ship", "train", "plane", "whale", "dolphin", "milk", "water"]
+    ):
         return "blue"
     if any(k in obj for k in ["carrot", "guitar", "orange", "fox", "tiger", "lion", "basketball"]):
         return "orange"
-    if any(k in obj for k in ["frog", "turtle", "tree", "leaf", "caterpillar", "dinosaur", "grass"]):
+    if any(
+        k in obj for k in ["frog", "turtle", "tree", "leaf", "caterpillar", "dinosaur", "grass"]
+    ):
         return "green"
     if any(k in obj for k in ["grape", "eggplant", "plum", "butterfly", "octopus"]):
         return "purple"
@@ -1110,8 +1401,7 @@ def _get_crayon_color_for_object(obj_name: str) -> str:
 
 
 def generate_front_cover_prompt(
-    book_config_path: str = "config/book_config.yaml",
-    manifest_path: str = "manifest/pages.json"
+    book_config_path: str = "config/book_config.yaml", manifest_path: str = "manifest/pages.json"
 ) -> tuple[str, str]:
     """Construct dynamic Front Cover Master Illustration prompt synthesized from manifest contents."""
     b_cfg = _load_yaml(book_config_path).get("book", {})
@@ -1127,18 +1417,18 @@ def generate_front_cover_prompt(
         "a shiny smiling cartoon red apple with round eyes, rosy cheeks, and a green leaf",
         "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds",
         "a happy smiling yellow cartoon flower with cute round face and soft green leaves",
-        "a cheerful chunky preschool toy beetle car with round cartoon headlights and smiling bumper"
+        "a cheerful chunky preschool toy beetle car with round cartoon headlights and smiling bumper",
     ]
     page_count = 100
-    
+
     m_p = Path(manifest_path)
     if m_p.exists():
         try:
-            with open(m_p, "r", encoding="utf-8") as f:
+            with open(m_p, encoding="utf-8") as f:
                 data = json.load(f)
                 pages = data.get("pages", [])
                 page_count = len(pages)
-                
+
                 # Check for hero animal in manifest
                 found_animal = None
                 for p in pages:
@@ -1152,23 +1442,37 @@ def generate_front_cover_prompt(
                         found_animal = f"an adorable chubby cartoon baby {label.lower()} with sweet smiling round eyes and rosy cheeks, sitting joyfully while holding a bright wax crayon"
                 if found_animal:
                     hero_char = found_animal
-                
+
                 # Discover dynamic companion objects across manifest categories
                 dynamic_companions = []
                 for p in pages:
                     canon = p.get("canonical_object", "").lower()
                     sec = p.get("section", "").lower()
                     label = p.get("display_label", canon.replace("_", " ")).title()
-                    if ("fruit" in sec or canon in ["apple", "banana", "strawberry"]) and len(dynamic_companions) < 1:
-                        dynamic_companions.append(f"a shiny cute smiling cartoon {label.lower()} with big sweet round eyes, rosy cheeks, and leafy stem")
-                    elif ("nature" in sec or canon in ["flower", "sun", "tree"]) and len(dynamic_companions) < 2:
-                        dynamic_companions.append(f"a cute happy smiling cartoon {label.lower()} with cheerful sunny face and soft petals")
-                    elif ("vehicle" in sec or canon in ["car", "bus", "train", "truck"]) and len(dynamic_companions) < 3:
-                        dynamic_companions.append(f"a cheerful chunky preschool toy {label.lower()} with round cartoon headlights and friendly smiling details")
-                
+                    if ("fruit" in sec or canon in ["apple", "banana", "strawberry"]) and len(
+                        dynamic_companions
+                    ) < 1:
+                        dynamic_companions.append(
+                            f"a shiny cute smiling cartoon {label.lower()} with big sweet round eyes, rosy cheeks, and leafy stem"
+                        )
+                    elif ("nature" in sec or canon in ["flower", "sun", "tree"]) and len(
+                        dynamic_companions
+                    ) < 2:
+                        dynamic_companions.append(
+                            f"a cute happy smiling cartoon {label.lower()} with cheerful sunny face and soft petals"
+                        )
+                    elif ("vehicle" in sec or canon in ["car", "bus", "train", "truck"]) and len(
+                        dynamic_companions
+                    ) < 3:
+                        dynamic_companions.append(
+                            f"a cheerful chunky preschool toy {label.lower()} with round cartoon headlights and friendly smiling details"
+                        )
+
                 # Always include iconic preschool rainbow staple
                 if len(dynamic_companions) >= 3:
-                    dynamic_companions.append("a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds")
+                    dynamic_companions.append(
+                        "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds"
+                    )
                     companion_items = dynamic_companions
         except Exception:
             pass
@@ -1205,27 +1509,11 @@ def generate_front_cover_prompt(
 
 
 def generate_back_cover_prompt(
-    book_config_path: str = "config/book_config.yaml",
-    manifest_path: str = "manifest/pages.json"
+    book_config_path: str = "config/book_config.yaml", manifest_path: str = "manifest/pages.json"
 ) -> tuple[str, str]:
     """Construct dynamic Back Cover Master Illustration prompt synthesized from manifest contents."""
     b_cfg = _load_yaml(book_config_path).get("book", {})
     title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
-    brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
-    age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
-    age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
-    page_count = 110
-
-    m_p = Path(manifest_path)
-    if m_p.exists():
-        try:
-            with open(m_p, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                pages = data.get("pages", [])
-                if pages:
-                    page_count = len(pages)
-        except Exception:
-            pass
 
     pos = (
         f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
@@ -1264,8 +1552,8 @@ def generate_back_cover_prompt(
     return pos, neg
 
 
-def generate_dynamic_cover_prompt(book_config_path: str = "config/book_config.yaml") -> tuple[str, str]:
+def generate_dynamic_cover_prompt(
+    book_config_path: str = "config/book_config.yaml",
+) -> tuple[str, str]:
     """Backward-compatible alias for Front Cover Master Prompt."""
     return generate_front_cover_prompt(book_config_path)
-
-

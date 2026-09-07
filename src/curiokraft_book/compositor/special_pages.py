@@ -9,12 +9,11 @@ Design System: welcome-cert-page-crafting skill
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+
 import numpy as np
 from PIL import Image, ImageDraw
 
 from curiokraft_book.compositor.fonts import get_typography_font
-
 
 # ---------------------------------------------------------------------------
 # BOOK THEME -- single source of truth for both pages
@@ -47,17 +46,17 @@ BOOK_THEME = {
 
 SPECIAL_ASSET_DIR = Path("inbox/special_assets")
 ASSET_NAMES = {
-    "mascot":      ["tiny_mascot.png", "tiny_mascot.png.jpg", "tiny_mascot.jpg"],
-    "badge":       ["super_colorist_badge.png", "super_colorist_badge.jpg"],
-    "welcome":     ["welcome_scene.png", "welcome_scene.jpg"],
+    "mascot": ["tiny_mascot.png", "tiny_mascot.png.jpg", "tiny_mascot.jpg"],
+    "badge": ["super_colorist_badge.png", "super_colorist_badge.jpg"],
+    "welcome": ["welcome_scene.png", "welcome_scene.jpg"],
     "celebration": ["celebration_scene.png", "celebration_scene.jpg"],
-    "stars":       ["stars.png", "stars.jpg"],
-    "sparkles":    ["sparkles.png", "sparkles.jpg"],
-    "crayons":     ["crayons.png", "crayons.jpg"],
+    "stars": ["stars.png", "stars.jpg"],
+    "sparkles": ["sparkles.png", "sparkles.jpg"],
+    "crayons": ["crayons.png", "crayons.jpg"],
 }
 
 
-def _find_asset(key: str, asset_dir: Path = SPECIAL_ASSET_DIR) -> Optional[Path]:
+def _find_asset(key: str, asset_dir: Path = SPECIAL_ASSET_DIR) -> Path | None:
     for name in ASSET_NAMES.get(key, []):
         p = asset_dir / name
         if p.exists():
@@ -65,7 +64,9 @@ def _find_asset(key: str, asset_dir: Path = SPECIAL_ASSET_DIR) -> Optional[Path]
     return None
 
 
-def _load_asset_grayscale(key: str, asset_dir: Path = SPECIAL_ASSET_DIR, crop: bool = True) -> Optional[Image.Image]:
+def _load_asset_grayscale(
+    key: str, asset_dir: Path = SPECIAL_ASSET_DIR, crop: bool = True
+) -> Image.Image | None:
     p = _find_asset(key, asset_dir)
     if p is None:
         return None
@@ -96,7 +97,9 @@ def _load_asset_grayscale(key: str, asset_dir: Path = SPECIAL_ASSET_DIR, crop: b
         return None
 
 
-def _load_welcome_scene_halves(asset_dir: Path = SPECIAL_ASSET_DIR) -> Tuple[Optional[Image.Image], Optional[Image.Image]]:
+def _load_welcome_scene_halves(
+    asset_dir: Path = SPECIAL_ASSET_DIR,
+) -> tuple[Image.Image | None, Image.Image | None]:
     """Dynamically split welcome_scene into left and right clusters to surround the central mascot."""
     p = _find_asset("welcome", asset_dir)
     if p is None:
@@ -139,8 +142,9 @@ def _load_welcome_scene_halves(asset_dir: Path = SPECIAL_ASSET_DIR) -> Tuple[Opt
         return None, None
 
 
-def _paste_asset(canvas: Image.Image, asset_img: Image.Image,
-                 x: int, y: int, max_w: int, max_h: int) -> tuple:
+def _paste_asset(
+    canvas: Image.Image, asset_img: Image.Image, x: int, y: int, max_w: int, max_h: int
+) -> tuple:
     scale = min(max_w / asset_img.width, max_h / asset_img.height, 1.0)
     new_w = max(1, int(asset_img.width * scale))
     new_h = max(1, int(asset_img.height * scale))
@@ -157,20 +161,40 @@ def _font(size: int):
     return get_typography_font(font_size_pt=size)
 
 
-def _centered_text(draw, y: int, text: str, font, fill: int = 0,
-                   canvas_w: int = 2550, stroke_width: int = 0, stroke_fill: int = 255):
-    draw.text((canvas_w // 2, y), text, font=font, fill=fill,
-              anchor="mm", stroke_width=stroke_width, stroke_fill=stroke_fill)
+def _centered_text(
+    draw,
+    y: int,
+    text: str,
+    font,
+    fill: int = 0,
+    canvas_w: int = 2550,
+    stroke_width: int = 0,
+    stroke_fill: int = 255,
+):
+    draw.text(
+        (canvas_w // 2, y),
+        text,
+        font=font,
+        fill=fill,
+        anchor="mm",
+        stroke_width=stroke_width,
+        stroke_fill=stroke_fill,
+    )
 
 
 def _draw_star(draw, cx: int, cy: int, r: int, fill: int = 0):
     ri = int(r * 0.42)
     pts = [
-        (cx, cy - r), (cx + int(ri * 0.59), cy - int(ri * 0.81)),
-        (cx + int(r * 0.95), cy - int(r * 0.31)), (cx + int(ri * 0.95), cy + int(ri * 0.31)),
-        (cx + int(r * 0.59), cy + int(r * 0.81)), (cx, cy + ri),
-        (cx - int(r * 0.59), cy + int(r * 0.81)), (cx - int(ri * 0.95), cy + int(ri * 0.31)),
-        (cx - int(r * 0.95), cy - int(r * 0.31)), (cx - int(ri * 0.59), cy - int(ri * 0.81)),
+        (cx, cy - r),
+        (cx + int(ri * 0.59), cy - int(ri * 0.81)),
+        (cx + int(r * 0.95), cy - int(r * 0.31)),
+        (cx + int(ri * 0.95), cy + int(ri * 0.31)),
+        (cx + int(r * 0.59), cy + int(r * 0.81)),
+        (cx, cy + ri),
+        (cx - int(r * 0.59), cy + int(r * 0.81)),
+        (cx - int(ri * 0.95), cy + int(ri * 0.31)),
+        (cx - int(r * 0.95), cy - int(r * 0.31)),
+        (cx - int(ri * 0.59), cy - int(ri * 0.81)),
     ]
     draw.polygon(pts, fill=fill)
 
@@ -179,10 +203,12 @@ def _draw_border_welcome(draw, t: dict):
     cw, ch = t["canvas_w"], t["canvas_h"]
     oi, ii = t["border_outer_inset"], t["border_inner_inset"]
     r = t["border_radius"]
-    draw.rounded_rectangle([oi, oi, cw - oi, ch - oi],
-                           radius=r + 10, outline=0, width=t["border_outer_width"])
-    draw.rounded_rectangle([ii, ii, cw - ii, ch - ii],
-                           radius=r, outline=0, width=t["border_inner_width"])
+    draw.rounded_rectangle(
+        [oi, oi, cw - oi, ch - oi], radius=r + 10, outline=0, width=t["border_outer_width"]
+    )
+    draw.rounded_rectangle(
+        [ii, ii, cw - ii, ch - ii], radius=r, outline=0, width=t["border_inner_width"]
+    )
     _draw_star(draw, oi + 40, oi + 40, 26, fill=0)
     _draw_star(draw, cw - oi - 40, oi + 40, 26, fill=0)
     _draw_star(draw, oi + 40, ch - oi - 40, 26, fill=0)
@@ -193,14 +219,21 @@ def _draw_border_certificate(draw, t: dict):
     cw, ch = t["canvas_w"], t["canvas_h"]
     oi, ii = t["border_outer_inset"], t["border_inner_inset"]
     r = t["border_radius"]
-    draw.rounded_rectangle([oi, oi, cw - oi, ch - oi],
-                           radius=r + 10, outline=0, width=t["border_outer_width"] + 4)
-    draw.rounded_rectangle([ii, ii, cw - ii, ch - ii],
-                           radius=r, outline=0, width=t["border_inner_width"])
-    draw.rounded_rectangle([ii + 20, ii + 20, cw - ii - 20, ch - ii - 20],
-                           radius=r - 8, outline=0, width=3)
-    for cx, cy in [(oi + 55, oi + 55), (cw - oi - 55, oi + 55),
-                   (oi + 55, ch - oi - 55), (cw - oi - 55, ch - oi - 55)]:
+    draw.rounded_rectangle(
+        [oi, oi, cw - oi, ch - oi], radius=r + 10, outline=0, width=t["border_outer_width"] + 4
+    )
+    draw.rounded_rectangle(
+        [ii, ii, cw - ii, ch - ii], radius=r, outline=0, width=t["border_inner_width"]
+    )
+    draw.rounded_rectangle(
+        [ii + 20, ii + 20, cw - ii - 20, ch - ii - 20], radius=r - 8, outline=0, width=3
+    )
+    for cx, cy in [
+        (oi + 55, oi + 55),
+        (cw - oi - 55, oi + 55),
+        (oi + 55, ch - oi - 55),
+        (cw - oi - 55, ch - oi - 55),
+    ]:
         _draw_star(draw, cx, cy, 36, fill=0)
     _draw_star(draw, cw // 2, oi + 30, 20, fill=0)
     _draw_star(draw, cw // 2, ch - oi - 30, 20, fill=0)
@@ -210,14 +243,21 @@ def _draw_name_hero_box(draw, t: dict, top_y: int, box_h: int = 180, helper_text
     cw = t["canvas_w"]
     box_l, box_r = 340, cw - 340
     box_t, box_b = top_y, top_y + box_h
-    draw.rounded_rectangle([box_l + 10, box_t + 10, box_r + 10, box_b + 10],
-                           radius=22, fill=t["light_gray"])
-    draw.rounded_rectangle([box_l, box_t, box_r, box_b],
-                           radius=22, fill=t["white"], outline=0, width=8)
+    draw.rounded_rectangle(
+        [box_l + 10, box_t + 10, box_r + 10, box_b + 10], radius=22, fill=t["light_gray"]
+    )
+    draw.rounded_rectangle(
+        [box_l, box_t, box_r, box_b], radius=22, fill=t["white"], outline=0, width=8
+    )
     if helper_text:
         f_help = _font(34)
-        draw.text((cw // 2, box_t + box_h // 2), helper_text, font=f_help,
-                  fill=t["light_gray"], anchor="mm")
+        draw.text(
+            (cw // 2, box_t + box_h // 2),
+            helper_text,
+            font=f_help,
+            fill=t["light_gray"],
+            anchor="mm",
+        )
     return box_b
 
 
@@ -238,8 +278,8 @@ def render_welcome_page(
     canvas_h: int = 3300,
     dpi: int = 300,
     show_guides: bool = False,
-    mascot_image_path: Optional[str] = None,
-    award_image_path: Optional[str] = None,
+    mascot_image_path: str | None = None,
+    award_image_path: str | None = None,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
@@ -263,8 +303,14 @@ def render_welcome_page(
 
     # 3. Subheading (Identical Mantra to Certificate)
     f_tag = _font(t["size_tagline"])
-    _centered_text(draw, 680, "COLOR  •  SAY  •  DISCOVER  •  PLAY",
-                   f_tag, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        680,
+        "COLOR  •  SAY  •  DISCOVER  •  PLAY",
+        f_tag,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
 
     # 4. Ownership Zone
     f_own = _font(t["size_heading"])
@@ -283,11 +329,15 @@ def render_welcome_page(
 
     # Center: Hero Teddy Bear Mascot (heroic centered presence)
     if mascot:
-        _paste_asset(img, mascot, x=(canvas_w - 980) // 2, y=interaction_top + 120, max_w=980, max_h=1260)
+        _paste_asset(
+            img, mascot, x=(canvas_w - 980) // 2, y=interaction_top + 120, max_w=980, max_h=1260
+        )
 
     # Right Column: Balloon, crayons, rainbow & stars from welcome scene
     if right_wel:
-        _paste_asset(img, right_wel, x=canvas_w - 220 - 560, y=interaction_top + 10, max_w=560, max_h=1480)
+        _paste_asset(
+            img, right_wel, x=canvas_w - 220 - 560, y=interaction_top + 10, max_w=560, max_h=1480
+        )
 
     # Floating sparkle accents around Mascot's ears and waving paw
     if sparkles:
@@ -299,10 +349,13 @@ def render_welcome_page(
     tip_l, tip_r = 340, canvas_w - 340
     tip_h = 220
     tip_b = tip_top + tip_h
-    draw.rounded_rectangle([tip_l, tip_top, tip_r, tip_b],
-                           radius=24, outline=0, width=4)
-    draw.rounded_rectangle([tip_l + 10, tip_top + 10, tip_r - 10, tip_b - 10],
-                           radius=18, outline=t["light_gray"], width=2)
+    draw.rounded_rectangle([tip_l, tip_top, tip_r, tip_b], radius=24, outline=0, width=4)
+    draw.rounded_rectangle(
+        [tip_l + 10, tip_top + 10, tip_r - 10, tip_b - 10],
+        radius=18,
+        outline=t["light_gray"],
+        width=2,
+    )
 
     f_tip_lbl = _font(54)
     _centered_text(draw, tip_top + 68, "GROWN-UP TIP", f_tip_lbl, fill=0, canvas_w=canvas_w)
@@ -310,19 +363,33 @@ def render_welcome_page(
     _draw_star(draw, canvas_w // 2 + 250, tip_top + 68, 18, fill=0)
 
     f_tip_body = _font(48)
-    _centered_text(draw, tip_top + 150,
-                   "Color together, say the words aloud, and celebrate every little discovery!",
-                   f_tip_body, fill=t["dark_gray"], canvas_w=canvas_w)
-
+    _centered_text(
+        draw,
+        tip_top + 150,
+        "Color together, say the words aloud, and celebrate every little discovery!",
+        f_tip_body,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
 
     # 7. Footer Zone (safe distance above inner border at 3130)
     f_foot = _font(40)
-    _centered_text(draw, 2980,
-                   "AGES 1–4   •   100+ FIRST WORDS, LETTERS & NUMBERS",
-                   f_foot, fill=t["dark_gray"], canvas_w=canvas_w)
-    _centered_text(draw, 3038,
-                   "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
-                   _font(34), fill=t["mid_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        2980,
+        "AGES 1–4   •   100+ FIRST WORDS, LETTERS & NUMBERS",
+        f_foot,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
+    _centered_text(
+        draw,
+        3038,
+        "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
+        _font(34),
+        fill=t["mid_gray"],
+        canvas_w=canvas_w,
+    )
 
     if show_guides:
         _draw_debug_guides(draw, t)
@@ -344,7 +411,7 @@ def render_certificate_page(
     canvas_h: int = 3300,
     dpi: int = 300,
     show_guides: bool = False,
-    award_image_path: Optional[str] = None,
+    award_image_path: str | None = None,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
@@ -375,29 +442,56 @@ def render_certificate_page(
 
     # 3. Recipient Zone
     f_body = _font(46)
-    _centered_text(draw, 685, "This special certificate celebrates",
-                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        685,
+        "This special certificate celebrates",
+        f_body,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
     name_box_bottom = _draw_name_hero_box(draw, t, top_y=730, box_h=170)
 
     # 4. Achievement & Emotional Payoff Zone
     ach_y = name_box_bottom + 50
-    _centered_text(draw, ach_y, f"for completing the {title} adventure!",
-                   _font(48), fill=0, canvas_w=canvas_w)
-    _centered_text(draw, ach_y + 65,
-                   "You explored, colored, discovered, and played with",
-                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
-    _centered_text(draw, ach_y + 125,
-                   "100+ first words, letters, numbers, and everyday objects.",
-                   f_body, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw, ach_y, f"for completing the {title} adventure!", _font(48), fill=0, canvas_w=canvas_w
+    )
+    _centered_text(
+        draw,
+        ach_y + 65,
+        "You explored, colored, discovered, and played with",
+        f_body,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
+    _centered_text(
+        draw,
+        ach_y + 125,
+        "100+ first words, letters, numbers, and everyday objects.",
+        f_body,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
 
     emo_y = ach_y + 205
     f_emo = _font(42)
-    _centered_text(draw, emo_y,
-                   "Every page was a little adventure.  •  Every color was your own.",
-                   f_emo, fill=t["dark_gray"], canvas_w=canvas_w)
-    _centered_text(draw, emo_y + 58,
-                   "Every discovery was something to celebrate!",
-                   f_emo, fill=0, canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        emo_y,
+        "Every page was a little adventure.  •  Every color was your own.",
+        f_emo,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
+    _centered_text(
+        draw,
+        emo_y + 58,
+        "Every discovery was something to celebrate!",
+        f_emo,
+        fill=0,
+        canvas_w=canvas_w,
+    )
 
     # 5. Central Hero Medal & Celebratory Assembly Zone (y=1400 to 2350)
     badge_y = emo_y + 140
@@ -423,8 +517,14 @@ def render_certificate_page(
     f_tag = _font(t["size_tagline"])
     _draw_star(draw, 440, tag_y, 16, fill=t["mid_gray"])
     _draw_star(draw, canvas_w - 440, tag_y, 16, fill=t["mid_gray"])
-    _centered_text(draw, tag_y, "COLOR  •  SAY  •  DISCOVER  •  PLAY",
-                   f_tag, fill=t["dark_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        tag_y,
+        "COLOR  •  SAY  •  DISCOVER  •  PLAY",
+        f_tag,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
 
     # Stars cluster accent above signatures
     if stars:
@@ -436,19 +536,34 @@ def render_certificate_page(
     draw.line([(340, sig_y), (1060, sig_y)], fill=0, width=5)
     draw.text((700, sig_y + 36), "Date", font=f_sig, fill=t["mid_gray"], anchor="mm")
     draw.line([(canvas_w - 1060, sig_y), (canvas_w - 340, sig_y)], fill=0, width=5)
-    draw.text((canvas_w - 700, sig_y + 36), "My Grown-Up's Signature",
-              font=f_sig, fill=t["mid_gray"], anchor="mm")
+    draw.text(
+        (canvas_w - 700, sig_y + 36),
+        "My Grown-Up's Signature",
+        font=f_sig,
+        fill=t["mid_gray"],
+        anchor="mm",
+    )
 
     # 8. Footer Zone (safe distance above inner border at 3130)
     f_foot = _font(40)
     _draw_star(draw, 340, 2980, 18, fill=t["dark_gray"])
     _draw_star(draw, canvas_w - 340, 2980, 18, fill=t["dark_gray"])
-    _centered_text(draw, 2980,
-                   "KEEP COLORING  •  KEEP EXPLORING  •  KEEP LEARNING!",
-                   f_foot, fill=t["dark_gray"], canvas_w=canvas_w)
-    _centered_text(draw, 3038,
-                   "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
-                   _font(34), fill=t["mid_gray"], canvas_w=canvas_w)
+    _centered_text(
+        draw,
+        2980,
+        "KEEP COLORING  •  KEEP EXPLORING  •  KEEP LEARNING!",
+        f_foot,
+        fill=t["dark_gray"],
+        canvas_w=canvas_w,
+    )
+    _centered_text(
+        draw,
+        3038,
+        "CURIOKRAFT-KIDS   •   EARLY LEARNING SERIES",
+        _font(34),
+        fill=t["mid_gray"],
+        canvas_w=canvas_w,
+    )
 
     if show_guides:
         _draw_debug_guides(draw, t)

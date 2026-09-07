@@ -1,10 +1,11 @@
 """Model-agnostic client interface supporting OpenAI, Anthropic, Gemini, and offline simulation."""
 
-import os
 import json
 import logging
-from typing import Any, Optional, Type
+import os
 from pathlib import Path
+from typing import Any
+
 from pydantic import BaseModel
 
 logger = logging.getLogger("curiokraft.model_client")
@@ -14,6 +15,7 @@ def load_env_file(env_filename: str = ".env") -> None:
     """Auto-load environment variables from .env file if present."""
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
     except Exception:
         pass
@@ -42,11 +44,11 @@ def load_env_file(env_filename: str = ".env") -> None:
 load_env_file()
 
 
-
 class ModelResponse(BaseModel):
     """Standardized response from an LLM model call."""
+
     content: str
-    parsed_json: Optional[dict[str, Any]] = None
+    parsed_json: dict[str, Any] | None = None
     model_name: str
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -56,9 +58,10 @@ class ModelResponse(BaseModel):
 # Pluggable Image Provider Strategy Architecture
 # ----------------------------------------------------------------------
 
+
 class BaseImageProvider:
     """Abstract Base Class for all illustration generation providers."""
-    
+
     @property
     def provider_name(self) -> str:
         raise NotImplementedError
@@ -69,9 +72,9 @@ class BaseImageProvider:
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
-        page_id: Optional[str] = None,
-        page_number: Optional[int] = None,
-        **kwargs
+        page_id: str | None = None,
+        page_number: int | None = None,
+        **kwargs,
     ) -> Any:
         raise NotImplementedError
 
@@ -79,8 +82,10 @@ class BaseImageProvider:
 class GeminiImageProvider(BaseImageProvider):
     """Google Gemini Native Image Generation Provider (gemini-3.1-flash-image)."""
 
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    def __init__(self, api_key: str | None = None):
+        self.api_key = (
+            api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        )
 
     @property
     def provider_name(self) -> str:
@@ -92,13 +97,14 @@ class GeminiImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
-        **kwargs
+        **kwargs,
     ) -> Any:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is not set in environment.")
 
         import base64
         from io import BytesIO
+
         from PIL import Image
 
         imagen_prompt = (
@@ -108,14 +114,12 @@ class GeminiImageProvider(BaseImageProvider):
 
         try:
             from google import genai
+
             client = genai.Client(api_key=self.api_key)
             for model_id in ["gemini-3.1-flash-image", "gemini-2.5-flash-image"]:
                 try:
                     logger.info(f"Calling Google Gemini Image Generation with {model_id}...")
-                    interaction = client.interactions.create(
-                        model=model_id,
-                        input=imagen_prompt
-                    )
+                    interaction = client.interactions.create(model=model_id, input=imagen_prompt)
                     if interaction.output_image and interaction.output_image.data:
                         img_bytes = base64.b64decode(interaction.output_image.data)
                         pil_img = Image.open(BytesIO(img_bytes)).convert("L")
@@ -126,7 +130,11 @@ class GeminiImageProvider(BaseImageProvider):
                     if "limit: 0" in str(m_err) or "429" in str(m_err):
                         raise
         except Exception as sdk_err:
-            if "limit: 0" in str(sdk_err) or "429" in str(sdk_err) or "too_many_requests" in str(sdk_err):
+            if (
+                "limit: 0" in str(sdk_err)
+                or "429" in str(sdk_err)
+                or "too_many_requests" in str(sdk_err)
+            ):
                 raise RuntimeError(
                     "Google AI Studio requires a linked Pay-As-You-Go billing account for image generation models (gemini-3.1-flash-image). "
                     "Free tier image quota is 0 RPM."
@@ -136,6 +144,7 @@ class GeminiImageProvider(BaseImageProvider):
         # REST fallback
         try:
             import requests
+
             url = "https://generativelanguage.googleapis.com/v1beta/interactions"
             headers = {
                 "Content-Type": "application/json",
@@ -143,7 +152,7 @@ class GeminiImageProvider(BaseImageProvider):
             }
             payload = {
                 "model": "gemini-3.1-flash-image",
-                "input": [{"type": "text", "text": imagen_prompt}]
+                "input": [{"type": "text", "text": imagen_prompt}],
             }
             resp = requests.post(url, json=payload, headers=headers, timeout=60)
             if resp.status_code == 200:
@@ -163,7 +172,7 @@ class GeminiImageProvider(BaseImageProvider):
 class OpenAIImageProvider(BaseImageProvider):
     """OpenAI DALL-E 3 Image Generation Provider."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
 
     @property
@@ -176,14 +185,15 @@ class OpenAIImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
-        **kwargs
+        **kwargs,
     ) -> Any:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY is not set in environment.")
 
+        from io import BytesIO
+
         import openai
         import requests
-        from io import BytesIO
         from PIL import Image
 
         client = openai.OpenAI(api_key=self.api_key)
@@ -193,7 +203,7 @@ class OpenAIImageProvider(BaseImageProvider):
             prompt=f"{positive_prompt}. Clean preschool coloring book line art, thick black outlines, stark pure white background, no shading.",
             size="1024x1024",
             quality="standard",
-            n=1
+            n=1,
         )
         img_url = resp.data[0].url
         raw_bytes = requests.get(img_url, timeout=30).content
@@ -205,7 +215,9 @@ class OpenAIImageProvider(BaseImageProvider):
 class DiskInboxProvider(BaseImageProvider):
     """Ingests fresh user-dropped illustrations from inbox/raw_pages/."""
 
-    def __init__(self, inbox_dir: str | Path = "inbox/raw_pages", raw_dir: str | Path = "generated/raw_pages"):
+    def __init__(
+        self, inbox_dir: str | Path = "inbox/raw_pages", raw_dir: str | Path = "generated/raw_pages"
+    ):
         self.inbox_dir = Path(inbox_dir)
         self.raw_dir = Path(raw_dir)
         self.inbox_dir.mkdir(parents=True, exist_ok=True)
@@ -215,20 +227,24 @@ class DiskInboxProvider(BaseImageProvider):
     def provider_name(self) -> str:
         return "inbox"
 
-    def find_image(self, page_id: Optional[str] = None, page_number: Optional[int] = None, canonical_label: str = "") -> Optional[Path]:
+    def find_image(
+        self, page_id: str | None = None, page_number: int | None = None, canonical_label: str = ""
+    ) -> Path | None:
         if not self.inbox_dir.exists():
             return None
 
         canon = canonical_label.lower().strip().replace(" ", "_")
         valid_extensions = {".png", ".jpg", ".jpeg", ".webp"}
 
-        inbox_files = [f for f in self.inbox_dir.iterdir() if f.is_file() and f.stat().st_size > 500]
+        inbox_files = [
+            f for f in self.inbox_dir.iterdir() if f.is_file() and f.stat().st_size > 500
+        ]
 
         def get_clean_stem_and_ext(file_path: Path) -> tuple[str, str]:
             name = file_path.name.lower()
             for ext in [".png.jpg", ".jpg.png", ".jpeg.jpg", ".jpeg.png", ".png.jpeg", ".jpg.jpeg"]:
                 if name.endswith(ext):
-                    clean_stem = name[:-len(ext)]
+                    clean_stem = name[: -len(ext)]
                     return clean_stem, ext
             return file_path.stem.lower(), file_path.suffix.lower()
 
@@ -240,12 +256,14 @@ class DiskInboxProvider(BaseImageProvider):
 
         target_prefixes = []
         if page_number is not None:
-            target_prefixes.extend([
-                f"raw_p{page_number:03d}",
-                f"p{page_number:03d}",
-                f"raw_p{page_number}",
-                f"p{page_number}",
-            ])
+            target_prefixes.extend(
+                [
+                    f"raw_p{page_number:03d}",
+                    f"p{page_number:03d}",
+                    f"raw_p{page_number}",
+                    f"p{page_number}",
+                ]
+            )
         if page_id:
             pid = page_id.lower().strip()
             target_prefixes.extend([f"raw_{pid}", pid])
@@ -264,11 +282,18 @@ class DiskInboxProvider(BaseImageProvider):
                 if page_number is not None and file_page_num != page_number:
                     continue  # Strictly belongs to a different page
 
-            matches_page = any(clean_stem == pfx or clean_stem.startswith(f"{pfx}_") or clean_stem.startswith(f"{pfx}-") for pfx in target_prefixes)
-            
+            matches_page = any(
+                clean_stem == pfx
+                or clean_stem.startswith(f"{pfx}_")
+                or clean_stem.startswith(f"{pfx}-")
+                for pfx in target_prefixes
+            )
+
             # Whole-token canonical matching (prevents 'cat' matching 'certificate' or 'car' matching 'carrot')
-            stem_delim = f"_{'_'.join(re.split(r'[-_\s]+', clean_stem))}_"
-            canon_delim = f"_{'_'.join(re.split(r'[-_\s]+', canon))}_"
+            stem_tokens = "_".join(re.split(r"[-_\s]+", clean_stem))
+            canon_tokens = "_".join(re.split(r"[-_\s]+", canon))
+            stem_delim = f"_{stem_tokens}_"
+            canon_delim = f"_{canon_tokens}_"
             matches_canon = bool(canon and (clean_stem == canon or canon_delim in stem_delim))
 
             if matches_page and matches_canon:
@@ -293,12 +318,15 @@ class DiskInboxProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
-        page_id: Optional[str] = None,
-        page_number: Optional[int] = None,
-        **kwargs
+        page_id: str | None = None,
+        page_number: int | None = None,
+        **kwargs,
     ) -> Any:
         from PIL import Image
-        found = self.find_image(page_id=page_id, page_number=page_number, canonical_label=canonical_label)
+
+        found = self.find_image(
+            page_id=page_id, page_number=page_number, canonical_label=canonical_label
+        )
         if not found:
             raise FileNotFoundError(
                 f"No image found in {self.inbox_dir}/ for page {page_id} ({canonical_label})."
@@ -318,8 +346,18 @@ class MockImageProvider(BaseImageProvider):
         pts = []
         for i in range(n + 1):
             t = i / float(n)
-            x = (1-t)**3 * p0[0] + 3*(1-t)**2 * t * p1[0] + 3*(1-t) * t**2 * p2[0] + t**3 * p3[0]
-            y = (1-t)**3 * p0[1] + 3*(1-t)**2 * t * p1[1] + 3*(1-t) * t**2 * p2[1] + t**3 * p3[1]
+            x = (
+                (1 - t) ** 3 * p0[0]
+                + 3 * (1 - t) ** 2 * t * p1[0]
+                + 3 * (1 - t) * t**2 * p2[0]
+                + t**3 * p3[0]
+            )
+            y = (
+                (1 - t) ** 3 * p0[1]
+                + 3 * (1 - t) ** 2 * t * p1[1]
+                + 3 * (1 - t) * t**2 * p2[1]
+                + t**3 * p3[1]
+            )
             pts.append((int(x), int(y)))
         return pts
 
@@ -329,7 +367,7 @@ class MockImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
-        **kwargs
+        **kwargs,
     ) -> Any:
         from PIL import Image, ImageDraw
 
@@ -368,9 +406,9 @@ class MockImageProvider(BaseImageProvider):
 class ModelClient:
     """Unified interface for executing agent prompts across different LLM providers."""
 
-    def __init__(self, provider: str = "auto", model_name: Optional[str] = None):
+    def __init__(self, provider: str = "auto", model_name: str | None = None):
         """Initialize model client.
-        
+
         Args:
             provider: 'openai' | 'anthropic' | 'gemini' | 'mock' | 'auto'.
             model_name: Specific model ID (e.g. 'gpt-4o', 'claude-3-5-sonnet', 'gemini-1.5-pro').
@@ -381,7 +419,7 @@ class ModelClient:
             self.provider = env_provider.lower()
         else:
             self.provider = provider.lower()
-            
+
         self.model_name = model_name
 
         if self.provider == "auto":
@@ -404,17 +442,17 @@ class ModelClient:
         self,
         system_prompt: str,
         user_prompt: str,
-        response_schema: Optional[Type[BaseModel]] = None,
-        temperature: float = 0.2
+        response_schema: type[BaseModel] | None = None,
+        temperature: float = 0.2,
     ) -> ModelResponse:
         """Execute an agent prompt and return structured response.
-        
+
         Args:
             system_prompt: The agent's authoritative system prompt.
             user_prompt: The specific task/context payload.
             response_schema: Optional Pydantic model for JSON validation.
             temperature: Sampling temperature (default: 0.2 for deterministic output).
-            
+
         Returns:
             ModelResponse containing raw text and parsed JSON.
         """
@@ -430,10 +468,7 @@ class ModelClient:
             raise ValueError(f"Unsupported provider: {self.provider}")
 
     def _mock_call(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        response_schema: Optional[Type[BaseModel]]
+        self, system_prompt: str, user_prompt: str, response_schema: type[BaseModel] | None
     ) -> ModelResponse:
         """Deterministic offline mock simulator for pipeline testing without API credits."""
         # Detect agent role from system prompt
@@ -447,9 +482,9 @@ class ModelClient:
                     "composition": "single_centered_large",
                     "line_art_style": "bold_clean_2d_vector",
                     "stroke_weight_pt": 6.0,
-                    "prohibited_elements": ["shading", "gradients", "color", "background"]
+                    "prohibited_elements": ["shading", "gradients", "color", "background"],
                 },
-                "judge_notes": "Synthesized optimal bold outline with conservative 0.50in margin clearance."
+                "judge_notes": "Synthesized optimal bold outline with conservative 0.50in margin clearance.",
             }
         elif "AGT-008" in system_prompt or "Prompt Engineer" in system_prompt:
             mock_payload = {
@@ -464,7 +499,12 @@ class ModelClient:
                     "background scenery, text, letters, watermarks, frames, borders, thin lines, cross-hatching"
                 ),
                 "aspect_ratio": "8.5:11",
-                "safety_tokens": ["pure black and white", "no shading", "single object", "toddler coloring book"]
+                "safety_tokens": [
+                    "pure black and white",
+                    "no shading",
+                    "single object",
+                    "toddler coloring book",
+                ],
             }
         elif "AGT-009" in system_prompt or "Vision QA" in system_prompt:
             mock_payload = {
@@ -475,10 +515,10 @@ class ModelClient:
                     "line_weight_consistency": 95,
                     "zero_shading_compliance": 100,
                     "single_object_focus": 100,
-                    "toddler_suitability": 95
+                    "toddler_suitability": 95,
                 },
                 "anomalies_detected": [],
-                "recommendation": "APPROVED_FOR_MASTER_COMPOSITING"
+                "recommendation": "APPROVED_FOR_MASTER_COMPOSITING",
             }
         elif "AGT-010" in system_prompt or "Book QA" in system_prompt:
             mock_payload = {
@@ -488,14 +528,14 @@ class ModelClient:
                 "style_cohesion_score": 98,
                 "kdp_compliance_score": 100,
                 "ready_for_press": True,
-                "summary": "110 pages audited with 0 duplicates, pristine line weight cohesion, and 100% KDP compliance."
+                "summary": "110 pages audited with 0 duplicates, pristine line weight cohesion, and 100% KDP compliance.",
             }
         else:
             mock_payload = {
                 "agent_id": "SPECIALIST",
                 "status": "PROPOSAL_READY",
                 "confidence_score": 95.0,
-                "recommendation": "Follow master blueprint parameters."
+                "recommendation": "Follow master blueprint parameters.",
             }
 
         return ModelResponse(
@@ -503,20 +543,23 @@ class ModelClient:
             parsed_json=mock_payload,
             model_name="curiokraft-offline-simulator",
             prompt_tokens=150,
-            completion_tokens=80
+            completion_tokens=80,
         )
 
-    def _call_openai(self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float) -> ModelResponse:
+    def _call_openai(
+        self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float
+    ) -> ModelResponse:
         import openai
+
         client = openai.OpenAI()
         resp = client.chat.completions.create(
             model=self.model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"} if response_schema else None,
-            temperature=temp
+            temperature=temp,
         )
         content = resp.choices[0].message.content or ""
         parsed = None
@@ -529,18 +572,21 @@ class ModelClient:
             parsed_json=parsed,
             model_name=self.model_name,
             prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
-            completion_tokens=resp.usage.completion_tokens if resp.usage else 0
+            completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
         )
 
-    def _call_anthropic(self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float) -> ModelResponse:
+    def _call_anthropic(
+        self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float
+    ) -> ModelResponse:
         import anthropic
+
         client = anthropic.Anthropic()
         resp = client.messages.create(
             model=self.model_name,
             max_tokens=4096,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
-            temperature=temp
+            temperature=temp,
         )
         content = resp.content[0].text if resp.content else ""
         parsed = None
@@ -553,21 +599,23 @@ class ModelClient:
             parsed_json=parsed,
             model_name=self.model_name,
             prompt_tokens=resp.usage.input_tokens if resp.usage else 0,
-            completion_tokens=resp.usage.output_tokens if resp.usage else 0
+            completion_tokens=resp.usage.output_tokens if resp.usage else 0,
         )
 
-    def _call_gemini(self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float) -> ModelResponse:
+    def _call_gemini(
+        self, system_prompt: str, user_prompt: str, response_schema: Any, temp: float
+    ) -> ModelResponse:
         import google.generativeai as genai
+
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if api_key:
             genai.configure(api_key=api_key)
         model = genai.GenerativeModel(
-            model_name=self.model_name or "gemini-1.5-pro",
-            system_instruction=system_prompt
+            model_name=self.model_name or "gemini-1.5-pro", system_instruction=system_prompt
         )
         resp = model.generate_content(
             user_prompt,
-            generation_config={"temperature": temp, "response_mime_type": "application/json"}
+            generation_config={"temperature": temp, "response_mime_type": "application/json"},
         )
         content = resp.text or ""
         parsed = None
@@ -576,9 +624,7 @@ class ModelClient:
         except Exception:
             pass
         return ModelResponse(
-            content=content,
-            parsed_json=parsed,
-            model_name=self.model_name or "gemini-1.5-pro"
+            content=content, parsed_json=parsed, model_name=self.model_name or "gemini-1.5-pro"
         )
 
     def generate_illustration(
@@ -588,9 +634,9 @@ class ModelClient:
         canonical_label: str = "",
         section: str = "General",
         source_mode: str = "auto",
-        page_id: Optional[str] = None,
-        page_number: Optional[int] = None,
-        force_fresh: bool = False
+        page_id: str | None = None,
+        page_number: int | None = None,
+        force_fresh: bool = False,
     ) -> Any:
         """Generate or ingest raw illustration using the pluggable provider strategy."""
         mode = source_mode.lower().strip()
@@ -599,15 +645,23 @@ class ModelClient:
         # 1. Explicit 'inbox' or 'disk' mode
         if mode in ["inbox", "disk"]:
             return inbox_provider.generate(
-                positive_prompt, negative_prompt, canonical_label, section, page_id=page_id, page_number=page_number
+                positive_prompt,
+                negative_prompt,
+                canonical_label,
+                section,
+                page_id=page_id,
+                page_number=page_number,
             )
 
         # 2. Check inbox if in 'auto' mode and not forced fresh
         if mode == "auto" and not force_fresh:
-            found = inbox_provider.find_image(page_id=page_id, page_number=page_number, canonical_label=canonical_label)
+            found = inbox_provider.find_image(
+                page_id=page_id, page_number=page_number, canonical_label=canonical_label
+            )
             if found:
                 logger.info(f"Auto-detected fresh user drop in inbox: {found}")
                 from PIL import Image
+
                 return Image.open(found).convert("L")
 
         # 3. Live API Generation (OpenAI / Gemini)

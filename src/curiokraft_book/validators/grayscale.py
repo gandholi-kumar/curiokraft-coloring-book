@@ -1,6 +1,7 @@
 """Grayscale, intentional gray shading, and color detector for coloring book pages."""
 
 from pathlib import Path
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -9,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class GrayscaleValidationResult(BaseModel):
     """Result of grayscale, shading, and color purity validation."""
+
     passed: bool
     image_path: str
     is_pure_black_and_white: bool
@@ -28,12 +30,12 @@ def validate_black_and_white(
     black_threshold: int = 20,
     white_threshold: int = 235,
     max_gray_cluster_size_px: int = 60,
-    color_tolerance: int = 6
+    color_tolerance: int = 6,
 ) -> GrayscaleValidationResult:
     """Analyze image to verify binary black-and-white purity and detect prohibited gray shading.
-    
+
     Differentiates valid anti-aliasing on 1-2px vector edges from intentional gray shading or fills.
-    
+
     Args:
         image_path: Path to the image file.
         black_threshold: Intensity below which pixels are considered pure black (default: 20).
@@ -41,7 +43,7 @@ def validate_black_and_white(
         max_gray_cluster_size_px: Maximum contiguous gray pixel cluster permitted before flagging
                                    as intentional shading (default: 60 px).
         color_tolerance: Max permitted variance between R, G, B channels before flagging color (default: 6).
-        
+
     Returns:
         GrayscaleValidationResult with detailed cluster metrics and violation reports.
     """
@@ -59,7 +61,7 @@ def validate_black_and_white(
             non_binary_pixel_percentage=0.0,
             max_gray_cluster_size_px=0,
             gray_cluster_count=0,
-            violations=[f"Image file does not exist: {path}"]
+            violations=[f"Image file does not exist: {path}"],
         )
 
     with Image.open(path) as img:
@@ -74,9 +76,11 @@ def validate_black_and_white(
     diff_rg = np.abs(rgb_arr[:, :, 0].astype(np.int16) - rgb_arr[:, :, 1].astype(np.int16))
     diff_gb = np.abs(rgb_arr[:, :, 1].astype(np.int16) - rgb_arr[:, :, 2].astype(np.int16))
     diff_rb = np.abs(rgb_arr[:, :, 0].astype(np.int16) - rgb_arr[:, :, 2].astype(np.int16))
-    
-    color_pixels = np.sum((diff_rg > color_tolerance) | (diff_gb > color_tolerance) | (diff_rb > color_tolerance))
-    has_color = color_pixels > 50  # Allow slight noise margin
+
+    color_pixels = np.sum(
+        (diff_rg > color_tolerance) | (diff_gb > color_tolerance) | (diff_rb > color_tolerance)
+    )
+    has_color = bool(color_pixels > 50)  # Allow slight noise margin
     if has_color:
         violations.append(
             f"Color Detected: Image contains {color_pixels} non-monochromatic color pixels. Interior must be pure black and white."
@@ -95,7 +99,9 @@ def validate_black_and_white(
     # 3. Connected Component Analysis for Gray Shading Clusters
     # We convert gray_mask to uint8 binary image (255 for gray, 0 for pure black/white)
     gray_binary = (gray_mask.astype(np.uint8)) * 255
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(gray_binary, connectivity=8)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+        gray_binary, connectivity=8
+    )
 
     # stats format: [x, y, width, height, area]
     # Label 0 is background (pure black/white pixels)
@@ -144,5 +150,5 @@ def validate_black_and_white(
         non_binary_pixel_percentage=non_binary_pct,
         max_gray_cluster_size_px=max_cluster_size,
         gray_cluster_count=gray_cluster_count,
-        violations=violations
+        violations=violations,
     )

@@ -1,39 +1,39 @@
 """Programmatic 110-page interior PDF compiler for Amazon KDP printing."""
 
 from pathlib import Path
-from typing import Optional
-from PIL import Image
-import pymupdf as fitz
-from pydantic import BaseModel, Field
 
-from curiokraft_book.validators.pdf import validate_interior_pdf, PDFValidationResult
+import pymupdf as fitz
+from pydantic import BaseModel
+
+from curiokraft_book.validators.pdf import PDFValidationResult, validate_interior_pdf
 
 
 class InteriorPDFResult(BaseModel):
     """Result of compiling the 110-page interior PDF."""
+
     success: bool
     output_pdf_path: str
     total_pages_compiled: int
     validation: PDFValidationResult
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 def compile_interior_pdf(
     image_paths: list[str | Path],
     output_pdf_path: str | Path = "output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf",
     expected_page_count: int = 110,
-    page_width_pt: float = 612.0,   # 8.5 in * 72 pt/in
-    page_height_pt: float = 792.0   # 11.0 in * 72 pt/in
+    page_width_pt: float = 612.0,  # 8.5 in * 72 pt/in
+    page_height_pt: float = 792.0,  # 11.0 in * 72 pt/in
 ) -> InteriorPDFResult:
     """Compile a list of 110 page images into a single lossless 8.5x11 inch print PDF.
-    
+
     Args:
         image_paths: Ordered list of 110 image file paths.
         output_pdf_path: Destination path for the compiled PDF.
         expected_page_count: Required page count (default: 110).
         page_width_pt: Page width in points (default: 612 pt = 8.5 in).
         page_height_pt: Page height in points (default: 792 pt = 11.0 in).
-        
+
     Returns:
         InteriorPDFResult with compilation and validation report.
     """
@@ -49,14 +49,16 @@ def compile_interior_pdf(
             is_page_count_correct=False,
             all_pages_correct_size=False,
             has_blank_pages=False,
-            violations=[f"Input image count mismatch: Expected {expected_page_count} images, received {len(image_paths)}."]
+            violations=[
+                f"Input image count mismatch: Expected {expected_page_count} images, received {len(image_paths)}."
+            ],
         )
         return InteriorPDFResult(
             success=False,
             output_pdf_path=str(out_p),
             total_pages_compiled=len(image_paths),
             validation=dummy_val,
-            error_message=f"Received {len(image_paths)} images instead of {expected_page_count}."
+            error_message=f"Received {len(image_paths)} images instead of {expected_page_count}.",
         )
 
     # Use PyMuPDF for lossless fast PDF assembly
@@ -66,11 +68,11 @@ def compile_interior_pdf(
         p = Path(img_path)
         if not p.exists():
             doc.close()
-            raise FileNotFoundError(f"Missing page image at index {idx+1}: {p}")
+            raise FileNotFoundError(f"Missing page image at index {idx + 1}: {p}")
 
         # Create new blank 8.5x11 page (612x792 pt)
         page = doc.new_page(width=page_width_pt, height=page_height_pt)
-        
+
         # Insert image fitting the entire rect without margin distortion (margins are inside the 2550x3300 px raster)
         rect = fitz.Rect(0, 0, page_width_pt, page_height_pt)
         page.insert_image(rect, filename=str(p))
@@ -87,5 +89,5 @@ def compile_interior_pdf(
         output_pdf_path=str(out_p),
         total_pages_compiled=len(image_paths),
         validation=val_report,
-        error_message=None if val_report.passed else "; ".join(val_report.violations)
+        error_message=None if val_report.passed else "; ".join(val_report.violations),
     )

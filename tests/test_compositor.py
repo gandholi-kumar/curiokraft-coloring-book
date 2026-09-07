@@ -1,14 +1,18 @@
 """Unit tests for programmatic typography, brand, cover, and PDF compositors."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 from PIL import Image, ImageDraw
 
-from curiokraft_book.compositor.typography import composite_typography
-from curiokraft_book.compositor.brand import get_brand_logo, get_brand_emblem, create_publisher_badge
+from curiokraft_book.compositor.brand import (
+    create_publisher_badge,
+    get_brand_emblem,
+    get_brand_logo,
+)
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
-from curiokraft_book.validators.pdf import validate_interior_pdf
+from curiokraft_book.compositor.typography import composite_typography
 
 
 @pytest.fixture
@@ -30,9 +34,7 @@ def sample_raw_page(temp_dir: Path) -> Path:
 def test_composite_typography(sample_raw_page: Path, temp_dir: Path):
     out_path = temp_dir / "page_005_titled.png"
     result = composite_typography(
-        image_input=sample_raw_page,
-        display_label="BANANA",
-        output_path=out_path
+        image_input=sample_raw_page, display_label="BANANA", output_path=out_path
     )
     assert result.success is True
     assert result.display_label == "BANANA"
@@ -80,7 +82,7 @@ def test_composite_kdp_cover(temp_dir: Path):
         output_pdf_path=cover_pdf,
         title="TINY HANDS COLOR & LEARN",
         subtitle="FUN & EASY FIRST WORDS",
-        brand_name="CURIOKRAFT-KIDS"
+        brand_name="CURIOKRAFT-KIDS",
     )
 
     assert result.success is True
@@ -96,9 +98,7 @@ def test_compile_interior_pdf(temp_dir: Path, sample_raw_page: Path):
     pdf_path = temp_dir / "test_mini_interior.pdf"
 
     result = compile_interior_pdf(
-        image_paths=page_paths,
-        output_pdf_path=pdf_path,
-        expected_page_count=3
+        image_paths=page_paths, output_pdf_path=pdf_path, expected_page_count=3
     )
 
     assert result.success is True
@@ -108,8 +108,11 @@ def test_compile_interior_pdf(temp_dir: Path, sample_raw_page: Path):
 
 
 def test_render_special_pages(temp_dir: Path):
-    from curiokraft_book.compositor.special_pages import render_welcome_page, render_certificate_page
-    
+    from curiokraft_book.compositor.special_pages import (
+        render_certificate_page,
+        render_welcome_page,
+    )
+
     p001_out = temp_dir / "page_001.png"
     res1 = render_welcome_page(output_path=str(p001_out))
     assert res1.exists()
@@ -127,4 +130,3 @@ def test_render_special_pages(temp_dir: Path):
         assert img110.mode == "L"
         dpi = img110.info.get("dpi", (300, 300))
         assert int(round(dpi[0])) >= 300
-

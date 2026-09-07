@@ -1,16 +1,16 @@
 """Comprehensive automated unit tests for deterministic validators and rescue engine."""
 
-import numpy as np
-import pytest
 from pathlib import Path
+
+import pytest
 from PIL import Image, ImageDraw
 
-from curiokraft_book.validators.dimensions import validate_dimensions
-from curiokraft_book.validators.margins import validate_margins
-from curiokraft_book.validators.grayscale import validate_black_and_white
-from curiokraft_book.validators.duplicates import ObjectRegistryValidator
 from curiokraft_book.rescue.binarizer import rescue_binarize
 from curiokraft_book.rescue.margin_fitter import fit_to_safe_margins
+from curiokraft_book.validators.dimensions import validate_dimensions
+from curiokraft_book.validators.duplicates import ObjectRegistryValidator
+from curiokraft_book.validators.grayscale import validate_black_and_white
+from curiokraft_book.validators.margins import validate_margins
 
 
 @pytest.fixture
@@ -59,6 +59,7 @@ def margin_breach_image(temp_dir: Path) -> Path:
 # 1. Dimension & DPI Validator Tests
 # ----------------------------------------------------------------------
 
+
 def test_validate_dimensions_success(perfect_bw_image: Path):
     result = validate_dimensions(perfect_bw_image)
     assert result.passed is True
@@ -84,6 +85,7 @@ def test_validate_dimensions_failure(temp_dir: Path):
 # 2. Margin Validator Tests
 # ----------------------------------------------------------------------
 
+
 def test_validate_margins_success(perfect_bw_image: Path):
     result = validate_margins(perfect_bw_image)
     assert result.passed is True
@@ -103,6 +105,7 @@ def test_validate_margins_breach(margin_breach_image: Path):
 # 3. Grayscale Validator Tests
 # ----------------------------------------------------------------------
 
+
 def test_validate_grayscale_success(perfect_bw_image: Path):
     result = validate_black_and_white(perfect_bw_image)
     assert result.passed is True
@@ -121,6 +124,7 @@ def test_validate_grayscale_intentional_shading(gray_shading_image: Path):
 # ----------------------------------------------------------------------
 # 4. Rescue Engine Tests
 # ----------------------------------------------------------------------
+
 
 def test_rescue_binarize(gray_shading_image: Path, temp_dir: Path):
     rescued_path = temp_dir / "rescued.png"
@@ -147,6 +151,7 @@ def test_fit_to_safe_margins(margin_breach_image: Path, temp_dir: Path):
 # ----------------------------------------------------------------------
 # 5. Semantic Object Registry Validator Tests
 # ----------------------------------------------------------------------
+
 
 def test_object_registry_validator():
     manifest_path = Path("manifest/objects.json")

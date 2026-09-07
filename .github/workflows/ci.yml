@@ -1,0 +1,52 @@
+name: CI Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }} - Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install Package & Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Lint with Ruff
+        run: |
+          ruff check src/ tests/
+
+      - name: Check Formatting with Ruff
+        run: |
+          ruff format --check src/ tests/
+
+      - name: Type Check with Mypy
+        run: |
+          mypy src/
+
+      - name: Dependency Security Audit (pip-audit)
+        run: |
+          pip-audit --desc on || true
+
+      - name: Execute Tests with Coverage
+        run: |
+          pytest -v --cov=curiokraft_book --cov-report=xml:coverage.xml --cov-report=term-missing

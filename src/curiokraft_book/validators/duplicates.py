@@ -2,19 +2,20 @@
 
 import json
 from pathlib import Path
-from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 
 class DuplicateCheckResult(BaseModel):
     """Result of semantic duplicate check against Object Registry."""
+
     is_duplicate: bool
     candidate_name: str
-    matched_object_id: Optional[str] = None
-    matched_canonical_name: Optional[str] = None
-    matched_display_name: Optional[str] = None
-    matched_reserved_by: Optional[str] = None
-    match_type: Optional[str] = None  # EXACT_CANONICAL | SYNONYM | COMPOUND_VARIANT | FUZZY_STRING
+    matched_object_id: str | None = None
+    matched_canonical_name: str | None = None
+    matched_display_name: str | None = None
+    matched_reserved_by: str | None = None
+    match_type: str | None = None  # EXACT_CANONICAL | SYNONYM | COMPOUND_VARIANT | FUZZY_STRING
     similarity_score: float = 0.0
     reason: str
 
@@ -33,17 +34,17 @@ class ObjectRegistryValidator:
         if not self.registry_path.exists():
             raise FileNotFoundError(f"Object registry not found at: {self.registry_path}")
 
-        with open(self.registry_path, "r", encoding="utf-8") as f:
+        with open(self.registry_path, encoding="utf-8") as f:
             data = json.load(f)
 
         for obj in data.get("objects", []):
             canonical = obj["canonical_name"].lower().strip()
             self.objects_by_canonical[canonical] = obj
-            
+
             # Map synonyms to canonical
             for syn in obj.get("synonyms", []):
                 self.synonym_map[syn.lower().strip()] = canonical
-                
+
             # Map compound variants to canonical
             for comp in obj.get("compound_variants", []):
                 self.compound_map[comp.lower().strip()] = canonical
@@ -55,7 +56,7 @@ class ObjectRegistryValidator:
         if len(s2) == 0:
             return len(s1)
 
-        previous_row = range(len(s2) + 1)
+        previous_row: list[int] = list(range(len(s2) + 1))
         for i, c1 in enumerate(s1):
             current_row = [i + 1]
             for j, c2 in enumerate(s2):
@@ -73,13 +74,15 @@ class ObjectRegistryValidator:
         max_len = max(len(s1), len(s2))
         return 1.0 - (dist / max_len) if max_len > 0 else 1.0
 
-    def check_object(self, candidate_name: str, requesting_page_id: Optional[str] = None) -> DuplicateCheckResult:
+    def check_object(
+        self, candidate_name: str, requesting_page_id: str | None = None
+    ) -> DuplicateCheckResult:
         """Check if a candidate object name duplicates an existing registered object.
-        
+
         Args:
             candidate_name: Name of the object to validate (e.g. "red apple", "toy car", "banana").
             requesting_page_id: Current page requesting the object (e.g. "P005" or "category_page_005").
-            
+
         Returns:
             DuplicateCheckResult indicating duplicate status and matched details.
         """
@@ -89,9 +92,12 @@ class ObjectRegistryValidator:
         if clean_name in self.objects_by_canonical:
             obj = self.objects_by_canonical[clean_name]
             reserved_by = obj.get("reserved_by", "")
-            
+
             # If requested by the designated page, it is valid and allowed
-            if requesting_page_id and (requesting_page_id.lower() in reserved_by.lower() or reserved_by.lower() in requesting_page_id.lower()):
+            if requesting_page_id and (
+                requesting_page_id.lower() in reserved_by.lower()
+                or reserved_by.lower() in requesting_page_id.lower()
+            ):
                 return DuplicateCheckResult(
                     is_duplicate=False,
                     candidate_name=candidate_name,
@@ -101,9 +107,9 @@ class ObjectRegistryValidator:
                     matched_reserved_by=reserved_by,
                     match_type="AUTHORIZED_ASSIGNMENT",
                     similarity_score=1.0,
-                    reason=f"Candidate '{candidate_name}' is authorized for assigned page '{requesting_page_id}'."
+                    reason=f"Candidate '{candidate_name}' is authorized for assigned page '{requesting_page_id}'.",
                 )
-            
+
             return DuplicateCheckResult(
                 is_duplicate=True,
                 candidate_name=candidate_name,
@@ -113,7 +119,7 @@ class ObjectRegistryValidator:
                 matched_reserved_by=reserved_by,
                 match_type="EXACT_CANONICAL",
                 similarity_score=1.0,
-                reason=f"Exact match with registered canonical object '{obj['canonical_name']}' (Reserved by {reserved_by})."
+                reason=f"Exact match with registered canonical object '{obj['canonical_name']}' (Reserved by {reserved_by}).",
             )
 
         # 2. Synonym Map Match
@@ -129,7 +135,7 @@ class ObjectRegistryValidator:
                 matched_reserved_by=obj.get("reserved_by"),
                 match_type="SYNONYM",
                 similarity_score=0.95,
-                reason=f"Candidate '{candidate_name}' is a recognized synonym for canonical '{canonical}'."
+                reason=f"Candidate '{candidate_name}' is a recognized synonym for canonical '{canonical}'.",
             )
 
         # 3. Compound Variant Match
@@ -145,7 +151,7 @@ class ObjectRegistryValidator:
                 matched_reserved_by=obj.get("reserved_by"),
                 match_type="COMPOUND_VARIANT",
                 similarity_score=0.90,
-                reason=f"Candidate '{candidate_name}' is a compound variant of canonical '{canonical}'."
+                reason=f"Candidate '{candidate_name}' is a compound variant of canonical '{canonical}'.",
             )
 
         # 4. Fuzzy Levenshtein Match on all canonicals (threshold >= 0.85)
@@ -167,7 +173,7 @@ class ObjectRegistryValidator:
                 matched_reserved_by=best_match.get("reserved_by"),
                 match_type="FUZZY_STRING",
                 similarity_score=round(highest_similarity, 3),
-                reason=f"High string similarity ({round(highest_similarity*100, 1)}%) to registered object '{best_match['canonical_name']}'."
+                reason=f"High string similarity ({round(highest_similarity * 100, 1)}%) to registered object '{best_match['canonical_name']}'.",
             )
 
         # No duplicate detected
@@ -180,5 +186,5 @@ class ObjectRegistryValidator:
             matched_reserved_by=None,
             match_type=None,
             similarity_score=round(highest_similarity, 3),
-            reason=f"Candidate '{candidate_name}' is unique and does not collide with registered vocabulary."
+            reason=f"Candidate '{candidate_name}' is unique and does not collide with registered vocabulary.",
         )

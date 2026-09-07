@@ -1,11 +1,12 @@
 """Unit tests for InteriorBatchRunner and Whole-Book QA Auditor."""
 
 import json
-import pytest
 from pathlib import Path
 
-from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
+import pytest
+
 from curiokraft_book.agents.book_qa import run_book_qa_audit
+from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
 
 
 @pytest.fixture
@@ -21,11 +22,35 @@ def sample_mini_manifest(temp_dir: Path) -> Path:
         "book_title": "TEST MINI BOOK",
         "total_pages": 4,
         "pages": [
-            {"page_id": "P001", "page_number": 1, "section": "Alphabet", "canonical_object": "alphabet_a_m", "display_label": "A - M FIRST WORDS"},
-            {"page_id": "P002", "page_number": 2, "section": "Alphabet", "canonical_object": "alphabet_n_z", "display_label": "N - Z FIRST WORDS"},
-            {"page_id": "P005", "page_number": 3, "section": "Fruits", "canonical_object": "banana", "display_label": "BANANA"},
-            {"page_id": "P047", "page_number": 4, "section": "Animals", "canonical_object": "dog", "display_label": "DOG"}
-        ]
+            {
+                "page_id": "P001",
+                "page_number": 1,
+                "section": "Alphabet",
+                "canonical_object": "alphabet_a_m",
+                "display_label": "A - M FIRST WORDS",
+            },
+            {
+                "page_id": "P002",
+                "page_number": 2,
+                "section": "Alphabet",
+                "canonical_object": "alphabet_n_z",
+                "display_label": "N - Z FIRST WORDS",
+            },
+            {
+                "page_id": "P005",
+                "page_number": 3,
+                "section": "Fruits",
+                "canonical_object": "banana",
+                "display_label": "BANANA",
+            },
+            {
+                "page_id": "P047",
+                "page_number": 4,
+                "section": "Animals",
+                "canonical_object": "dog",
+                "display_label": "DOG",
+            },
+        ],
     }
     with open(manifest_p, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
@@ -39,10 +64,16 @@ def test_batch_runner_single_page(sample_mini_manifest: Path, temp_dir: Path):
     runner = InteriorBatchRunner(
         manifest_path=sample_mini_manifest,
         output_masters_dir=masters_dir,
-        raw_generated_dir=raw_dir
+        raw_generated_dir=raw_dir,
     )
 
-    page_data = {"page_id": "P005", "page_number": 3, "canonical_object": "banana", "display_label": "BANANA", "section": "Fruits"}
+    page_data = {
+        "page_id": "P005",
+        "page_number": 3,
+        "canonical_object": "banana",
+        "display_label": "BANANA",
+        "section": "Fruits",
+    }
     master_path = runner.generate_single_page(page_data)
 
     assert master_path.exists()
@@ -56,7 +87,7 @@ def test_batch_runner_mini_batch(sample_mini_manifest: Path, temp_dir: Path):
     runner = InteriorBatchRunner(
         manifest_path=sample_mini_manifest,
         output_masters_dir=masters_dir,
-        raw_generated_dir=raw_dir
+        raw_generated_dir=raw_dir,
     )
 
     report = runner.run_full_book_batch()
@@ -74,7 +105,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
     runner = InteriorBatchRunner(
         manifest_path=sample_mini_manifest,
         output_masters_dir=masters_dir,
-        raw_generated_dir=raw_dir
+        raw_generated_dir=raw_dir,
     )
     runner.run_full_book_batch()
 
@@ -83,7 +114,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
         masters_dir=masters_dir,
         manifest_path=sample_mini_manifest,
         objects_registry_path="manifest/objects.json",
-        report_output_path=qa_report_path
+        report_output_path=qa_report_path,
     )
 
     assert qa_res.audit_verdict == "PASSED"
@@ -94,6 +125,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
 
 def test_mock_image_provider():
     from curiokraft_book.orchestrator.model_client import MockImageProvider
+
     provider = MockImageProvider()
     img = provider.generate("cute banana", canonical_label="banana", section="Fruits")
     assert img.size == (2550, 3300)
@@ -102,6 +134,7 @@ def test_mock_image_provider():
 
 def test_inbox_image_provider(temp_dir: Path):
     from PIL import Image, ImageDraw
+
     from curiokraft_book.orchestrator.model_client import DiskInboxProvider
 
     inbox = temp_dir / "test_inbox"
@@ -155,7 +188,7 @@ def test_spread_formatting_bypasses_typography(temp_dir: Path):
         "display_label": "A - M FIRST WORDS",
         "type": "educational_spread",
         "composition": "flashcard_grid",
-        "cards": []
+        "cards": [],
     }
 
     master_p = runner.generate_single_page(spread_page_data, source_mode="mock", force_fresh=True)
@@ -173,7 +206,7 @@ def test_prompt_taxonomy_and_export_compliance():
     from curiokraft_book.orchestrator.debate_engine import DebateEngine, classify_living_taxonomy
 
     manifest_p = Path("manifest/pages.json")
-    with open(manifest_p, "r", encoding="utf-8") as f:
+    with open(manifest_p, encoding="utf-8") as f:
         manifest = json.load(f)
 
     engine = DebateEngine()
@@ -185,11 +218,12 @@ def test_prompt_taxonomy_and_export_compliance():
     spread_count = 0
 
     for p in pages:
-        pid = p["page_id"]
         sec = p.get("section", "")
         canon = p.get("canonical_object", "")
         page_type = p.get("type", "single_page")
-        is_spread = (page_type in ["educational_spread", "counting_spread"]) or (p.get("composition") == "flashcard_grid")
+        is_spread = (page_type in ["educational_spread", "counting_spread"]) or (
+            p.get("composition") == "flashcard_grid"
+        )
         res = engine.run_page_debate(p)
         pos = res.positive_prompt
         neg = res.negative_prompt
@@ -221,7 +255,6 @@ def test_prompt_taxonomy_and_export_compliance():
             assert "face" in neg.lower()
             assert "eyes" in neg.lower()
             assert "text" in neg.lower()
-
 
     assert spread_count == 4
     assert living_count == 20  # Animals + Teddy Bear + Doll
@@ -275,6 +308,7 @@ def test_vehicle_design_profile_resolution():
 
 def test_vehicle_prompts_export_compliance():
     import json
+
     export_path = Path("generated/prompts_export.json")
     assert export_path.exists()
     data = json.loads(export_path.read_text(encoding="utf-8"))
@@ -318,6 +352,7 @@ def test_vehicle_prompts_export_compliance():
 def test_welcome_page_preserves_raw_and_mascot(temp_dir: Path):
     """Verify that when a user drops an illustration for welcome_page, it is preserved in raw_dir and composited."""
     from PIL import Image
+
     masters_dir = temp_dir / "masters"
     raw_dir = temp_dir / "raw"
     inbox_dir = temp_dir / "inbox"
@@ -342,16 +377,14 @@ def test_welcome_page_preserves_raw_and_mascot(temp_dir: Path):
                 "section": "Front Matter",
                 "canonical_object": "welcome_belongs_to",
                 "display_label": "THIS BOOK BELONGS TO",
-                "type": "welcome_page"
+                "type": "welcome_page",
             }
-        ]
+        ],
     }
     manifest_p.write_text(json.dumps(manifest_data), encoding="utf-8")
 
     runner = InteriorBatchRunner(
-        manifest_path=manifest_p,
-        output_masters_dir=masters_dir,
-        raw_generated_dir=raw_dir
+        manifest_path=manifest_p, output_masters_dir=masters_dir, raw_generated_dir=raw_dir
     )
     # Point runner's inbox provider to test inbox
     runner.inbox_provider.inbox_dir = inbox_dir
@@ -365,5 +398,3 @@ def test_welcome_page_preserves_raw_and_mascot(temp_dir: Path):
     expected_raw = raw_dir / "raw_p001_welcome_belongs_to.png"
     assert expected_raw.exists()
     assert expected_raw.stat().st_size > 500
-
-

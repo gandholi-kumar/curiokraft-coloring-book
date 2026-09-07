@@ -2,25 +2,26 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 from curiokraft_book.rescue.binarizer import rescue_binarize
 from curiokraft_book.rescue.margin_fitter import fit_to_safe_margins
 from curiokraft_book.validators.dimensions import validate_dimensions
-from curiokraft_book.validators.margins import validate_margins
 from curiokraft_book.validators.grayscale import validate_black_and_white
+from curiokraft_book.validators.margins import validate_margins
 
 logger = logging.getLogger("curiokraft.retry_manager")
 
 
 class RecoveryAction(BaseModel):
     """Action taken to recover a failing page."""
+
     action_type: str  # RESCUE_BINARIZE | RESCUE_MARGIN_FIT | REVISE_PROMPT | ESCALATE_HUMAN
     success: bool
     details: str
-    revised_positive_prompt: Optional[str] = None
-    revised_negative_prompt: Optional[str] = None
+    revised_positive_prompt: str | None = None
+    revised_negative_prompt: str | None = None
 
 
 class RetryManager:
@@ -30,20 +31,17 @@ class RetryManager:
         self.max_retries = max_retries
 
     def attempt_programmatic_rescue(
-        self,
-        raw_image_path: str | Path,
-        output_rescued_path: str | Path,
-        is_spread: bool = False
+        self, raw_image_path: str | Path, output_rescued_path: str | Path, is_spread: bool = False
     ) -> tuple[bool, str, list[str]]:
         """Attempt deterministic code-level rescue on raw image before wasting an API call.
-        
+
         Applies Otsu adaptive binarization and margin centering.
-        
+
         Args:
             raw_image_path: Path to the raw generated image.
             output_rescued_path: Destination path for the rescued image.
             is_spread: Whether the page is a spread (bypasses top header reservation).
-            
+
         Returns:
             Tuple of (passed: bool, message: str, remaining_violations: list[str]).
         """
@@ -51,7 +49,9 @@ class RetryManager:
         out_p = Path(output_rescued_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Executing deterministic rescue pipeline on: {raw_p.name} (spread={is_spread})")
+        logger.info(
+            f"Executing deterministic rescue pipeline on: {raw_p.name} (spread={is_spread})"
+        )
 
         # Step 1: Adaptive Binarization (cleans light gray, antialiasing, compression noise)
         bin_res = rescue_binarize(raw_p, output_path=out_p, use_otsu=True)
@@ -67,7 +67,7 @@ class RetryManager:
             safe_margin_in=0.50,
             header_reservation_in=header_res,
             target_coverage_ratio=coverage,
-            is_spread=is_spread
+            is_spread=is_spread,
         )
         if not fit_res.success:
             return False, "Failed to fit artwork to safe margins.", ["RESCUE_MARGIN_FIT_FAILED"]
@@ -81,25 +81,31 @@ class RetryManager:
         passed = dim_res.passed and margin_res.passed and gray_res.passed
 
         if passed:
-            logger.info(f"Pristine deterministic rescue successful for {raw_p.name}! Saved image quota.")
+            logger.info(
+                f"Pristine deterministic rescue successful for {raw_p.name}! Saved image quota."
+            )
             return True, "Deterministic rescue completely resolved all violations.", []
         else:
             logger.warning(f"Rescue partial. Remaining violations: {all_violations}")
-            return False, "Code rescue could not fully resolve geometry/shading violations.", all_violations
+            return (
+                False,
+                "Code rescue could not fully resolve geometry/shading violations.",
+                all_violations,
+            )
 
     def formulate_revised_prompt(
         self,
         current_positive: str,
         current_negative: str,
         violations: list[str],
-        attempt_number: int
+        attempt_number: int,
     ) -> RecoveryAction:
         """Formulate fortified prompt tokens targeting the specific failure reasons."""
         if attempt_number >= self.max_retries:
             return RecoveryAction(
                 action_type="ESCALATE_HUMAN",
                 success=False,
-                details=f"Exceeded maximum retry attempts ({self.max_retries}). Escalating to human review."
+                details=f"Exceeded maximum retry attempts ({self.max_retries}). Escalating to human review.",
             )
 
         fortified_pos = current_positive
@@ -108,13 +114,19 @@ class RetryManager:
         for v in violations:
             if "Gray" in v or "Shading" in v or "Color" in v:
                 if "pure binary black and white line art" not in fortified_pos:
-                    fortified_pos += ", stark pure binary black and white line art only, zero filled textures"
-                fortified_neg += ", gray tones, shading, shadows, soft gradients, tones, textures, grayscale"
+                    fortified_pos += (
+                        ", stark pure binary black and white line art only, zero filled textures"
+                    )
+                fortified_neg += (
+                    ", gray tones, shading, shadows, soft gradients, tones, textures, grayscale"
+                )
 
             if "Margin" in v or "Gutter" in v:
                 if "centered strictly in middle" not in fortified_pos:
                     fortified_pos += ", compact centered object strictly in middle of white canvas with wide blank margins"
-                fortified_neg += ", touching edges, border elements, bleed, panoramic, extended background"
+                fortified_neg += (
+                    ", touching edges, border elements, bleed, panoramic, extended background"
+                )
 
             if "Multiple" in v or "Complexity" in v:
                 fortified_pos += ", isolated single lone object, completely empty background"
@@ -125,5 +137,5 @@ class RetryManager:
             success=True,
             details=f"Fortified prompt for attempt {attempt_number + 1}.",
             revised_positive_prompt=fortified_pos,
-            revised_negative_prompt=fortified_neg
+            revised_negative_prompt=fortified_neg,
         )

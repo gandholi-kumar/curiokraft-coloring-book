@@ -1,14 +1,15 @@
 """Deterministic auto-margin and centering fitter for coloring book artwork."""
 
 from pathlib import Path
-from typing import Optional
+
 import numpy as np
 from PIL import Image
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class MarginFitResult(BaseModel):
     """Result of margin fitting and auto-centering."""
+
     success: bool
     input_path: str
     output_path: str
@@ -24,21 +25,21 @@ class MarginFitResult(BaseModel):
 
 def fit_to_safe_margins(
     input_path: str | Path,
-    output_path: Optional[str | Path] = None,
+    output_path: str | Path | None = None,
     canvas_width: int = 2550,
     canvas_height: int = 3300,
     dpi: int = 300,
     safe_margin_in: float = 0.50,
     header_reservation_in: float = 1.20,
     target_coverage_ratio: float = 0.72,
-    is_spread: bool = False
+    is_spread: bool = False,
 ) -> MarginFitResult:
     """Crop artwork to its tight bounding box, center, scale, and place on a pristine 300 DPI canvas.
-    
+
     Guarantees that artwork strictly satisfies KDP inside/outside margins. For standard pages,
     preserves the top header space for vector typography rendering. For spreads, uses the entire
     safe area (>= 0.50 in safe margins on all 4 sides) with zero header reservation.
-    
+
     Args:
         input_path: Path to the source image.
         output_path: Path to save the fitted image (if None, overwrites or creates _fitted suffix).
@@ -49,7 +50,7 @@ def fit_to_safe_margins(
         header_reservation_in: Top margin reserved for typography in inches (default: 1.20 in = 360 px).
         target_coverage_ratio: Target coverage of the usable artwork zone (default: 0.72).
         is_spread: If True, bypasses header reservation and uses full safe margin canvas.
-        
+
     Returns:
         MarginFitResult with repositioning coordinates and scale factor.
     """
@@ -66,7 +67,7 @@ def fit_to_safe_margins(
             top_margin_px=0,
             bottom_margin_px=0,
             left_margin_px=0,
-            right_margin_px=0
+            right_margin_px=0,
         )
 
     out_p = Path(output_path) if output_path else in_p.parent / f"{in_p.stem}_fitted.png"
@@ -89,7 +90,7 @@ def fit_to_safe_margins(
             top_margin_px=0,
             bottom_margin_px=0,
             left_margin_px=0,
-            right_margin_px=0
+            right_margin_px=0,
         )
 
     y_indices, x_indices = np.where(ink_mask)
@@ -156,5 +157,5 @@ def fit_to_safe_margins(
         top_margin_px=pos_y,
         bottom_margin_px=canvas_height - (pos_y + new_h),
         left_margin_px=pos_x,
-        right_margin_px=canvas_width - (pos_x + new_w)
+        right_margin_px=canvas_width - (pos_x + new_w),
     )

@@ -1,14 +1,15 @@
 """Pipeline state machine and persistent progress tracker for all 110 pages."""
 
 import json
-from pathlib import Path
-from typing import Any, Optional
 from enum import Enum
+from pathlib import Path
+
 from pydantic import BaseModel, Field
 
 
 class PageStatus(str, Enum):
     """Lifecycle states of an individual page in the production pipeline."""
+
     PLANNED = "PLANNED"
     DEBATED = "DEBATED"
     PROMPT_LOCKED = "PROMPT_LOCKED"
@@ -25,6 +26,7 @@ class PageStatus(str, Enum):
 
 class PageStateRecord(BaseModel):
     """Execution state and artifact paths for an individual book page."""
+
     page_id: str
     page_number: int
     canonical_object: str
@@ -33,21 +35,25 @@ class PageStateRecord(BaseModel):
     status: PageStatus = PageStatus.PLANNED
     attempts: int = 0
     max_attempts: int = 3
-    positive_prompt: Optional[str] = None
-    negative_prompt: Optional[str] = None
-    raw_image_path: Optional[str] = None
-    rescued_image_path: Optional[str] = None
-    composite_image_path: Optional[str] = None
+    positive_prompt: str | None = None
+    negative_prompt: str | None = None
+    raw_image_path: str | None = None
+    rescued_image_path: str | None = None
+    composite_image_path: str | None = None
     qa_score: float = 0.0
     qa_passed: bool = False
     violations: list[str] = Field(default_factory=list)
-    last_updated: Optional[str] = None
+    last_updated: str | None = None
 
 
 class PipelineStateManager:
     """Manages the lifecycle state of all 110 pages with atomic JSON persistence."""
 
-    def __init__(self, state_file_path: str | Path = "output/pipeline_state.json", manifest_path: str | Path = "manifest/pages.json"):
+    def __init__(
+        self,
+        state_file_path: str | Path = "output/pipeline_state.json",
+        manifest_path: str | Path = "manifest/pages.json",
+    ):
         self.state_file = Path(state_file_path)
         self.manifest_path = Path(manifest_path)
         self.pages: dict[str, PageStateRecord] = {}
@@ -57,7 +63,7 @@ class PipelineStateManager:
         """Load existing state from JSON and ensure all manifest pages are registered."""
         if self.state_file.exists():
             try:
-                with open(self.state_file, "r", encoding="utf-8") as f:
+                with open(self.state_file, encoding="utf-8") as f:
                     data = json.load(f)
                 for page_id, rec in data.get("pages", {}).items():
                     self.pages[page_id] = PageStateRecord(**rec)
@@ -66,7 +72,7 @@ class PipelineStateManager:
 
         # Populate any missing pages from manifest
         if self.manifest_path.exists():
-            with open(self.manifest_path, "r", encoding="utf-8") as f:
+            with open(self.manifest_path, encoding="utf-8") as f:
                 manifest_data = json.load(f)
             for p in manifest_data.get("pages", []):
                 p_id = p["page_id"]
@@ -77,12 +83,11 @@ class PipelineStateManager:
                         canonical_object=p["canonical_object"],
                         display_label=p.get("display_label", p["canonical_object"].upper()),
                         section=p.get("section", "General"),
-                        status=PageStatus.PLANNED
+                        status=PageStatus.PLANNED,
                     )
             self.save()
 
-
-    def get_page(self, page_id: str) -> Optional[PageStateRecord]:
+    def get_page(self, page_id: str) -> PageStateRecord | None:
         return self.pages.get(page_id)
 
     def update_page(self, page_id: str, **kwargs) -> PageStateRecord:
@@ -113,7 +118,7 @@ class PipelineStateManager:
         serializable = {
             "total_pages": len(self.pages),
             "summary": self.get_summary(),
-            "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()}
+            "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
         }
         with open(self.state_file, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=2)

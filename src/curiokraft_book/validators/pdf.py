@@ -1,13 +1,14 @@
 """PDF geometry, page count, and print-standard validator using PyMuPDF."""
 
 from pathlib import Path
-from typing import Optional
+
 import pymupdf as fitz
 from pydantic import BaseModel, Field
 
 
 class PageDimensionInfo(BaseModel):
     """Geometry metrics for an individual PDF page."""
+
     page_number: int
     width_pt: float
     height_pt: float
@@ -18,6 +19,7 @@ class PageDimensionInfo(BaseModel):
 
 class PDFValidationResult(BaseModel):
     """Result of comprehensive PDF preflight analysis."""
+
     passed: bool
     pdf_path: str
     total_pages: int
@@ -35,17 +37,17 @@ def validate_interior_pdf(
     expected_page_count: int = 110,
     expected_width_in: float = 8.5,
     expected_height_in: float = 11.0,
-    pt_tolerance: float = 2.0
+    pt_tolerance: float = 2.0,
 ) -> PDFValidationResult:
     """Validate that an assembled interior PDF complies with KDP 8.5x11 110-page requirements.
-    
+
     Args:
         pdf_path: Path to the assembled interior PDF file.
         expected_page_count: Expected exact page count (default: 110).
         expected_width_in: Expected page width in inches (default: 8.5 in = 612 pt).
         expected_height_in: Expected page height in inches (default: 11.0 in = 792 pt).
         pt_tolerance: Permitted size variance in PostScript points (default: 2.0 pt).
-        
+
     Returns:
         PDFValidationResult with full page-by-page geometry analysis.
     """
@@ -59,7 +61,7 @@ def validate_interior_pdf(
             is_page_count_correct=False,
             all_pages_correct_size=False,
             has_blank_pages=False,
-            violations=[f"PDF file does not exist: {path}"]
+            violations=[f"PDF file does not exist: {path}"],
         )
 
     expected_width_pt = expected_width_in * 72.0
@@ -80,7 +82,7 @@ def validate_interior_pdf(
             is_page_count_correct=False,
             all_pages_correct_size=False,
             has_blank_pages=False,
-            violations=[f"Failed to open PDF document: {e}"]
+            violations=[f"Failed to open PDF document: {e}"],
         )
 
     total_pages = len(doc)
@@ -92,7 +94,8 @@ def validate_interior_pdf(
 
     all_pages_correct_size = True
 
-    for i, page in enumerate(doc):
+    for i in range(len(doc)):
+        page = doc[i]
         page_num = i + 1
         rect = page.rect
         w_pt, h_pt = rect.width, rect.height
@@ -125,7 +128,7 @@ def validate_interior_pdf(
                 height_pt=round(h_pt, 2),
                 width_in=w_in,
                 height_in=h_in,
-                is_standard_letter=is_letter
+                is_standard_letter=is_letter,
             )
         )
 
@@ -149,5 +152,5 @@ def validate_interior_pdf(
         has_blank_pages=has_blank_pages,
         blank_page_numbers=blank_pages,
         pages_geometry=pages_geometry,
-        violations=violations
+        violations=violations,
     )

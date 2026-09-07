@@ -2,14 +2,15 @@
 
 import json
 from pathlib import Path
-from typing import Optional
-from PIL import Image
+
 import numpy as np
+from PIL import Image
 from pydantic import BaseModel, Field
 
 
 class CoverValidationResult(BaseModel):
     """Result of KDP cover geometry and barcode clearance validation."""
+
     passed: bool
     cover_image_path: str
     width_in: float
@@ -32,10 +33,10 @@ def validate_kdp_cover(
     expected_height_in: float = 11.250,
     spine_width_in: float = 0.248,
     dpi: int = 300,
-    report_output_path: Optional[str | Path] = "output/reports/cover_kdp_compliance_report.json"
+    report_output_path: str | Path | None = "output/reports/cover_kdp_compliance_report.json",
 ) -> CoverValidationResult:
     """Validate that the assembled cover complies strictly with Amazon KDP full wrap specifications.
-    
+
     Args:
         cover_path: Path to the assembled cover master PNG file.
         expected_width_in: Total width in inches (default: 17.498 in).
@@ -43,7 +44,7 @@ def validate_kdp_cover(
         spine_width_in: Spine width in inches (default: 0.248 in).
         dpi: Target DPI (default: 300).
         report_output_path: Path to save the compliance JSON report.
-        
+
     Returns:
         CoverValidationResult with validation metrics.
     """
@@ -60,7 +61,7 @@ def validate_kdp_cover(
             spine_center_x_px=0,
             barcode_box_clear=False,
             kdp_compliant=False,
-            violations=[f"Cover file not found: {path}"]
+            violations=[f"Cover file not found: {path}"],
         )
 
     expected_w_px = int(round(expected_width_in * dpi))  # 5249 px
@@ -99,7 +100,7 @@ def validate_kdp_cover(
         # Barcode area on back cover lower-right (approx 600x360 px)
         spine_center_x = actual_w // 2
         spine_left_x = spine_center_x - int(round((spine_width_in * dpi) / 2))
-        
+
         barcode_w = 600
         barcode_h = 360
         bx1 = spine_left_x - barcode_w - 150
@@ -110,7 +111,7 @@ def validate_kdp_cover(
         # Inspect barcode region pixels
         cover_rgb = img.convert("RGB")
         barcode_crop = np.array(cover_rgb.crop((bx1, by1, bx2, by2)))
-        
+
         # Check if region is clean (high average brightness > 220, meaning clean white box)
         avg_brightness = np.mean(barcode_crop)
         barcode_clear = avg_brightness > 200
@@ -136,7 +137,7 @@ def validate_kdp_cover(
         spine_center_x_px=spine_center_x,
         barcode_box_clear=barcode_clear,
         kdp_compliant=kdp_ok,
-        violations=violations
+        violations=violations,
     )
 
     if report_output_path:

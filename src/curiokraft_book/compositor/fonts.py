@@ -1,38 +1,37 @@
 """Font loader and manager for programmatic typography rendering with intelligent prioritization."""
 
 from pathlib import Path
-from typing import Optional
-from PIL import ImageFont
 
+from PIL import ImageFont
 
 # Preferred child-friendly font hierarchy for Toddler Coloring Books (Ages 1–4)
 PREFERRED_FONT_ORDER = [
-    "fredoka",       # #1 Best: Ultra-chunky, bubbly, warm rounded terminals
-    "nunito",        # #2 Balanced, highly legible rounded sans
-    "quicksand",     # #3 Geometric rounded sans
+    "fredoka",  # #1 Best: Ultra-chunky, bubbly, warm rounded terminals
+    "nunito",  # #2 Balanced, highly legible rounded sans
+    "quicksand",  # #3 Geometric rounded sans
     "comic relief",  # #4 Cheerful casual font
     "comic",
-    "arial rounded"
+    "arial rounded",
 ]
 
 
 def get_typography_font(
     font_size_pt: int = 120,
-    custom_font_path: Optional[str | Path] = None,
-    preferred_font_name: Optional[str] = None,
-    fonts_dir: str | Path = "assets/fonts"
+    custom_font_path: str | Path | None = None,
+    preferred_font_name: str | None = None,
+    fonts_dir: str | Path = "assets/fonts",
 ) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Load the best available child-friendly TrueType font with intelligent preference ranking.
-    
+
     If multiple font files exist in assets/fonts/, this loader automatically selects the optimal
     toddler font according to preschool typography benchmarks (Fredoka > Nunito > Quicksand > Comic Relief).
-    
+
     Args:
         font_size_pt: Requested font size in points (scaled for 300 DPI canvas).
         custom_font_path: Explicit path to a .ttf/.otf font file.
         preferred_font_name: Optional font name keyword to prioritize (e.g. 'Nunito').
         fonts_dir: Directory containing project font assets.
-        
+
     Returns:
         Loaded ImageFont instance.
     """
@@ -75,13 +74,13 @@ def get_typography_font(
 
     # 3. Check common Windows / Unix system fonts for rounded/friendly bold fonts
     system_font_candidates = [
-        "C:\\Windows\\Fonts\\arialbd.ttf",      # Arial Bold
-        "C:\\Windows\\Fonts\\segoeuib.ttf",     # Segoe UI Bold
-        "C:\\Windows\\Fonts\\comicbd.ttf",      # Comic Sans Bold (child-friendly)
-        "C:\\Windows\\Fonts\\trebucbd.ttf",     # Trebuchet Bold
-        "C:\\Windows\\Fonts\\arial.ttf",        # Arial Regular
+        "C:\\Windows\\Fonts\\arialbd.ttf",  # Arial Bold
+        "C:\\Windows\\Fonts\\segoeuib.ttf",  # Segoe UI Bold
+        "C:\\Windows\\Fonts\\comicbd.ttf",  # Comic Sans Bold (child-friendly)
+        "C:\\Windows\\Fonts\\trebucbd.ttf",  # Trebuchet Bold
+        "C:\\Windows\\Fonts\\arial.ttf",  # Arial Regular
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/System/Library/Fonts/Helvetica.ttc"
+        "/System/Library/Fonts/Helvetica.ttc",
     ]
 
     for candidate in system_font_candidates:

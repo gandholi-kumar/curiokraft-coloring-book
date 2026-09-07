@@ -1,15 +1,17 @@
 """Programmatic vector typography compositor with dynamic preschool font autoscaling and letter spacing."""
 
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
+
 from PIL import Image, ImageDraw
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from curiokraft_book.compositor.fonts import get_typography_font
 
 
 class TypographyCompositorResult(BaseModel):
     """Result of programmatic typography compositing."""
+
     success: bool
     output_path: str
     display_label: str
@@ -22,11 +24,7 @@ class TypographyCompositorResult(BaseModel):
 
 
 def measure_spaced_text(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: Any,
-    stroke_width: int,
-    letter_spacing_px: int
+    draw: ImageDraw.ImageDraw, text: str, font: Any, stroke_width: int, letter_spacing_px: int
 ) -> tuple[int, int]:
     """Calculate total bounding width and height of text with inter-character spacing."""
     total_w = 0
@@ -49,19 +47,19 @@ def measure_spaced_text(
 def composite_typography(
     image_input: str | Path | Image.Image,
     display_label: str,
-    output_path: Optional[str | Path] = None,
+    output_path: str | Path | None = None,
     base_font_size_pt: int = 245,
     top_offset_px: int = 240,
     hollow_bubble_style: bool = True,
     stroke_width_px: int = 15,
     letter_spacing_px: int = 40,
-    custom_font_path: Optional[str | Path] = None
+    custom_font_path: str | Path | None = None,
 ) -> TypographyCompositorResult:
     """Render uppercase bubbly vector typography onto the top of the master canvas.
-    
+
     Features generous inter-character letter spacing (tracking) and dynamic autoscaling
     so each letter is distinct and easy for toddlers to color with crayons.
-    
+
     Args:
         image_input: Path to the 300 DPI master image or an existing PIL Image.
         display_label: The exact uppercase word to render (e.g. "BANANA", "ELEPHANT").
@@ -72,7 +70,7 @@ def composite_typography(
         stroke_width_px: Thickness of the black outline around hollow letters (default: 15 px).
         letter_spacing_px: Spacing between adjacent letterforms to prevent outline overlap (default: 40 px).
         custom_font_path: Optional explicit path to a TrueType font file.
-        
+
     Returns:
         TypographyCompositorResult with positioning coordinates.
     """
@@ -97,19 +95,19 @@ def composite_typography(
     char_len = len(clean_label)
     if char_len <= 5:
         target_font_size = int(base_font_size_pt * 1.08)  # ~265 pt (tall prominent bubble letters)
-        spacing = int(letter_spacing_px * 1.15)           # ~46 px
+        spacing = int(letter_spacing_px * 1.15)  # ~46 px
     elif char_len <= 8:
-        target_font_size = base_font_size_pt              # ~245 pt
-        spacing = letter_spacing_px                       # ~40 px
+        target_font_size = base_font_size_pt  # ~245 pt
+        spacing = letter_spacing_px  # ~40 px
     elif char_len <= 11:
         target_font_size = int(base_font_size_pt * 0.82)  # ~200 pt
-        spacing = int(letter_spacing_px * 0.75)           # ~30 px
+        spacing = int(letter_spacing_px * 0.75)  # ~30 px
     elif char_len <= 15:
         target_font_size = int(base_font_size_pt * 0.68)  # ~166 pt
-        spacing = int(letter_spacing_px * 0.60)           # ~24 px
+        spacing = int(letter_spacing_px * 0.60)  # ~24 px
     else:
         target_font_size = int(base_font_size_pt * 0.55)  # ~135 pt
-        spacing = int(letter_spacing_px * 0.50)           # ~20 px
+        spacing = int(letter_spacing_px * 0.50)  # ~20 px
 
     font = get_typography_font(font_size_pt=target_font_size, custom_font_path=custom_font_path)
     draw = ImageDraw.Draw(img)
@@ -145,9 +143,9 @@ def composite_typography(
                 (curr_x, pos_y),
                 char,
                 font=font,
-                fill=255,                 # White interior for toddler coloring
+                fill=255,  # White interior for toddler coloring
                 stroke_width=stroke,
-                stroke_fill=0             # Bold Black outline
+                stroke_fill=0,  # Bold Black outline
             )
         else:
             draw.text((curr_x, pos_y), char, fill=0, font=font)
@@ -181,5 +179,5 @@ def composite_typography(
         horizontal_center_px=canvas_width // 2,
         vertical_top_px=pos_y,
         is_hollow_bubble=hollow_bubble_style,
-        letter_spacing_px=spacing
+        letter_spacing_px=spacing,
     )

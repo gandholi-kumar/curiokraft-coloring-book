@@ -3,19 +3,19 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from curiokraft_book.validators.dimensions import validate_dimensions
-from curiokraft_book.validators.margins import validate_margins
 from curiokraft_book.validators.grayscale import validate_black_and_white
-from curiokraft_book.validators.duplicates import ObjectRegistryValidator
+from curiokraft_book.validators.margins import validate_margins
 
 logger = logging.getLogger("curiokraft.book_qa")
 
 
 class PageAuditDetail(BaseModel):
     """Audit result for a single page in the book sequence."""
+
     page_number: int
     page_id: str
     label: str
@@ -29,6 +29,7 @@ class PageAuditDetail(BaseModel):
 
 class BookQAReport(BaseModel):
     """Comprehensive whole-book audit report produced by AGT-010-BOOKQA."""
+
     audit_verdict: str  # PASSED | FAILED
     overall_readiness_score: float
     total_pages_audited: int
@@ -48,39 +49,36 @@ def run_book_qa_audit(
     masters_dir: str | Path = "output/interior_masters",
     manifest_path: str | Path = "manifest/pages.json",
     objects_registry_path: str | Path = "manifest/objects.json",
-    report_output_path: str | Path = "output/reports/book_level_qa_audit.json"
+    report_output_path: str | Path = "output/reports/book_level_qa_audit.json",
 ) -> BookQAReport:
     """Execute complete whole-book audit across all 110 pages.
-    
+
     Verifies sequential completeness, geometry, zero duplicates, and whole-book consistency.
-    
+
     Args:
         masters_dir: Directory containing the 110 composited master PNG files.
         manifest_path: Path to manifest/pages.json.
         objects_registry_path: Path to manifest/objects.json.
         report_output_path: Path to save the JSON audit report.
-        
+
     Returns:
         BookQAReport with full page-by-page diagnostics.
     """
     m_dir = Path(masters_dir)
     m_path = Path(manifest_path)
-    o_path = Path(objects_registry_path)
     r_out = Path(report_output_path)
     r_out.parent.mkdir(parents=True, exist_ok=True)
 
     if not m_path.exists():
         raise FileNotFoundError(f"Manifest not found: {m_path}")
 
-    with open(m_path, "r", encoding="utf-8") as f:
+    with open(m_path, encoding="utf-8") as f:
         manifest_data = json.load(f)
 
     pages = manifest_data.get("pages", [])
     expected_count = len(pages)  # 110
 
     # Initialize duplicate validator
-    registry_validator = ObjectRegistryValidator(o_path) if o_path.exists() else None
-
     page_audits = []
     passed_pages = 0
     failed_pages = 0
@@ -104,17 +102,19 @@ def run_book_qa_audit(
 
         if not p_file.exists():
             violations.append(f"Missing master file: {p_file.name}")
-            page_audits.append(PageAuditDetail(
-                page_number=p_num,
-                page_id=p_id,
-                label=label,
-                file_path=str(p_file),
-                dimension_passed=False,
-                margin_passed=False,
-                grayscale_passed=False,
-                all_passed=False,
-                violations=violations
-            ))
+            page_audits.append(
+                PageAuditDetail(
+                    page_number=p_num,
+                    page_id=p_id,
+                    label=label,
+                    file_path=str(p_file),
+                    dimension_passed=False,
+                    margin_passed=False,
+                    grayscale_passed=False,
+                    all_passed=False,
+                    violations=violations,
+                )
+            )
             failed_pages += 1
             continue
 
@@ -132,20 +132,24 @@ def run_book_qa_audit(
         else:
             failed_pages += 1
 
-        page_audits.append(PageAuditDetail(
-            page_number=p_num,
-            page_id=p_id,
-            label=label,
-            file_path=str(p_file),
-            dimension_passed=dim_res.passed,
-            margin_passed=margin_res.passed,
-            grayscale_passed=gray_res.passed,
-            all_passed=page_passed,
-            violations=violations
-        ))
+        page_audits.append(
+            PageAuditDetail(
+                page_number=p_num,
+                page_id=p_id,
+                label=label,
+                file_path=str(p_file),
+                dimension_passed=dim_res.passed,
+                margin_passed=margin_res.passed,
+                grayscale_passed=gray_res.passed,
+                all_passed=page_passed,
+                violations=violations,
+            )
+        )
 
     # Calculate overall scores
-    compliance_score = round((passed_pages / expected_count) * 100, 1) if expected_count > 0 else 0.0
+    compliance_score = (
+        round((passed_pages / expected_count) * 100, 1) if expected_count > 0 else 0.0
+    )
     overall_readiness = round(compliance_score * (1.0 - (duplicate_count * 0.1)), 1)
     is_ready = (failed_pages == 0) and (duplicate_count == 0) and (passed_pages == expected_count)
     verdict = "PASSED" if is_ready else "FAILED"
@@ -168,7 +172,7 @@ def run_book_qa_audit(
         toddler_simplicity_score=99.0,
         ready_for_press=is_ready,
         pages_audit=page_audits,
-        summary=summary
+        summary=summary,
     )
 
     with open(r_out, "w", encoding="utf-8") as f:

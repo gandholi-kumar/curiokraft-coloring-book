@@ -1,6 +1,7 @@
 """Margin and safe-zone bounding box validator for Amazon KDP interior printing."""
 
 from pathlib import Path
+
 import numpy as np
 from PIL import Image
 from pydantic import BaseModel, Field
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class MarginMetrics(BaseModel):
     """Calculated margin distances from artwork bounding box to canvas edges."""
+
     left_margin_in: float
     right_margin_in: float
     top_margin_in: float
@@ -20,6 +22,7 @@ class MarginMetrics(BaseModel):
 
 class MarginValidationResult(BaseModel):
     """Result of margin and safe-zone validation."""
+
     passed: bool
     image_path: str
     bounding_box_px: tuple[int, int, int, int] = Field(
@@ -43,10 +46,10 @@ def validate_margins(
     kdp_min_gutter_in: float = 0.375,
     kdp_min_outside_in: float = 0.250,
     ink_threshold: int = 240,
-    is_left_page: bool = False
+    is_left_page: bool = False,
 ) -> MarginValidationResult:
     """Validate that all artwork ink remains strictly inside KDP and project safe boundaries.
-    
+
     Args:
         image_path: Path to the image file.
         dpi: Target resolution in dots per inch (default: 300).
@@ -55,15 +58,21 @@ def validate_margins(
         kdp_min_outside_in: Authoritative KDP hard minimum outside margin (default: 0.250 in).
         ink_threshold: Grayscale pixel value below which pixels are considered ink (default: 240).
         is_left_page: True if this is an even (left-hand) page where gutter is on the right.
-        
+
     Returns:
         MarginValidationResult with bounding box and margin clearance metrics.
     """
     path = Path(image_path)
     if not path.exists():
         empty_metrics = MarginMetrics(
-            left_margin_in=0, right_margin_in=0, top_margin_in=0, bottom_margin_in=0,
-            left_margin_px=0, right_margin_px=0, top_margin_px=0, bottom_margin_px=0
+            left_margin_in=0,
+            right_margin_in=0,
+            top_margin_in=0,
+            bottom_margin_in=0,
+            left_margin_px=0,
+            right_margin_px=0,
+            top_margin_px=0,
+            bottom_margin_px=0,
         )
         return MarginValidationResult(
             passed=False,
@@ -77,7 +86,7 @@ def validate_margins(
             margins=empty_metrics,
             kdp_compliant=False,
             project_safe_zone_compliant=False,
-            violations=[f"Image file does not exist: {path}"]
+            violations=[f"Image file does not exist: {path}"],
         )
 
     with Image.open(path) as img:
@@ -90,10 +99,14 @@ def validate_margins(
     # If image is pure white (no ink)
     if not np.any(ink_mask):
         empty_metrics = MarginMetrics(
-            left_margin_in=canvas_width / dpi, right_margin_in=canvas_width / dpi,
-            top_margin_in=canvas_height / dpi, bottom_margin_in=canvas_height / dpi,
-            left_margin_px=canvas_width, right_margin_px=canvas_width,
-            top_margin_px=canvas_height, bottom_margin_px=canvas_height
+            left_margin_in=canvas_width / dpi,
+            right_margin_in=canvas_width / dpi,
+            top_margin_in=canvas_height / dpi,
+            bottom_margin_in=canvas_height / dpi,
+            left_margin_px=canvas_width,
+            right_margin_px=canvas_width,
+            top_margin_px=canvas_height,
+            bottom_margin_px=canvas_height,
         )
         return MarginValidationResult(
             passed=False,
@@ -107,7 +120,7 @@ def validate_margins(
             margins=empty_metrics,
             kdp_compliant=False,
             project_safe_zone_compliant=False,
-            violations=["Image contains no printable ink pixels (blank white canvas)."]
+            violations=["Image contains no printable ink pixels (blank white canvas)."],
         )
 
     # Find bounding box coordinates of all ink pixels
@@ -136,7 +149,7 @@ def validate_margins(
         left_margin_px=left_margin_px,
         right_margin_px=right_margin_px,
         top_margin_px=top_margin_px,
-        bottom_margin_px=bottom_margin_px
+        bottom_margin_px=bottom_margin_px,
     )
 
     # Determine inside gutter vs outside margin based on page side
@@ -148,7 +161,7 @@ def validate_margins(
         outside_margin_in = right_margin_in
 
     violations = []
-    
+
     # KDP Hard Boundary Checks
     kdp_compliant = True
     if gutter_margin_in < kdp_min_gutter_in:
@@ -175,7 +188,12 @@ def validate_margins(
     # Project Safe Zone Target Checks (0.50 in)
     project_safe_compliant = True
     min_safe_px = int(safe_margin_in * dpi)
-    if min_x < min_safe_px or right_margin_px < min_safe_px or min_y < min_safe_px or bottom_margin_px < min_safe_px:
+    if (
+        min_x < min_safe_px
+        or right_margin_px < min_safe_px
+        or min_y < min_safe_px
+        or bottom_margin_px < min_safe_px
+    ):
         project_safe_compliant = False
         if kdp_compliant:
             violations.append(
@@ -203,5 +221,5 @@ def validate_margins(
         margins=margins,
         kdp_compliant=kdp_compliant,
         project_safe_zone_compliant=project_safe_compliant,
-        violations=violations
+        violations=violations,
     )

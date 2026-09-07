@@ -1,6 +1,7 @@
 """Deterministic adaptive binarizer to eliminate gray noise and protect image generation quotas."""
 
 from pathlib import Path
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 
 class RescueBinarizeResult(BaseModel):
     """Result of the deterministic binarization rescue process."""
+
     success: bool
     input_path: str
     output_path: str
@@ -19,21 +21,21 @@ class RescueBinarizeResult(BaseModel):
 
 def rescue_binarize(
     input_path: str | Path,
-    output_path: Optional[str | Path] = None,
+    output_path: str | Path | None = None,
     threshold_value: int = 200,
-    use_otsu: bool = True
+    use_otsu: bool = True,
 ) -> RescueBinarizeResult:
     """Clean minor antialiasing, compression artifacts, and light gray pixels from raw line art.
-    
+
     Transforms raw generated illustrations into pure, stark 2D black-and-white line art without
     altering line continuity or thickness.
-    
+
     Args:
         input_path: Path to the source raw image.
         output_path: Path to save the rescued binary image (if None, overwrites or creates _rescued suffix).
         threshold_value: Base grayscale threshold value (default: 200).
         use_otsu: If True, uses Otsu's adaptive thresholding for optimal global separation.
-        
+
     Returns:
         RescueBinarizeResult with rescue metrics.
     """
@@ -45,7 +47,7 @@ def rescue_binarize(
             output_path="",
             original_non_binary_pixels=0,
             cleaned_pixels_count=0,
-            method_applied="NONE"
+            method_applied="NONE",
         )
 
     out_p = Path(output_path) if output_path else in_p.parent / f"{in_p.stem}_rescued.png"
@@ -59,7 +61,7 @@ def rescue_binarize(
             output_path="",
             original_non_binary_pixels=0,
             cleaned_pixels_count=0,
-            method_applied="READ_FAILURE"
+            method_applied="READ_FAILURE",
         )
 
     # Measure non-binary pixels before cleanup (15 < pixel < 240)
@@ -94,5 +96,5 @@ def rescue_binarize(
         output_path=str(out_p),
         original_non_binary_pixels=original_non_binary_count,
         cleaned_pixels_count=cleaned_pixels,
-        method_applied=method
+        method_applied=method,
     )
