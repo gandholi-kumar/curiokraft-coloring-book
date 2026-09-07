@@ -8,7 +8,7 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY environment variable is not set.")
 
 # Use the multimodal image generation endpoint
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={api_key}"
+url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
 
 payload = {
     "contents": [
@@ -25,7 +25,10 @@ payload = {
 req = urllib.request.Request(
     url,
     data=json.dumps(payload).encode("utf-8"),
-    headers={"Content-Type": "application/json"},
+    headers={
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key,
+    },
     method="POST",
 )
 

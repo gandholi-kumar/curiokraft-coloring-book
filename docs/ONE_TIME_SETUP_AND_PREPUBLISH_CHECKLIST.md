@@ -22,7 +22,7 @@ Before running a production book generation, place your brand assets and chosen 
 ## 2. One-Time VS Code & Python Setup
 
 ### Step 1: Open Folder in VS Code
-Open `H:\Store\CurioKraft\Publications\coloring-book` in VS Code.
+Open the project root directory (`coloring-book`) in VS Code.
 
 ### Step 2: Ensure Python 3.10+ is Installed
 If Python is not recognized in your terminal, download and install Python 3.10 or higher from [python.org](https://www.python.org/downloads/) (ensure you check **"Add Python to PATH"** during installation).
@@ -100,7 +100,7 @@ curiokraft-book doctor
 When packaging and publishing to the global Pip inventory (PyPI), here is the exact breakdown of what gets distributed versus what stays in your private publishing repository:
 
 ```text
-H:\Store\CurioKraft\Publications\coloring-book\
+coloring-book/
 │
 ├── 📦 DISTRIBUTED VIA PIP PACKAGE (PyPI)
 │   ├── pyproject.toml              <-- Master build configuration & dependencies

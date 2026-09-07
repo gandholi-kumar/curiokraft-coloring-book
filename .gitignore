@@ -37,6 +37,19 @@ scratch/
 # Environment Variables & Secrets
 .env
 *.env
+!.env.example
+!.env.template
+
+# Proprietary Business & Commercial Documentation
+private_docs/
+
+# Testing, Coverage & Static Analysis
+.coverage
+htmlcov/
+coverage.xml
+test-results.xml
+.scannerwork/
+teddy_bear_outline.png
 
 # IDE & OS
 .vscode/

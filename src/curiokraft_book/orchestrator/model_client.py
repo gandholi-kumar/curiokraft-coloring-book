@@ -136,12 +136,16 @@ class GeminiImageProvider(BaseImageProvider):
         # REST fallback
         try:
             import requests
-            url = f"https://generativelanguage.googleapis.com/v1beta/interactions?key={self.api_key}"
+            url = "https://generativelanguage.googleapis.com/v1beta/interactions"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.api_key,
+            }
             payload = {
                 "model": "gemini-3.1-flash-image",
                 "input": [{"type": "text", "text": imagen_prompt}]
             }
-            resp = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=60)
+            resp = requests.post(url, json=payload, headers=headers, timeout=60)
             if resp.status_code == 200:
                 data = resp.json()
                 out_img = data.get("output_image", {})
