@@ -1,0 +1,38 @@
+name: 📚 New Book Volume Proposal
+description: Scope and propose a new multi-volume coloring book theme.
+title: "[VOLUME]: "
+labels: ["volume-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Propose a New CurioKraft Book Volume
+  - type: input
+    id: volume-title
+    attributes:
+      label: Volume Title
+      placeholder: "e.g., TINY EXPLORERS: DINOSAURS & JUNGLE"
+    validations:
+      required: true
+  - type: input
+    id: target-age
+    attributes:
+      label: Target Age Range
+      placeholder: "e.g., Ages 1–4, Toddlers & Preschoolers"
+    validations:
+      required: true
+  - type: textarea
+    id: categories
+    attributes:
+      label: Proposed Thematic Categories (8–10 categories)
+      placeholder: |
+        - Category 1: Herbivores
+        - Category 2: Carnivores
+        - Category 3: Flying Reptiles
+    validations:
+      required: true
+  - type: textarea
+    id: special-mascot
+    attributes:
+      label: Volume Mascot & Milestone Scene Concept
+      placeholder: Describe the baby animal or character that guides the child...

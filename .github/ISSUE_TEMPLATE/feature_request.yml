@@ -1,0 +1,31 @@
+name: 💡 Feature / Enhancement Proposal
+description: Propose an architectural improvement, new validator, or rescue technique.
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Propose a New Feature or Engine Capability
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of what you would like to see added.
+      placeholder: Describe the feature, validator, or compositor enhancement...
+    validations:
+      required: true
+  - type: textarea
+    id: publishing-benefit
+    attributes:
+      label: Publishing & Pedagogical Value
+      description: How does this improve KDP print quality or early learning cognitive development?
+    validations:
+      required: false
+  - type: textarea
+    id: implementation-ideas
+    attributes:
+      label: Proposed Implementation Details
+      placeholder: Classes, algorithms (e.g. OpenCV, PyMuPDF), or workflow steps...
+    validations:
+      required: false

@@ -46,7 +46,7 @@ BOOK_THEME = {
 
 SPECIAL_ASSET_DIR = Path("inbox/special_assets")
 ASSET_NAMES = {
-    "mascot": ["tiny_mascot.png", "tiny_mascot.png.jpg", "tiny_mascot.jpg"],
+    "mascot": ["tiny_mascot.png", "tiny_mascot.jpg", "tiny_mascot.png.jpg"],
     "badge": ["super_colorist_badge.png", "super_colorist_badge.jpg"],
     "welcome": ["welcome_scene.png", "welcome_scene.jpg"],
     "celebration": ["celebration_scene.png", "celebration_scene.jpg"],

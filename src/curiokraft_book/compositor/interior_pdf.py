@@ -77,6 +77,17 @@ def compile_interior_pdf(
         rect = fitz.Rect(0, 0, page_width_pt, page_height_pt)
         page.insert_image(rect, filename=str(p))
 
+    # Set clean publishing metadata
+    doc.set_metadata(
+        {
+            "title": "Tiny Hands Color & Learn",
+            "author": "CurioKraft Publications",
+            "subject": "Amazon KDP Preschool Activity Coloring Book",
+            "creator": "CurioKraft Publishing Engine v1.0",
+            "producer": "CurioKraft Automated Preflight Suite",
+        }
+    )
+
     # Save PDF with lossless compression
     doc.save(str(out_p), garbage=4, deflate=True)
     doc.close()

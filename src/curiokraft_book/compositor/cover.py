@@ -782,7 +782,15 @@ def composite_kdp_cover(
         out_pdf = Path(output_pdf_path)
         out_pdf.parent.mkdir(parents=True, exist_ok=True)
         cmyk_cover = rgb_cover.convert("CMYK")
-        cmyk_cover.save(out_pdf, resolution=float(dpi), format="PDF")
+        cmyk_cover.save(
+            out_pdf,
+            resolution=float(dpi),
+            format="PDF",
+            title=title,
+            author=brand_name,
+            creator="CurioKraft Publishing Engine v1.0",
+            producer="CurioKraft Automated Preflight Suite",
+        )
         out_pdf_str = str(out_pdf)
 
     return CoverCompositorResult(
