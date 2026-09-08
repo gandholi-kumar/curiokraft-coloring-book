@@ -7,6 +7,8 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel
 
+from curiokraft_book.constants import BINARIZE_THRESHOLD_VALUE
+
 
 class RescueBinarizeResult(BaseModel):
     """Result of the deterministic binarization rescue process."""
@@ -22,7 +24,7 @@ class RescueBinarizeResult(BaseModel):
 def rescue_binarize(
     input_path: str | Path,
     output_path: str | Path | None = None,
-    threshold_value: int = 200,
+    threshold_value: int = BINARIZE_THRESHOLD_VALUE,
     use_otsu: bool = True,
 ) -> RescueBinarizeResult:
     """Clean minor antialiasing, compression artifacts, and light gray pixels from raw line art.

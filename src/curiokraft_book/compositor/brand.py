@@ -6,9 +6,19 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from curiokraft_book.compositor.fonts import get_typography_font
+from curiokraft_book.constants import (
+    BACKGROUND_TRANSPARENCY_THRESHOLD,
+    DEFAULT_EMBLEM_PATH,
+    DEFAULT_IMPRINT,
+    DEFAULT_LOGO_PATH,
+    PUBLISHER_BADGE_HEIGHT,
+    PUBLISHER_BADGE_WIDTH,
+)
 
 
-def make_background_transparent(img: Image.Image, threshold: int = 245) -> Image.Image:
+def make_background_transparent(
+    img: Image.Image, threshold: int = BACKGROUND_TRANSPARENCY_THRESHOLD
+) -> Image.Image:
     """Intelligently converts solid white/off-white background pixels to transparent alpha.
 
     Ensures that logos and emblems blend seamlessly over colored cover backgrounds.
@@ -34,10 +44,10 @@ def make_background_transparent(img: Image.Image, threshold: int = 245) -> Image
 
 
 def get_brand_logo(
-    logo_path: str | Path = "assets/logo/curiokraft_logo.png",
+    logo_path: str | Path = DEFAULT_LOGO_PATH,
     target_width_px: int = 600,
     auto_remove_white_bg: bool = True,
-    brand_text_fallback: str = "CURIOKRAFT-KIDS",
+    brand_text_fallback: str = DEFAULT_IMPRINT,
 ) -> Image.Image:
     """Load the protected CurioKraft company logo or generate an exact vector fallback.
 
@@ -110,8 +120,8 @@ def get_brand_logo(
 
 
 def create_publisher_badge(
-    card_w: int = 640,
-    card_h: int = 420,
+    card_w: int = PUBLISHER_BADGE_WIDTH,
+    card_h: int = PUBLISHER_BADGE_HEIGHT,
     radius: int = 28,
     offset_x: int = 16,
     offset_y: int = 20,
@@ -240,7 +250,7 @@ def create_publisher_badge(
 
 
 def get_brand_emblem(
-    emblem_path: str | Path = "assets/emblem/curiokraft_emblem.png",
+    emblem_path: str | Path = DEFAULT_EMBLEM_PATH,
     target_size_px: int = 200,
     auto_remove_white_bg: bool = True,
 ) -> Image.Image:

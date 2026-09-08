@@ -38,15 +38,52 @@ flowchart TD
 
 | File | Scope | Responsibilities | Volume 2 / Volume 3 Impact |
 | :--- | :--- | :--- | :--- |
-| `manifest/pages.json` | **Volume-Specific** | Master 110-page sequence. Contains `page_id`, `display_label`, `canonical_object`, `section`, and spread `cards` array (e.g. A=Apple, 8=Plain Wooden Cubes). | **Modify Here:** Provide new words, objects, and card lists. |
-| `config/curriculum.yaml` | **Volume-Agnostic** | Spread layout templates (`alphabet_a_m`, `numbers_0_5`), hollow bubble numeral fill mandate, container uniformity rules, and object purity rejections (e.g. rejecting alphabet blocks). | **No change needed** across volumes. |
-| `config/taxonomy.yaml` | **Volume-Agnostic** | Living creature keywords, inanimate exceptions (`rocking_horse`, `toy_robot`), and category-specific visual prompt templates (`vehicles`, `food`, `toys`, `nature`). | **No change needed** unless introducing novel categories. |
+| `config/book_config.yaml` | **Volume-Specific Hub** | Master publishing metadata: Title, subtitle, author/imprint, page count (110, 80, etc.), trim size, spine formula, safe margins, and barcode placement. | **Modify Here:** Update title, subtitle, target age range, or page count for the new volume. |
+| `manifest/pages.json` | **Volume-Specific Content** | Master page sequence. Contains `page_id`, `display_label`, `canonical_object`, `section`, and spread `cards` array (e.g. A=Apple, 8=Plain Wooden Cubes). | **Modify Here:** Provide new words, objects, and card lists. |
+| `manifest/objects.json` | **Volume-Specific Registry** | Object vocabulary dictionary with singular/plural constraints, category mappings, and anti-duplication rules. | **Modify Here:** Add new objects for the volume. |
+| `config/curriculum.yaml` | **Volume-Agnostic** | Spread layout templates (`alphabet_a_m`, `numbers_0_5`), hollow bubble numeral fill mandate, container uniformity rules, and object purity rejections. | **No change needed** across volumes. |
+| `config/taxonomy.yaml` | **Volume-Agnostic** | Living creature keywords, locomotion matrix (`quadrupeds`, `bipeds`, etc.), vehicle domain matrix, inanimate exceptions, and visual prompt templates. | **No change needed** unless introducing novel categories (e.g. Dinosaurs, Space). |
 | `config/agents.yaml` | **System-Level** | System prompts, temperatures, and deliberation protocols for all 10 specialist agents. | **No change needed**. |
-| `curiokraft_book/` | **Code Logic** | Pure logic: reads manifest and configs dynamically. Contains **zero hardcoded keyword sets or card object lists**. | **Zero code changes required**. |
+| `src/curiokraft_book/constants.py` | **Central Engine Standard** | Single source of truth for KDP publishing dimensions, paper thickness multipliers, default paths, and quality thresholds; loads and binds to `book_config.yaml`. | **Zero code changes required**. |
+| `curiokraft_book/` | **Code Logic** | Pure logic: reads manifest, constants, and configs dynamically. Contains **zero hardcoded keyword sets or card object lists**. | **Zero code changes required**. |
 
 ---
 
 ## 🚀 How to Produce Volume 2 (Step-by-Step)
+
+### Step 0: Configure Book Metadata (`config/book_config.yaml`)
+Before generating pages or manifests, set your book metadata in `config/book_config.yaml`:
+```yaml
+book:
+  title: "TINY HANDS COLOR & LEARN — VOLUME 2"
+  subtitle: "ANIMALS, VEHICLES & FIRST ADVENTURES"
+  brand: "CURIOKRAFT-KIDS"
+  target_audience:
+    age_min: 1
+    age_max: 4
+    description: "Toddler & preschool coloring book"
+  
+  interior:
+    page_count: 110            # Or customize (e.g. 80, 100, 120)
+    color_mode: "black_and_white"
+    paper_type: "white"        # white | cream | color
+    trim_size:
+      width_in: 8.5
+      height_in: 11.0
+  
+  cover:
+    type: "paperback"
+    overall_dimensions_in:
+      width: 17.498            # (2 * 0.125) + (2 * 8.5) + spine_width_in
+      height: 11.250           # (2 * 0.125) + 11.0
+    spine_width_in: 0.248      # 110 pages * 0.002252 in/page
+    spine:
+      mode: "clean_background" # Seamless wraparound background art
+```
+> [!TIP]
+> **Zero Code Edits:** All publishing dimensions, page budgets, title labels, and spine calculations are loaded dynamically into the pipeline via `curiokraft_book.constants.load_book_config()`.
+
+---
 
 ### Step 1: Create the Volume 2 Manifest
 Define your new vocabulary in `manifest/pages_vol2.json` (or replace `manifest/pages.json`). 

@@ -6,6 +6,15 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel
 
+from curiokraft_book.constants import (
+    CANVAS_DPI,
+    CANVAS_HEIGHT_PX,
+    CANVAS_WIDTH_PX,
+    HEADER_RESERVATION_IN,
+    SAFE_MARGIN_IN,
+    TARGET_COVERAGE_RATIO,
+)
+
 
 class MarginFitResult(BaseModel):
     """Result of margin fitting and auto-centering."""
@@ -26,12 +35,12 @@ class MarginFitResult(BaseModel):
 def fit_to_safe_margins(
     input_path: str | Path,
     output_path: str | Path | None = None,
-    canvas_width: int = 2550,
-    canvas_height: int = 3300,
-    dpi: int = 300,
-    safe_margin_in: float = 0.50,
-    header_reservation_in: float = 1.20,
-    target_coverage_ratio: float = 0.72,
+    canvas_width: int = CANVAS_WIDTH_PX,
+    canvas_height: int = CANVAS_HEIGHT_PX,
+    dpi: int = CANVAS_DPI,
+    safe_margin_in: float = SAFE_MARGIN_IN,
+    header_reservation_in: float = HEADER_RESERVATION_IN,
+    target_coverage_ratio: float = TARGET_COVERAGE_RATIO,
     is_spread: bool = False,
 ) -> MarginFitResult:
     """Crop artwork to its tight bounding box, center, scale, and place on a pristine 300 DPI canvas.

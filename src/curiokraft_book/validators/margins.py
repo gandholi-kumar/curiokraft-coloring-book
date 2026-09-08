@@ -6,6 +6,14 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    CANVAS_DPI,
+    INK_THRESHOLD,
+    KDP_MIN_GUTTER_IN,
+    KDP_MIN_OUTSIDE_IN,
+    SAFE_MARGIN_IN,
+)
+
 
 class MarginMetrics(BaseModel):
     """Calculated margin distances from artwork bounding box to canvas edges."""
@@ -21,7 +29,7 @@ class MarginMetrics(BaseModel):
 
 
 class MarginValidationResult(BaseModel):
-    """Result of margin and safe-zone validation."""
+    """Result of margin safety and KDP compliance validation."""
 
     passed: bool
     image_path: str
@@ -41,11 +49,11 @@ class MarginValidationResult(BaseModel):
 
 def validate_margins(
     image_path: str | Path,
-    dpi: int = 300,
-    safe_margin_in: float = 0.50,
-    kdp_min_gutter_in: float = 0.375,
-    kdp_min_outside_in: float = 0.250,
-    ink_threshold: int = 240,
+    dpi: int = CANVAS_DPI,
+    safe_margin_in: float = SAFE_MARGIN_IN,
+    kdp_min_gutter_in: float = KDP_MIN_GUTTER_IN,
+    kdp_min_outside_in: float = KDP_MIN_OUTSIDE_IN,
+    ink_threshold: int = INK_THRESHOLD,
     is_left_page: bool = False,
 ) -> MarginValidationResult:
     """Validate that all artwork ink remains strictly inside KDP and project safe boundaries.

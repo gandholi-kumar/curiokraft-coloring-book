@@ -6,25 +6,34 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from curiokraft_book.compositor.cover import calculate_kdp_cover_dimensions
+from curiokraft_book.constants import (
+    DEFAULT_BOOK_TITLE,
+    DEFAULT_COVER_OUTPUT_PDF,
+    DEFAULT_IMPRINT,
+    DEFAULT_INTERIOR_PDF,
+    DEFAULT_OBJECTS_REGISTRY,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+)
 
 
 class PreflightCheckItem(BaseModel):
-    """Individual preflight check metric."""
+    """Single diagnostic check result."""
 
-    check_number: int
-    name: str
-    target_spec: str
-    actual_value: str
+    category: str
+    item_id: str
+    description: str
     passed: bool
     details: str
+    status: str  # PASS | FAIL | WARN
 
 
 class MasterPreflightReport(BaseModel):
     """Comprehensive 18-point preflight certification report."""
 
     certified: bool
-    book_title: str = "TINY HANDS COLOR & LEARN"
-    publisher: str = "CURIOKRAFT-KIDS"
+    book_title: str = DEFAULT_BOOK_TITLE
+    publisher: str = DEFAULT_IMPRINT
     total_checks_run: int = 18
     checks_passed: int
     checks_failed: int
@@ -33,18 +42,16 @@ class MasterPreflightReport(BaseModel):
 
 
 def run_full_preflight(
-    interior_pdf_path: str
-    | Path
-    | None = "output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf",
-    cover_pdf_path: str | Path | None = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf",
-    manifest_objects_path: str | Path = "manifest/objects.json",
-    manifest_pages_path: str | Path = "manifest/pages.json",
+    interior_pdf_path: str | Path | None = DEFAULT_INTERIOR_PDF,
+    cover_pdf_path: str | Path | None = DEFAULT_COVER_OUTPUT_PDF,
+    manifest_objects_path: str | Path = DEFAULT_OBJECTS_REGISTRY,
+    manifest_pages_path: str | Path = DEFAULT_PAGES_MANIFEST,
 ) -> MasterPreflightReport:
     """Execute the full 18-point KDP Preflight diagnostic suite dynamically from manifest metadata."""
     m_path = Path(manifest_pages_path)
-    total_pages = 110
-    book_title = "TINY HANDS COLOR & LEARN"
-    publisher = "CURIOKRAFT-KIDS"
+    total_pages = DEFAULT_PAGE_COUNT
+    book_title = DEFAULT_BOOK_TITLE
+    publisher = DEFAULT_IMPRINT
 
     if m_path.exists():
         try:

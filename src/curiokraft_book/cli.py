@@ -14,6 +14,14 @@ from rich.table import Table
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.typography import composite_typography
+from curiokraft_book.constants import (
+    DEFAULT_BOOK_TITLE,
+    DEFAULT_DEBATE_LOG_FILE,
+    DEFAULT_IMPRINT,
+    DEFAULT_INBOX_DIR,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_SPECIAL_ASSETS_DIR,
+)
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -133,8 +141,8 @@ def main_callback():
 
 @app.command("init")
 def init_workspace(
-    project_name: str = typer.Option("TINY HANDS COLOR & LEARN", "--name", "-n", help="Book title"),
-    imprint: str = typer.Option("CURIOKRAFT-KIDS", "--imprint", "-i", help="Publisher imprint"),
+    project_name: str = typer.Option(DEFAULT_BOOK_TITLE, "--name", "-n", help="Book title"),
+    imprint: str = typer.Option(DEFAULT_IMPRINT, "--imprint", "-i", help="Publisher imprint"),
 ):
     """Scaffold complete directory structure and templates on a fresh installation or new laptop."""
     console.print(
@@ -618,10 +626,16 @@ def generate_full_book(
 @generate_app.command("special-pages")
 def generate_special_pages(
     asset_dir: str = typer.Option(
-        "inbox/special_assets", "--assets", "-a", help="Directory containing special page assets"
+        str(DEFAULT_SPECIAL_ASSETS_DIR),
+        "--assets",
+        "-a",
+        help="Directory containing special page assets",
     ),
     output_dir: str = typer.Option(
-        "output/interior_masters", "--output", "-o", help="Output directory for interior masters"
+        str(DEFAULT_INTERIOR_MASTERS_DIR),
+        "--output",
+        "-o",
+        help="Output directory for interior masters",
     ),
     guides: bool = typer.Option(
         False, "--guides", "-g", help="Overlay print-safety guides (dev mode)"
@@ -1218,7 +1232,7 @@ def show_debate(
 @debate_app.command("export")
 def export_debate_log(
     output_file: str = typer.Option(
-        "logs/agent_debates_log.md", "--out", "-o", help="Path to write markdown debate log"
+        str(DEFAULT_DEBATE_LOG_FILE), "--out", "-o", help="Path to write markdown debate log"
     ),
 ):
     """[Transparency] Run and export the complete 4-round multi-agent debate log for all 110 pages."""
@@ -1237,7 +1251,7 @@ def export_debate_log(
 @app.command("process-raw")
 def ingest_raw_images(
     inbox_dir: str = typer.Option(
-        "inbox/raw_pages", "--inbox", "-i", help="Directory containing user-dropped images"
+        str(DEFAULT_INBOX_DIR), "--inbox", "-i", help="Directory containing user-dropped images"
     ),
     clear_inbox: bool = typer.Option(
         True,

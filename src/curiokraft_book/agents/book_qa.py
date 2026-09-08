@@ -6,6 +6,13 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    DEFAULT_BOOK_QA_REPORT,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_OBJECTS_REGISTRY,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+)
 from curiokraft_book.validators.dimensions import validate_dimensions
 from curiokraft_book.validators.grayscale import validate_black_and_white
 from curiokraft_book.validators.margins import validate_margins
@@ -33,7 +40,7 @@ class BookQAReport(BaseModel):
     audit_verdict: str  # PASSED | FAILED
     overall_readiness_score: float
     total_pages_audited: int
-    expected_pages_count: int = 110
+    expected_pages_count: int = DEFAULT_PAGE_COUNT
     passed_pages_count: int
     failed_pages_count: int
     duplicate_objects_found: int
@@ -46,10 +53,10 @@ class BookQAReport(BaseModel):
 
 
 def run_book_qa_audit(
-    masters_dir: str | Path = "output/interior_masters",
-    manifest_path: str | Path = "manifest/pages.json",
-    objects_registry_path: str | Path = "manifest/objects.json",
-    report_output_path: str | Path = "output/reports/book_level_qa_audit.json",
+    masters_dir: str | Path = DEFAULT_INTERIOR_MASTERS_DIR,
+    manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+    objects_registry_path: str | Path = DEFAULT_OBJECTS_REGISTRY,
+    report_output_path: str | Path = DEFAULT_BOOK_QA_REPORT,
 ) -> BookQAReport:
     """Execute complete whole-book audit across all 110 pages.
 

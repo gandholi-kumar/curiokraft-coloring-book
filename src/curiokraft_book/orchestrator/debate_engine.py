@@ -17,6 +17,15 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    DEFAULT_AGENTS_CONFIG,
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_CURRICULUM_CONFIG,
+    DEFAULT_DEBATE_LOG_FILE,
+    DEFAULT_OBJECTS_REGISTRY,
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_TAXONOMY_CONFIG,
+)
 from curiokraft_book.orchestrator.model_client import ModelClient
 
 logger = logging.getLogger("curiokraft.debate_engine")
@@ -64,9 +73,9 @@ def _load_json(path: str) -> dict:
 
 
 # Loaded once at import time — cached for the process lifetime
-_TAXONOMY: dict = _load_yaml("config/taxonomy.yaml")
-_CURRICULUM: dict = _load_yaml("config/curriculum.yaml")
-_OBJECTS_DATA: dict = _load_json("manifest/objects.json")
+_TAXONOMY: dict = _load_yaml(str(DEFAULT_TAXONOMY_CONFIG))
+_CURRICULUM: dict = _load_yaml(str(DEFAULT_CURRICULUM_CONFIG))
+_OBJECTS_DATA: dict = _load_json(str(DEFAULT_OBJECTS_REGISTRY))
 _OBJECTS_REGISTRY: dict[str, dict] = {
     obj.get("canonical_name", "").lower(): obj for obj in _OBJECTS_DATA.get("objects", [])
 }
@@ -335,39 +344,13 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
             "negative_tokens": negative_tokens,
         }
 
-    # Infer class from general keywords if not in specific species profile
-    bird_words = [
-        "bird",
-        "chicken",
-        "duck",
-        "chick",
-        "hen",
-        "rooster",
-        "penguin",
-        "flamingo",
-        "ostrich",
-        "owl",
-        "parrot",
-        "swan",
-        "peacock",
-    ]
-    aquatic_words = ["fish", "dolphin", "whale", "shark", "octopus", "crab"]
-    insect_words = ["butterfly", "bee", "bug", "ant", "ladybug", "dragonfly"]
-    reptile_amphibian_words = ["frog", "toad", "turtle", "lizard", "alligator", "snake"]
-    arboreal_words = ["monkey", "chimpanzee", "gorilla", "sloth", "koala", "squirrel"]
-
-    if any(w in canon_lower for w in bird_words):
-        cls_key = "bipeds"
-    elif any(w in canon_lower for w in aquatic_words):
-        cls_key = "aquatic"
-    elif any(w in canon_lower for w in insect_words):
-        cls_key = "insects"
-    elif any(w in canon_lower for w in reptile_amphibian_words):
-        cls_key = "amphibians"
-    elif any(w in canon_lower for w in arboreal_words):
-        cls_key = "arboreal"
-    else:
-        cls_key = "quadrupeds"
+    # Infer class dynamically from taxonomy locomotion matrix keywords if not in specific species profile
+    cls_key = "quadrupeds"
+    for class_name, class_data in matrix.items():
+        class_keywords = class_data.get("keywords", [])
+        if any(w in canon_lower for w in class_keywords):
+            cls_key = class_name
+            break
 
     cls_matrix = matrix.get(cls_key, matrix.get("quadrupeds", {}))
     anatomy = f"natural {readable} anatomy with recognizable baby {readable} body proportions and species silhouette"
@@ -448,34 +431,13 @@ def resolve_vehicle_design_profile(canonical: str) -> dict:
             "negative_tokens": negative_tokens,
         }
 
-    # Infer domain from keywords if not in specific profiles
-    rotor_words = ["helicopter", "chopper", "gyrocopter"]
-    space_words = ["rocket", "spaceship", "shuttle"]
-    water_words = ["boat", "sailboat", "ship", "yacht", "canoe", "kayak", "tugboat", "ferry"]
-    sub_words = ["submarine", "submersible"]
-    cycle_words = ["bicycle", "bike", "motorcycle", "scooter", "tricycle"]
-    rail_words = ["train", "locomotive", "subway", "tram", "trolley"]
-    air_words = ["plane", "airplane", "jet", "biplane"]
-    balloon_words = ["balloon", "blimp", "airship"]
-
-    if any(w in canon_lower for w in rotor_words):
-        cls_key = "rotorcraft"
-    elif any(w in canon_lower for w in space_words):
-        cls_key = "spacecraft"
-    elif any(w in canon_lower for w in water_words):
-        cls_key = "watercraft"
-    elif any(w in canon_lower for w in sub_words):
-        cls_key = "submersible"
-    elif any(w in canon_lower for w in cycle_words):
-        cls_key = "wheeled_two_wheel"
-    elif any(w in canon_lower for w in rail_words):
-        cls_key = "rail_vehicles"
-    elif any(w in canon_lower for w in air_words):
-        cls_key = "fixed_wing_aircraft"
-    elif any(w in canon_lower for w in balloon_words):
-        cls_key = "lighter_than_air"
-    else:
-        cls_key = "wheeled_four_wheel"
+    # Infer domain dynamically from vehicle domain matrix keywords if not in specific profiles
+    cls_key = "wheeled_four_wheel"
+    for domain_name, domain_data in matrix.items():
+        domain_keywords = domain_data.get("keywords", [])
+        if any(w in canon_lower for w in domain_keywords):
+            cls_key = domain_name
+            break
 
     cls_matrix = matrix.get(cls_key, matrix.get("wheeled_four_wheel", {}))
     anatomy = f"classic toddler {readable} anatomy with recognizable preschool proportions"
@@ -808,7 +770,7 @@ class DebateEngine:
     def __init__(
         self,
         model_client: ModelClient | None = None,
-        agents_config_path: str = "config/agents.yaml",
+        agents_config_path: str = str(DEFAULT_AGENTS_CONFIG),
     ):
         self.client = model_client or ModelClient()
         self.agents_config_path = agents_config_path
@@ -1286,8 +1248,8 @@ class DebateEngine:
 
     def export_full_debate_log(
         self,
-        manifest_path: str | Path = "manifest/pages.json",
-        output_file: str | Path = "logs/agent_debates_log.md",
+        manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+        output_file: str | Path = DEFAULT_DEBATE_LOG_FILE,
     ) -> str:
         """Synthesize and export the complete 4-round debate transcript across all manifest pages."""
         import json
@@ -1401,7 +1363,8 @@ def _get_crayon_color_for_object(obj_name: str) -> str:
 
 
 def generate_front_cover_prompt(
-    book_config_path: str = "config/book_config.yaml", manifest_path: str = "manifest/pages.json"
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
 ) -> tuple[str, str]:
     """Construct dynamic Front Cover Master Illustration prompt synthesized from manifest contents."""
     b_cfg = _load_yaml(book_config_path).get("book", {})
@@ -1444,7 +1407,7 @@ def generate_front_cover_prompt(
                     hero_char = found_animal
 
                 # Discover dynamic companion objects across manifest categories
-                dynamic_companions = []
+                dynamic_companions: list[str] = []
                 for p in pages:
                     canon = p.get("canonical_object", "").lower()
                     sec = p.get("section", "").lower()
@@ -1509,7 +1472,8 @@ def generate_front_cover_prompt(
 
 
 def generate_back_cover_prompt(
-    book_config_path: str = "config/book_config.yaml", manifest_path: str = "manifest/pages.json"
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
 ) -> tuple[str, str]:
     """Construct dynamic Back Cover Master Illustration prompt synthesized from manifest contents."""
     b_cfg = _load_yaml(book_config_path).get("book", {})
@@ -1553,7 +1517,7 @@ def generate_back_cover_prompt(
 
 
 def generate_dynamic_cover_prompt(
-    book_config_path: str = "config/book_config.yaml",
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
 ) -> tuple[str, str]:
     """Backward-compatible alias for Front Cover Master Prompt."""
     return generate_front_cover_prompt(book_config_path)

@@ -14,14 +14,23 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from curiokraft_book.compositor.fonts import get_typography_font
+from curiokraft_book.constants import (
+    CANVAS_DPI,
+    CANVAS_HEIGHT_PX,
+    CANVAS_WIDTH_PX,
+    DEFAULT_BOOK_TITLE,
+    DEFAULT_FONTS_DIR,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_SPECIAL_ASSETS_DIR,
+)
 
 # ---------------------------------------------------------------------------
 # BOOK THEME -- single source of truth for both pages
 # ---------------------------------------------------------------------------
 BOOK_THEME = {
-    "canvas_w": 2550,
-    "canvas_h": 3300,
-    "dpi": 300,
+    "canvas_w": CANVAS_WIDTH_PX,
+    "canvas_h": CANVAS_HEIGHT_PX,
+    "dpi": CANVAS_DPI,
     "safe_margin": 113,
     "bleed": 38,
     "border_outer_inset": 140,
@@ -270,16 +279,16 @@ def _draw_debug_guides(draw, t: dict):
 
 
 def render_welcome_page(
-    output_path: str = "output/interior_masters/page_001.png",
-    title: str = "TINY HANDS COLOR & LEARN",
-    font_dir: str = "assets/fonts",
-    asset_dir: str = "inbox/special_assets",
-    canvas_w: int = 2550,
-    canvas_h: int = 3300,
-    dpi: int = 300,
+    output_path: str | Path = DEFAULT_INTERIOR_MASTERS_DIR / "page_001.png",
+    title: str = DEFAULT_BOOK_TITLE,
+    font_dir: str | Path = DEFAULT_FONTS_DIR,
+    asset_dir: str | Path = DEFAULT_SPECIAL_ASSETS_DIR,
+    canvas_w: int = CANVAS_WIDTH_PX,
+    canvas_h: int = CANVAS_HEIGHT_PX,
+    dpi: int = CANVAS_DPI,
     show_guides: bool = False,
-    mascot_image_path: str | None = None,
-    award_image_path: str | None = None,
+    mascot_image_path: str | Path | None = None,
+    award_image_path: str | Path | None = None,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
@@ -403,15 +412,15 @@ def render_welcome_page(
 
 
 def render_certificate_page(
-    output_path: str = "output/interior_masters/page_110.png",
-    title: str = "TINY HANDS COLOR & LEARN",
-    font_dir: str = "assets/fonts",
-    asset_dir: str = "inbox/special_assets",
-    canvas_w: int = 2550,
-    canvas_h: int = 3300,
-    dpi: int = 300,
+    output_path: str | Path = DEFAULT_INTERIOR_MASTERS_DIR / "page_110.png",
+    title: str = DEFAULT_BOOK_TITLE,
+    font_dir: str | Path = DEFAULT_FONTS_DIR,
+    asset_dir: str | Path = DEFAULT_SPECIAL_ASSETS_DIR,
+    canvas_w: int = CANVAS_WIDTH_PX,
+    canvas_h: int = CANVAS_HEIGHT_PX,
+    dpi: int = CANVAS_DPI,
     show_guides: bool = False,
-    award_image_path: str | None = None,
+    award_image_path: str | Path | None = None,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)

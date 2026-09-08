@@ -7,6 +7,12 @@ from PIL import Image, ImageDraw
 from pydantic import BaseModel
 
 from curiokraft_book.compositor.fonts import get_typography_font
+from curiokraft_book.constants import (
+    TYPOGRAPHY_BASE_FONT_SIZE_PT,
+    TYPOGRAPHY_LETTER_SPACING_PX,
+    TYPOGRAPHY_STROKE_WIDTH_PX,
+    TYPOGRAPHY_TOP_OFFSET_PX,
+)
 
 
 class TypographyCompositorResult(BaseModel):
@@ -48,11 +54,11 @@ def composite_typography(
     image_input: str | Path | Image.Image,
     display_label: str,
     output_path: str | Path | None = None,
-    base_font_size_pt: int = 245,
-    top_offset_px: int = 240,
+    base_font_size_pt: int = TYPOGRAPHY_BASE_FONT_SIZE_PT,
+    top_offset_px: int = TYPOGRAPHY_TOP_OFFSET_PX,
     hollow_bubble_style: bool = True,
-    stroke_width_px: int = 15,
-    letter_spacing_px: int = 40,
+    stroke_width_px: int = TYPOGRAPHY_STROKE_WIDTH_PX,
+    letter_spacing_px: int = TYPOGRAPHY_LETTER_SPACING_PX,
     custom_font_path: str | Path | None = None,
 ) -> TypographyCompositorResult:
     """Render uppercase bubbly vector typography onto the top of the master canvas.

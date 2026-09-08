@@ -7,9 +7,16 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    BLACK_THRESHOLD,
+    COLOR_TOLERANCE,
+    MAX_GRAY_CLUSTER_SIZE_PX,
+    WHITE_THRESHOLD,
+)
+
 
 class GrayscaleValidationResult(BaseModel):
-    """Result of grayscale, shading, and color purity validation."""
+    """Result of binary black-and-white purity validation."""
 
     passed: bool
     image_path: str
@@ -27,10 +34,10 @@ class GrayscaleValidationResult(BaseModel):
 
 def validate_black_and_white(
     image_path: str | Path,
-    black_threshold: int = 20,
-    white_threshold: int = 235,
-    max_gray_cluster_size_px: int = 60,
-    color_tolerance: int = 6,
+    black_threshold: int = BLACK_THRESHOLD,
+    white_threshold: int = WHITE_THRESHOLD,
+    max_gray_cluster_size_px: int = MAX_GRAY_CLUSTER_SIZE_PX,
+    color_tolerance: int = COLOR_TOLERANCE,
 ) -> GrayscaleValidationResult:
     """Analyze image to verify binary black-and-white purity and detect prohibited gray shading.
 

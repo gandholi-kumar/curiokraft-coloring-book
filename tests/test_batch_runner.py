@@ -308,8 +308,14 @@ def test_vehicle_design_profile_resolution():
 
 def test_vehicle_prompts_export_compliance():
     import json
+    from typer.testing import CliRunner
+    from curiokraft_book.cli import app
 
     export_path = Path("generated/prompts_export.json")
+    if not export_path.exists():
+        runner = CliRunner()
+        runner.invoke(app, ["prompt", "export", "--format", "json"])
+
     assert export_path.exists()
     data = json.loads(export_path.read_text(encoding="utf-8"))
     prompts_list = data.get("prompts", data)

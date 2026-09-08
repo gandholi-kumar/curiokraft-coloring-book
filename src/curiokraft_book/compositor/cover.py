@@ -18,13 +18,30 @@ from pydantic import BaseModel, Field
 
 from curiokraft_book.compositor.brand import create_publisher_badge, get_brand_emblem
 from curiokraft_book.compositor.fonts import get_typography_font
-
-KDP_PAPER_MULTIPLIERS = {
-    "white": 0.002252,
-    "cream": 0.002500,
-    "standard_color": 0.002252,
-    "premium_color": 0.002347,
-}
+from curiokraft_book.constants import (
+    BARCODE_BOX_X1,
+    BARCODE_BOX_X2,
+    BARCODE_BOX_Y1,
+    BARCODE_BOX_Y2,
+    CANVAS_DPI,
+    DEFAULT_BLEED_IN,
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_COVER_HEIGHT_IN,
+    DEFAULT_COVER_OUTPUT_PDF,
+    DEFAULT_COVER_OUTPUT_PNG,
+    DEFAULT_COVER_WIDTH_IN,
+    DEFAULT_CURRICULUM_CONFIG,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_SPINE_WIDTH_IN,
+    DEFAULT_TRIM_HEIGHT_IN,
+    DEFAULT_TRIM_WIDTH_IN,
+    KDP_PAPER_MULTIPLIERS,
+    PUBLISHER_BADGE_HEIGHT,
+    PUBLISHER_BADGE_WIDTH,
+    PUBLISHER_BADGE_X1,
+    PUBLISHER_BADGE_Y1,
+)
 
 
 def _load_yaml(path: str) -> dict:
@@ -46,12 +63,12 @@ def _load_yaml(path: str) -> dict:
 
 
 def calculate_kdp_cover_dimensions(
-    page_count: int,
-    trim_w_in: float = 8.500,
-    trim_h_in: float = 11.000,
+    page_count: int = DEFAULT_PAGE_COUNT,
+    trim_w_in: float = DEFAULT_TRIM_WIDTH_IN,
+    trim_h_in: float = DEFAULT_TRIM_HEIGHT_IN,
     paper_type: str = "white",
-    bleed_in: float = 0.125,
-    dpi: int = 300,
+    bleed_in: float = DEFAULT_BLEED_IN,
+    dpi: int = CANVAS_DPI,
 ) -> dict:
     """Calculate exact Amazon KDP paperback cover dimensions dynamically.
 
@@ -82,10 +99,10 @@ class CoverCompositorResult(BaseModel):
     success: bool
     output_png_path: str
     output_cmyk_pdf_path: str | None = None
-    overall_width_in: float = 17.498
-    overall_height_in: float = 11.250
+    overall_width_in: float = DEFAULT_COVER_WIDTH_IN
+    overall_height_in: float = DEFAULT_COVER_HEIGHT_IN
     canvas_dimensions_px: tuple[int, int]
-    spine_width_in: float = 0.248
+    spine_width_in: float = DEFAULT_SPINE_WIDTH_IN
     spine_width_px: int
     spine_center_x_px: int
     barcode_box_px: tuple[int, int, int, int]
@@ -465,16 +482,16 @@ def _draw_preview_card_icon(draw: ImageDraw.ImageDraw, obj: str, cx: int, cy: in
 def composite_kdp_cover(
     front_hero_art_path: str | Path | None = None,
     back_art_path: str | Path | None = None,
-    output_png_path: str | Path = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png",
-    output_pdf_path: str | Path | None = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf",
-    manifest_path: str | Path = "manifest/pages.json",
-    book_config_path: str | Path = "config/book_config.yaml",
-    curriculum_config_path: str | Path = "config/curriculum.yaml",
-    dpi: int = 300,
-    page_count: int = 110,
-    overall_w_in: float = 17.498,
-    overall_h_in: float = 11.250,
-    spine_w_in: float = 0.248,
+    output_png_path: str | Path = DEFAULT_COVER_OUTPUT_PNG,
+    output_pdf_path: str | Path | None = DEFAULT_COVER_OUTPUT_PDF,
+    manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+    book_config_path: str | Path = DEFAULT_BOOK_CONFIG,
+    curriculum_config_path: str | Path = DEFAULT_CURRICULUM_CONFIG,
+    dpi: int = CANVAS_DPI,
+    page_count: int = DEFAULT_PAGE_COUNT,
+    overall_w_in: float = DEFAULT_COVER_WIDTH_IN,
+    overall_h_in: float = DEFAULT_COVER_HEIGHT_IN,
+    spine_w_in: float = DEFAULT_SPINE_WIDTH_IN,
     title: str | None = None,
     subtitle: str | None = None,
     brand_name: str | None = None,
@@ -498,6 +515,16 @@ def composite_kdp_cover(
     overall_w_in = dim_dict["overall_width_in"]  # 17.498 in
     overall_h_in = dim_dict["overall_height_in"]  # 11.250 in
     spine_w_in = dim_dict["spine_width_in"]  # 0.248 in
+
+    # Barcode & Publisher Badge Geometry (Locked Multi-Volume Standard)
+    barcode_x1 = BARCODE_BOX_X1
+    barcode_x2 = BARCODE_BOX_X2
+    barcode_y1 = BARCODE_BOX_Y1
+    barcode_y2 = BARCODE_BOX_Y2
+    badge_x = PUBLISHER_BADGE_X1
+    badge_y = PUBLISHER_BADGE_Y1
+    badge_w = PUBLISHER_BADGE_WIDTH
+    badge_h = PUBLISHER_BADGE_HEIGHT
 
     # Resolve Spine Display Configuration (Priority: book_config.yaml -> curriculum.yaml -> "clean_background")
     spine_cfg = b_cfg.get("cover", {}).get("spine", {})
