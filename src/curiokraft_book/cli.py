@@ -20,6 +20,7 @@ from curiokraft_book.constants import (
     DEFAULT_IMPRINT,
     DEFAULT_INBOX_DIR,
     DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_PAGES_MANIFEST,
     DEFAULT_SPECIAL_ASSETS_DIR,
 )
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
@@ -283,20 +284,20 @@ def run_doctor():
         )
 
     # 2. Manifests
-    pages_p = Path("manifest/pages.json")
+    pages_p = DEFAULT_PAGES_MANIFEST
     if pages_p.exists():
         table.add_row(
             "Page Manifest",
             str(pages_p),
             "[bold green]VALID[/bold green]",
-            "110-page master manifest present",
+            f"Active page manifest present ({pages_p.name})",
         )
     else:
         table.add_row(
             "Page Manifest",
             str(pages_p),
             "[bold red]MISSING[/bold red]",
-            "Restore manifest/pages.json",
+            f"Restore {pages_p}",
         )
 
     objects_p = Path("manifest/objects.json")
@@ -446,6 +447,12 @@ def generate_samples(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force fresh generation, bypassing existing cache"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Stage 2: Gate 2] Generate 1 to 5 representative sample pages for visual style approval."""
     console.print(
@@ -454,11 +461,11 @@ def generate_samples(
         )
     )
 
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
         print_failure_recovery(
             "Sample Generation",
-            "manifest/pages.json not found.",
+            f"Manifest not found: {manifest_path}",
             [("curiokraft-book init", "Restore manifest templates")],
         )
         sys.exit(1)
@@ -786,7 +793,7 @@ def assemble_interior():
 
         from PIL import Image, ImageDraw
 
-        manifest_path = Path("manifest/pages.json")
+        manifest_path = DEFAULT_PAGES_MANIFEST
         with open(manifest_path, encoding="utf-8") as f:
             m_data = json.load(f)
 
@@ -915,11 +922,17 @@ def run_preflight():
 @prompt_app.command("show")
 def show_prompt(
     page_id: str = typer.Option("P005", "--page", "-p", help="Page ID (e.g. P005, P001, P047)"),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Free Web Workflow] Generate and display the exact prompt for 1-click copy into Google AI Studio."""
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -970,13 +983,19 @@ def export_prompts(
     format_type: str = typer.Option(
         "all", "--format", "-f", help="Export format: 'all', 'json', or 'md'"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Free Web Workflow] Export all or selected page prompts into a ready-to-use markdown document and/or JSON manifest."""
     from curiokraft_book.schemas import CurioKraftPromptManifest, PromptDefaults, PromptItem
 
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -1140,7 +1159,7 @@ def export_prompts(
         lines.append("")
 
     # Construct Pydantic Manifest
-    manifest = CurioKraftPromptManifest(
+    prompt_manifest = CurioKraftPromptManifest(
         manifest_version="1.0.0",
         book_title=DEFAULT_BOOK_TITLE,
         book_id=DEFAULT_IMPRINT.lower(),
@@ -1157,7 +1176,7 @@ def export_prompts(
         )
 
     if fmt in ("all", "json"):
-        json_p.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
+        json_p.write_text(prompt_manifest.model_dump_json(indent=2), encoding="utf-8")
         console.print(
             f"[bold green][PASS] Exported JSON manifest ({len(prompt_items)} items) to:[/] [cyan]{json_out}[/cyan]"
         )
@@ -1175,11 +1194,17 @@ def show_debate(
     page_id: str = typer.Option(
         "P001", "--page", "-p", help="Page ID to inspect (e.g. P001, P005, P047)"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Multi-Agent Debate] Inspect the 4-round debate transcript, agent proposals, red-team critiques, and Judge score."""
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -1258,6 +1283,12 @@ def ingest_raw_images(
         "--clear/--keep",
         help="Move processed images from inbox to generated/raw_pages to prevent stale runs",
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Free Web Workflow] Ingest, binarize, fit margins, and overlay typography on newly dropped images."""
     console.print(
@@ -1266,12 +1297,12 @@ def ingest_raw_images(
 
     from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
 
-    runner = InteriorBatchRunner()
-
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
+
+    runner = InteriorBatchRunner(manifest_path=manifest_path)
 
     with open(manifest_path, encoding="utf-8") as f:
         data = json.load(f)

@@ -2,6 +2,7 @@ book:
   title: "TINY HANDS COLOR & LEARN"
   subtitle: "FUN & EASY FIRST WORDS"
   brand: "CURIOKRAFT-KIDS"
+  manifest: "manifest/pages.json"  # Active pages manifest path (e.g. manifest/pages_vol2.json for Vol 2)
   target_audience:
     age_min: 1
     age_max: 4

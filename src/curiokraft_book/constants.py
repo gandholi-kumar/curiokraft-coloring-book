@@ -21,9 +21,28 @@ logger = logging.getLogger("curiokraft.constants")
 # ==============================================================================
 # 1. Standard File System Paths
 # ==============================================================================
-DEFAULT_PAGES_MANIFEST = Path("manifest/pages.json")
-DEFAULT_OBJECTS_REGISTRY = Path("manifest/objects.json")
 DEFAULT_BOOK_CONFIG = Path("config/book_config.yaml")
+
+
+def _read_initial_book_config() -> dict[str, Any]:
+    if DEFAULT_BOOK_CONFIG.exists():
+        try:
+            with open(DEFAULT_BOOK_CONFIG, encoding="utf-8") as fh:
+                d = yaml.safe_load(fh)
+                if isinstance(d, dict):
+                    return d
+        except Exception:
+            pass
+    return {}
+
+
+_cfg = _read_initial_book_config()
+_b_cfg = _cfg.get("book", {})
+_i_cfg = _b_cfg.get("interior", {})
+_aud_cfg = _b_cfg.get("target_audience", {})
+
+DEFAULT_PAGES_MANIFEST = Path(str(_b_cfg.get("manifest", "manifest/pages.json")))
+DEFAULT_OBJECTS_REGISTRY = Path("manifest/objects.json")
 DEFAULT_CURRICULUM_CONFIG = Path("config/curriculum.yaml")
 DEFAULT_TAXONOMY_CONFIG = Path("config/taxonomy.yaml")
 DEFAULT_AGENTS_CONFIG = Path("config/agents.yaml")
@@ -56,7 +75,7 @@ DEFAULT_TRIM_HEIGHT_IN = 11.0
 DEFAULT_PAGE_WIDTH_PT = 612.0
 DEFAULT_PAGE_HEIGHT_PT = 792.0
 DEFAULT_BLEED_IN = 0.125
-DEFAULT_PAGE_COUNT = 110
+DEFAULT_PAGE_COUNT = int(_i_cfg.get("page_count", 110))
 
 # KDP spine thickness multipliers (inches per page)
 KDP_PAPER_MULTIPLIERS = {
@@ -94,12 +113,12 @@ PUBLISHER_BADGE_HEIGHT = 420
 # ==============================================================================
 # 3. Branding & Book Metadata Defaults
 # ==============================================================================
-DEFAULT_BOOK_TITLE = "TINY HANDS COLOR & LEARN"
-DEFAULT_BOOK_SUBTITLE = "FUN & EASY FIRST WORDS"
-DEFAULT_IMPRINT = "CURIOKRAFT-KIDS"
-DEFAULT_AUTHOR = "CurioKraft Publications"
-DEFAULT_AGE_MIN = 1
-DEFAULT_AGE_MAX = 4
+DEFAULT_BOOK_TITLE = str(_b_cfg.get("title", "TINY HANDS COLOR & LEARN"))
+DEFAULT_BOOK_SUBTITLE = str(_b_cfg.get("subtitle", "FUN & EASY FIRST WORDS"))
+DEFAULT_IMPRINT = str(_b_cfg.get("brand", "CURIOKRAFT-KIDS"))
+DEFAULT_AUTHOR = str(_b_cfg.get("author", "CurioKraft Publications"))
+DEFAULT_AGE_MIN = int(_aud_cfg.get("age_min", 1))
+DEFAULT_AGE_MAX = int(_aud_cfg.get("age_max", 4))
 
 # ==============================================================================
 # 4. Quality, Validation & Algorithmic Thresholds
@@ -193,6 +212,7 @@ def _build_fallback_config() -> dict[str, Any]:
             "title": DEFAULT_BOOK_TITLE,
             "subtitle": DEFAULT_BOOK_SUBTITLE,
             "brand": DEFAULT_IMPRINT,
+            "manifest": str(DEFAULT_PAGES_MANIFEST),
             "target_audience": {"age_min": DEFAULT_AGE_MIN, "age_max": DEFAULT_AGE_MAX},
             "interior": {
                 "page_count": DEFAULT_PAGE_COUNT,

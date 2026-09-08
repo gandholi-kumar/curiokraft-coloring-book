@@ -58,6 +58,7 @@ book:
   title: "TINY HANDS COLOR & LEARN — VOLUME 2"
   subtitle: "ANIMALS, VEHICLES & FIRST ADVENTURES"
   brand: "CURIOKRAFT-KIDS"
+  manifest: "manifest/pages_vol2.json" # <--- Active manifest pointer for Volume 2
   target_audience:
     age_min: 1
     age_max: 4
@@ -81,12 +82,17 @@ book:
       mode: "clean_background" # Seamless wraparound background art
 ```
 > [!TIP]
-> **Zero Code Edits:** All publishing dimensions, page budgets, title labels, and spine calculations are loaded dynamically into the pipeline via `curiokraft_book.constants.load_book_config()`.
+> **Zero Code Edits:** All publishing dimensions, page budgets, title labels, and the active manifest path are loaded dynamically into the pipeline via `curiokraft_book.constants.load_book_config()`.
 
 ---
 
 ### Step 1: Create the Volume 2 Manifest
-Define your new vocabulary in `manifest/pages_vol2.json` (or replace `manifest/pages.json`). 
+Define your new vocabulary in `manifest/pages_vol2.json`.
+
+> [!NOTE]
+> **How the Code Automatically Picks Volume 2:**
+> Setting `manifest: "manifest/pages_vol2.json"` in `config/book_config.yaml` immediately routes all engines, prompt exporters, and compositors to Volume 2 with zero file renaming!
+> You can also override the manifest dynamically on any CLI command using `--manifest manifest/pages_vol2.json` (or `-m`). 
 
 Example of custom educational spreads and new vocabulary words for Volume 2:
 ```json
