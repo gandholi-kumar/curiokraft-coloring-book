@@ -1142,8 +1142,8 @@ def export_prompts(
     # Construct Pydantic Manifest
     manifest = CurioKraftPromptManifest(
         manifest_version="1.0.0",
-        book_title=data.get("book_title", "TINY HANDS COLOR & LEARN"),
-        book_id=data.get("book_id", "curiokraft-vol1"),
+        book_title=DEFAULT_BOOK_TITLE,
+        book_id=DEFAULT_IMPRINT.lower(),
         total_prompts=len(prompt_items),
         defaults=PromptDefaults(aspect_ratio="3:4", output_format="Images only", top_p=0.95),
         prompts=prompt_items,

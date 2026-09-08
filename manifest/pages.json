@@ -1,9 +1,5 @@
 {
     "manifest_version": "1.0",
-    "book_title": "TINY HANDS COLOR & LEARN",
-    "subtitle": "FUN & EASY FIRST WORDS",
-    "publisher_brand": "CURIOKRAFT-KIDS",
-    "total_pages": 110,
     "pages": [
         {
             "page_id": "P001",
@@ -1412,29 +1408,5 @@
             "composition": "certificate_award_medal",
             "difficulty": 1
         }
-    ],
-    "global_page_rules": {
-        "dimensions_px": {
-            "width": 2550,
-            "height": 3300
-        },
-        "dpi": 300,
-        "trim_in": {
-            "width": 8.5,
-            "height": 11.0
-        },
-        "bleed": false,
-        "color_mode": "black_and_white",
-        "safe_margin_in": {
-            "inside_gutter": 0.5,
-            "outside": 0.5,
-            "top": 0.5,
-            "bottom": 0.5
-        },
-        "typography": {
-            "case": "UPPERCASE",
-            "style": "bubbly_child_friendly",
-            "position": "top_center"
-        }
-    }
+    ]
 }

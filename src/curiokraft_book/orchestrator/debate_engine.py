@@ -20,9 +20,11 @@ from pydantic import BaseModel, Field
 from curiokraft_book.constants import (
     DEFAULT_AGENTS_CONFIG,
     DEFAULT_BOOK_CONFIG,
+    DEFAULT_BOOK_TITLE,
     DEFAULT_CURRICULUM_CONFIG,
     DEFAULT_DEBATE_LOG_FILE,
     DEFAULT_OBJECTS_REGISTRY,
+    DEFAULT_PAGE_COUNT,
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_TAXONOMY_CONFIG,
 )
@@ -1265,8 +1267,8 @@ class DebateEngine:
             manifest_data = json.load(f)
 
         pages = manifest_data.get("pages", [])
-        title = manifest_data.get("book_title", "CURIOKRAFT COLORING BOOK")
-        total_p = manifest_data.get("total_pages", len(pages))
+        title = manifest_data.get("book_title", DEFAULT_BOOK_TITLE)
+        total_p = len(pages) if pages else DEFAULT_PAGE_COUNT
 
         lines = [
             "# \U0001f916 Multi-Agent Specialist Pre-Generation Debate & Decision Audit Log",

@@ -417,7 +417,8 @@ flowchart TD
 
 | File | Scope | Responsibilities | Volume 2 Impact |
 | :--- | :--- | :--- | :--- |
-| `manifest/pages.json` | **Volume-Specific** | Master 110-page manifest. Contains `page_id`, `display_label`, `canonical_object`, `section`, and spread `cards` array (e.g. A=Apple, 8=Plain Wooden Cubes). | **Change here**: provide new objects or card arrays. |
+| `config/book_config.yaml` | **Single Source of Truth** | Master publishing metadata: Title, subtitle, author/imprint, target page count (110, 80, etc.), trim size, spine formula, safe margins, sections outline, and barcode placement. | **Modify Here:** The sole authority for book title, subtitle, target age range, page count, and print geometry. |
+| `manifest/pages.json` | **Pure Content Manifest** | Master page sequence. Contains strictly `manifest_version` and `pages` array (`page_id`, `display_label`, `canonical_object`, `section`, and spread `cards` array). Zero duplicate book metadata or global rules. | **Change here**: provide new objects or card arrays. |
 | `config/curriculum.yaml` | **Volume-Agnostic** | Spread layout templates (`alphabet_a_m`, `numbers_0_5`), hollow bubble numeral fill mandate, container uniformity rules, and object purity rejections (e.g. rejecting alphabet blocks). | **No change needed** between volumes. |
 | `config/taxonomy.yaml` | **Volume-Agnostic** | Living creature keywords, inanimate exceptions (`rocking_horse`, `toy_robot`), and category-specific visual prompt templates (`vehicles`, `food`, `toys`, `nature`). | **No change needed** unless introducing novel categories. |
 | `config/agents.yaml` | **System-Level** | System prompts, temperatures, and deliberation protocols for all 10 specialist agents. Agents reference `curriculum.yaml` and `taxonomy.yaml` dynamically. | **No change needed**. |

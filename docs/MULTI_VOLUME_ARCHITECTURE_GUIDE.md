@@ -38,8 +38,8 @@ flowchart TD
 
 | File | Scope | Responsibilities | Volume 2 / Volume 3 Impact |
 | :--- | :--- | :--- | :--- |
-| `config/book_config.yaml` | **Volume-Specific Hub** | Master publishing metadata: Title, subtitle, author/imprint, page count (110, 80, etc.), trim size, spine formula, safe margins, and barcode placement. | **Modify Here:** Update title, subtitle, target age range, or page count for the new volume. |
-| `manifest/pages.json` | **Volume-Specific Content** | Master page sequence. Contains `page_id`, `display_label`, `canonical_object`, `section`, and spread `cards` array (e.g. A=Apple, 8=Plain Wooden Cubes). | **Modify Here:** Provide new words, objects, and card lists. |
+| `config/book_config.yaml` | **Single Source of Truth** | Master publishing metadata: Title, subtitle, author/imprint, target page count (110, 80, etc.), trim size, spine formula, safe margins, sections outline, and barcode placement. | **Modify Here:** The sole authority for book title, subtitle, target age range, page count, and print geometry. |
+| `manifest/pages.json` | **Pure Content Manifest** | Master page sequence. Contains strictly `manifest_version` and `pages` array (`page_id`, `display_label`, `canonical_object`, `section`, `cards`). Contains zero duplicate book metadata or global rules. | **Modify Here:** Provide new words, objects, and card lists. |
 | `manifest/objects.json` | **Volume-Specific Registry** | Object vocabulary dictionary with singular/plural constraints, category mappings, and anti-duplication rules. | **Modify Here:** Add new objects for the volume. |
 | `config/curriculum.yaml` | **Volume-Agnostic** | Spread layout templates (`alphabet_a_m`, `numbers_0_5`), hollow bubble numeral fill mandate, container uniformity rules, and object purity rejections. | **No change needed** across volumes. |
 | `config/taxonomy.yaml` | **Volume-Agnostic** | Living creature keywords, locomotion matrix (`quadrupeds`, `bipeds`, etc.), vehicle domain matrix, inanimate exceptions, and visual prompt templates. | **No change needed** unless introducing novel categories (e.g. Dinosaurs, Space). |
@@ -91,11 +91,7 @@ Define your new vocabulary in `manifest/pages_vol2.json` (or replace `manifest/p
 Example of custom educational spreads and new vocabulary words for Volume 2:
 ```json
 {
-  "manifest_version": "2.0",
-  "book_title": "TINY HANDS COLOR & LEARN — VOLUME 2",
-  "subtitle": "ANIMALS, VEHICLES & FIRST ADVENTURES",
-  "publisher_brand": "CURIOKRAFT-KIDS",
-  "total_pages": 110,
+  "manifest_version": "1.0",
   "pages": [
     {
       "page_id": "P001",
