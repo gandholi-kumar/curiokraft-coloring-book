@@ -943,16 +943,23 @@ def show_prompt(
         console.print(f"[red]Page {page_id} not found in manifest.[/red]")
         sys.exit(1)
 
-    client = ModelClient()
-    debate = DebateEngine(client)
-    res = debate.run_page_debate(target)
+    from curiokraft_book.orchestrator.debate_engine import get_custom_alphabet_spread_prompt
+
+    custom = get_custom_alphabet_spread_prompt(target, all_manifest_pages=data.get("pages", []))
+    if custom is not None:
+        pos_prompt, neg_prompt = custom
+    else:
+        client = ModelClient()
+        debate = DebateEngine(client)
+        res = debate.run_page_debate(target)
+        pos_prompt, neg_prompt = res.positive_prompt, res.negative_prompt
 
     label = target.get("display_label", target.get("canonical_object", "").upper())
 
     console.print(
         Panel(
-            f"[bold yellow]{res.positive_prompt}[/bold yellow]\n\n"
-            f"[dim]Negative Prompt:[/dim] [white]{res.negative_prompt}[/white]",
+            f"[bold yellow]{pos_prompt}[/bold yellow]\n\n"
+            f"[dim]Negative Prompt:[/dim] [white]{neg_prompt}[/white]",
             title=f"[bold green]Optimized Prompt for {page_id} ({label}) — Ready to Copy[/bold green]",
             border_style="green",
         )
@@ -1117,10 +1124,10 @@ def export_prompts(
         save_name = f"raw_p{num:03d}_{canon}.png"
 
         # Use custom hand-crafted alphabet spread prompts if available (P002, P003)
-        custom = get_custom_alphabet_spread_prompt(p)
+        custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
         if custom is not None:
             pos_prompt, neg_prompt = custom
-            prompt_source = "📖 Custom Template (config/A-Z.md + config/alphabet_spreads.yaml)"
+            prompt_source = "📖 Custom Template (config/A-Z.md + Manifest Cards)"
         else:
             res = debate.run_page_debate(p)
             pos_prompt = res.positive_prompt

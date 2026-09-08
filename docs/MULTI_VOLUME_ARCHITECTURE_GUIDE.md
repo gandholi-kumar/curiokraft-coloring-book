@@ -142,6 +142,12 @@ Example of custom educational spreads and new vocabulary words for Volume 2:
 }
 ```
 
+> [!TIP]
+> **Zero Duplicate Config Files (Alphabet Spreads Unified):**
+> You do **NOT** need to edit or duplicate `config/alphabet_spreads.yaml`!
+> - **Option 1 (Custom Cards in Manifest):** Define `"cards"` directly inside P002 / P003 in your volume manifest (e.g. `A` for Astronaut, `B` for Butterfly). The prompt exporter directly uses these cards as the single source of truth.
+> - **Option 2 (Automatic A–Z Page Matcher):** If you omit the `"cards"` array on P002 / P003, the pipeline automatically scans your volume's interior pages (Pages 5–110) to find matching words for letters A through Z. Any missing letter is automatically filled with a preschool-safe fallback dictionary.
+
 ---
 
 ### Step 2: Export Prompts for Volume 2

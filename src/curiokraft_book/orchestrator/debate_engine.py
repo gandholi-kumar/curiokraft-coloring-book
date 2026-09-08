@@ -85,10 +85,38 @@ _OBJECTS_REGISTRY: dict[str, dict] = {
 
 # =============================================================================
 # Custom Spread Prompt Loader
-# Reads config/alphabet_spreads.yaml + config/A-Z.md template.
-# Returns the filled prompt verbatim — no AI generation involved.
-# For Vol 2/3: swap in a different alphabet_spreads.yaml with new words.
+# Builds prompt from config/A-Z.md template driven directly by manifest cards
+# or auto-matched from interior pages (with optional alphabet_spreads.yaml fallback).
 # =============================================================================
+
+DEFAULT_ALPHABET_FALLBACK: dict[str, tuple[str, str]] = {
+    "A": ("APPLE", "Apple fruit outline"),
+    "B": ("BALL", "Soccer ball outline"),
+    "C": ("CAT", "Cute cat outline"),
+    "D": ("DOG", "Puppy dog outline"),
+    "E": ("ELEPHANT", "Baby elephant outline"),
+    "F": ("FISH", "Fish outline"),
+    "G": ("GIRAFFE", "Giraffe outline"),
+    "H": ("HAT", "Clean hat outline"),
+    "I": ("ICE CREAM", "Ice cream cone outline"),
+    "J": ("JUICE", "Juice box outline"),
+    "K": ("KITE", "Flying kite outline"),
+    "L": ("LION", "Lion face outline"),
+    "M": ("MOON", "Crescent moon outline"),
+    "N": ("NEST", "Bird nest outline"),
+    "O": ("ORANGE", "Orange fruit outline"),
+    "P": ("PENGUIN", "Penguin outline"),
+    "Q": ("QUEEN", "Queen face and crown outline"),
+    "R": ("RABBIT", "Bunny rabbit outline"),
+    "S": ("SUN", "Smiling sun outline"),
+    "T": ("TREE", "Tree outline"),
+    "U": ("UMBRELLA", "Open umbrella outline"),
+    "V": ("VAN", "Vehicle van outline"),
+    "W": ("WATCH", "Wristwatch outline"),
+    "X": ("XYLOPHONE", "Xylophone outline"),
+    "Y": ("YOYO", "Yoyo outline"),
+    "Z": ("ZEBRA", "Zebra outline"),
+}
 
 
 def _find_config_file(name: str) -> Path | None:
@@ -103,56 +131,169 @@ def _find_config_file(name: str) -> Path | None:
     return None
 
 
-def _build_alphabet_spread_prompt(section_key: str) -> str | None:
-    """Build a filled prompt from the A-Z.md template + alphabet_spreads.yaml data.
+def _build_alphabet_spread_prompt(
+    section_key: str,
+    page_record: dict[str, Any] | None = None,
+    all_manifest_pages: list[dict[str, Any]] | None = None,
+) -> str | None:
+    """Build a filled prompt from the A-Z.md template using manifest cards or automatic page matching.
+
+    Resolution Priority:
+      1. Manifest Page Record: Uses explicit `page_record["cards"]` if present (Single Source of Truth).
+      2. Automatic A-Z Matcher: Auto-matches letter items from interior pages (Pages 5–110).
+      3. Legacy Fallback: Reads `config/alphabet_spreads.yaml` if available.
+      4. Universal Alphabet Fallback: Populates remaining letters from preschool dictionary.
 
     Args:
         section_key: 'a_to_m' for P002 or 'n_to_z' for P003
+        page_record: Optional page dictionary from manifest containing explicit 'cards'.
+        all_manifest_pages: Optional list of all pages from the active manifest for auto-matching.
 
     Returns:
-        The fully-filled prompt string, or None if config files are missing.
+        The fully-filled prompt string, or None if template file is missing.
     """
     template_path = _find_config_file("config/A-Z.md")
-    data_path = _find_config_file("config/alphabet_spreads.yaml")
-
-    if template_path is None or data_path is None:
+    if template_path is None:
         logger.warning(
-            "Custom alphabet spread files missing (config/A-Z.md and/or "
-            "config/alphabet_spreads.yaml). Falling back to generated prompt."
+            "Custom alphabet spread template missing (config/A-Z.md). Falling back to generated prompt."
         )
         return None
 
     template = template_path.read_text(encoding="utf-8")
 
-    with open(data_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    section = data.get(section_key)
-    if not section:
-        logger.warning(f"Section '{section_key}' not found in alphabet_spreads.yaml.")
+    if section_key == "a_to_m":
+        target_letters = list("ABCDEFGHIJKLM")
+    elif section_key == "n_to_z":
+        target_letters = list("NOPQRSTUVWXYZ")
+    else:
+        logger.warning(f"Unknown alphabet spread section key '{section_key}'.")
         return None
 
-    letters: list[dict] = section.get("letters", [])
-    if len(letters) != 13:
-        logger.warning(
-            f"Expected 13 letters in '{section_key}', found {len(letters)}. Skipping custom prompt."
-        )
+    cards_data: list[dict[str, str]] = []
+
+    # Tier 1: Check if page_record has explicit cards list
+    if (
+        page_record
+        and "cards" in page_record
+        and isinstance(page_record["cards"], list)
+        and len(page_record["cards"]) >= 13
+    ):
+        for card in page_record["cards"][:13]:
+            let = str(card.get("letter", "")).strip().upper()
+            word = card.get("word")
+            if not word:
+                obj = str(card.get("object", ""))
+                word = obj.replace("_", " ").upper()
+            ill = (
+                card.get("illustration")
+                or card.get("positive_description")
+                or card.get("description")
+                or f"{word.title()} outline"
+            )
+            cards_data.append({"letter": let, "word": str(word), "illustration": str(ill)})
+
+    # Tier 2: Automatic A-Z matcher from all manifest pages (Pages 5-110)
+    if len(cards_data) < 13:
+        pages_to_scan = all_manifest_pages
+        if pages_to_scan is None:
+            try:
+                manifest_path = _find_config_file(str(DEFAULT_PAGES_MANIFEST))
+                if manifest_path and manifest_path.exists():
+                    with open(manifest_path, encoding="utf-8") as mf:
+                        m_data = json.load(mf)
+                        pages_to_scan = m_data.get("pages", [])
+            except Exception:
+                pages_to_scan = None
+
+        if pages_to_scan:
+            interior_pages = [
+                p
+                for p in pages_to_scan
+                if p.get("page_number", 0) >= 4 and p.get("type") in ["coloring_page", None]
+            ]
+            cards_data = []
+            for let in target_letters:
+                matched_page = None
+                for p in interior_pages:
+                    lbl = (
+                        str(p.get("display_label") or p.get("canonical_object", "")).strip().upper()
+                    )
+                    canon = str(p.get("canonical_object", "")).strip().upper()
+                    if lbl.startswith(let) or canon.startswith(let):
+                        matched_page = p
+                        break
+
+                if matched_page:
+                    w = str(
+                        matched_page.get("display_label")
+                        or matched_page.get("canonical_object", "").replace("_", " ")
+                    ).upper()
+                    ill = str(
+                        matched_page.get("positive_description")
+                        or matched_page.get("description")
+                        or f"{w.title()} outline"
+                    )
+                    cards_data.append({"letter": let, "word": w, "illustration": ill})
+                elif let in DEFAULT_ALPHABET_FALLBACK:
+                    fb_word, fb_ill = DEFAULT_ALPHABET_FALLBACK[let]
+                    cards_data.append({"letter": let, "word": fb_word, "illustration": fb_ill})
+                else:
+                    cards_data.append(
+                        {"letter": let, "word": let, "illustration": f"Letter {let} outline"}
+                    )
+
+    # Tier 3: Legacy Fallback to config/alphabet_spreads.yaml
+    if len(cards_data) < 13:
+        data_path = _find_config_file("config/alphabet_spreads.yaml")
+        if data_path and data_path.exists():
+            try:
+                with open(data_path, encoding="utf-8") as f:
+                    yaml_data = yaml.safe_load(f) or {}
+                sec = yaml_data.get(section_key, {})
+                yaml_letters = sec.get("letters", [])
+                if len(yaml_letters) == 13:
+                    cards_data = [
+                        {
+                            "letter": str(y.get("letter", "")),
+                            "word": str(y.get("word", "")),
+                            "illustration": str(y.get("illustration", "")),
+                        }
+                        for y in yaml_letters
+                    ]
+            except Exception as e:
+                logger.warning(f"Failed to read alphabet_spreads.yaml fallback: {e}")
+
+    if len(cards_data) != 13:
+        logger.warning(f"Expected 13 cards for '{section_key}', resolved {len(cards_data)}.")
         return None
 
     # Fill placeholder variables 1–13
     substitutions: dict[str, str] = {}
-    for i, card in enumerate(letters, start=1):
+    for i, card in enumerate(cards_data, start=1):
         substitutions[f"{{{{LETTER_{i}}}}}"] = card.get("letter", "")
         substitutions[f"{{{{WORD_{i}}}}}"] = card.get("word", "")
         substitutions[f"{{{{ILLUSTRATION_{i}}}}}"] = card.get("illustration", "")
 
     # Derive START/END letters from data
-    substitutions["{{START_LETTER}}"] = letters[0].get("letter", "")
-    substitutions["{{END_LETTER}}"] = letters[-1].get("letter", "")
+    substitutions["{{START_LETTER}}"] = cards_data[0].get("letter", "")
+    substitutions["{{END_LETTER}}"] = cards_data[-1].get("letter", "")
 
-    # Bonus tiles
-    bonus14 = section.get("bonus_tile_14", {}).get("description", "decorative bonus tile")
-    bonus15 = section.get("bonus_tile_15", {}).get("description", "decorative bonus tile")
+    # Bonus tiles (from page_record, or default toddler rewards)
+    bonus14 = "cute star badge with text 'GREAT JOB!' in hollow bubble letters"
+    bonus15 = "cute smiling sun outline illustration"
+    if page_record:
+        if (
+            isinstance(page_record.get("bonus_tiles"), list)
+            and len(page_record["bonus_tiles"]) >= 2
+        ):
+            bonus14 = str(page_record["bonus_tiles"][0])
+            bonus15 = str(page_record["bonus_tiles"][1])
+        elif page_record.get("bonus_tile_14"):
+            b14 = page_record.get("bonus_tile_14")
+            bonus14 = b14.get("description", str(b14)) if isinstance(b14, dict) else str(b14)
+            b15 = page_record.get("bonus_tile_15", "")
+            bonus15 = b15.get("description", str(b15)) if isinstance(b15, dict) else str(b15)
+
     substitutions["{{BONUS_TILE_14}}"] = bonus14
     substitutions["{{BONUS_TILE_15}}"] = bonus15
 
@@ -163,21 +304,30 @@ def _build_alphabet_spread_prompt(section_key: str) -> str | None:
     return prompt.strip()
 
 
-def get_custom_alphabet_spread_prompt(page_record: dict) -> tuple[str, str] | None:
+def get_custom_alphabet_spread_prompt(
+    page_record: dict[str, Any],
+    all_manifest_pages: list[dict[str, Any]] | None = None,
+) -> tuple[str, str] | None:
     """Return (positive_prompt, negative_prompt) from the custom A-Z template if available.
 
     The negative prompt is a fixed, strong universal set for coloring-book line art.
     Returns None if custom config files are missing (falls back to generated prompt).
     """
-    canonical = page_record.get("canonical_object", "")
-    if "a_to_m" in canonical:
+    canonical = str(page_record.get("canonical_object", "")).lower()
+    page_num = page_record.get("page_number", 0)
+
+    if "a_to_m" in canonical or page_num == 2:
         section_key = "a_to_m"
-    elif "n_to_z" in canonical:
+    elif "n_to_z" in canonical or page_num == 3:
         section_key = "n_to_z"
     else:
         return None
 
-    pos = _build_alphabet_spread_prompt(section_key)
+    pos = _build_alphabet_spread_prompt(
+        section_key,
+        page_record=page_record,
+        all_manifest_pages=all_manifest_pages,
+    )
     if pos is None:
         return None
 
