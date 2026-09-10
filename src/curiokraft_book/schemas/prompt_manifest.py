@@ -67,6 +67,7 @@ class CurioKraftPromptManifest(BaseModel):
     manifest_version: str = Field(default="1.0.0", description="Schema version")
     book_title: str = Field(..., description="Title of the book")
     book_id: str = Field(..., description="Unique identifier for the book/volume")
+    volume: str = Field(default="vol1", description="Volume identifier, e.g. vol1, vol2")
     generated_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(),
         description="ISO 8601 generation timestamp",

@@ -115,6 +115,7 @@ PUBLISHER_BADGE_HEIGHT = 420
 # ==============================================================================
 DEFAULT_BOOK_TITLE = str(_b_cfg.get("title", "TINY HANDS COLOR & LEARN"))
 DEFAULT_BOOK_SUBTITLE = str(_b_cfg.get("subtitle", "FUN & EASY FIRST WORDS"))
+DEFAULT_BOOK_VOLUME = str(_b_cfg.get("volume", "vol1")).lower()
 DEFAULT_IMPRINT = str(_b_cfg.get("brand", "CURIOKRAFT-KIDS"))
 DEFAULT_AUTHOR = str(_b_cfg.get("author", "CurioKraft Publications"))
 DEFAULT_AGE_MIN = int(_aud_cfg.get("age_min", 1))

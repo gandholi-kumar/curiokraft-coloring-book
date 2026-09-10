@@ -16,6 +16,7 @@ from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.typography import composite_typography
 from curiokraft_book.constants import (
     DEFAULT_BOOK_TITLE,
+    DEFAULT_BOOK_VOLUME,
     DEFAULT_DEBATE_LOG_FILE,
     DEFAULT_IMPRINT,
     DEFAULT_INBOX_DIR,
@@ -1026,7 +1027,7 @@ def export_prompts(
     json_p.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [
-        "# CurioKraft Preschool Coloring Book — Master Prompt Export",
+        f"# CurioKraft Preschool Coloring Book — Master Prompt Export ({DEFAULT_BOOK_VOLUME.upper()})",
         "",
         "Use these prompts in the free **Google AI Studio Web UI** (or Gemini Chat) to generate illustrations at zero API cost.",
         "Save each downloaded image (`.jpg` or `.png`) to `inbox/raw_pages/` (or `inbox/` for covers), then run `curiokraft-book ingest`.",
@@ -1170,6 +1171,7 @@ def export_prompts(
         manifest_version="1.0.0",
         book_title=DEFAULT_BOOK_TITLE,
         book_id=DEFAULT_IMPRINT.lower(),
+        volume=DEFAULT_BOOK_VOLUME,
         total_prompts=len(prompt_items),
         defaults=PromptDefaults(aspect_ratio="3:4", output_format="Images only", top_p=0.95),
         prompts=prompt_items,
