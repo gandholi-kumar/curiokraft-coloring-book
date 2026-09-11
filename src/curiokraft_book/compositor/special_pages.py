@@ -19,8 +19,11 @@ from curiokraft_book.constants import (
     CANVAS_HEIGHT_PX,
     CANVAS_WIDTH_PX,
     DEFAULT_BOOK_TITLE,
+    DEFAULT_BOOK_VOLUME,
     DEFAULT_FONTS_DIR,
     DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_MASCOT_DROP_PATH,
+    DEFAULT_MASCOT_NAME,
     DEFAULT_SPECIAL_ASSETS_DIR,
 )
 
@@ -53,7 +56,7 @@ BOOK_THEME = {
 }
 
 
-SPECIAL_ASSET_DIR = Path("inbox/special_assets")
+SPECIAL_ASSET_DIR = DEFAULT_SPECIAL_ASSETS_DIR
 ASSET_NAMES = {
     "mascot": ["tiny_mascot.png", "tiny_mascot.jpg", "tiny_mascot.png.jpg"],
     "badge": ["super_colorist_badge.png", "super_colorist_badge.jpg"],
@@ -65,11 +68,48 @@ ASSET_NAMES = {
 }
 
 
-def _find_asset(key: str, asset_dir: Path = SPECIAL_ASSET_DIR) -> Path | None:
-    for name in ASSET_NAMES.get(key, []):
-        p = asset_dir / name
-        if p.exists():
-            return p
+def _find_asset(key: str, asset_dir: Path | str = SPECIAL_ASSET_DIR) -> Path | None:
+    # Direct check for configured mascot drop path if key is mascot
+    if key == "mascot" and DEFAULT_MASCOT_DROP_PATH and Path(DEFAULT_MASCOT_DROP_PATH).exists():
+        return Path(DEFAULT_MASCOT_DROP_PATH)
+
+    vol = DEFAULT_BOOK_VOLUME
+    dirs_to_check = [
+        Path(asset_dir),
+        Path(f"assets/special_assets/{vol}"),
+        Path("assets/special_assets/shared"),
+        Path("assets/special_assets"),
+        Path(f"inbox/special_assets/{vol}"),
+        Path("inbox/special_assets"),
+        DEFAULT_SPECIAL_ASSETS_DIR,
+        Path(__file__).resolve().parent.parent.parent.parent / f"assets/special_assets/{vol}",
+        Path(__file__).resolve().parent.parent.parent.parent / "assets/special_assets",
+        Path(__file__).resolve().parent.parent.parent.parent / "inbox/special_assets",
+    ]
+
+    candidate_names = list(ASSET_NAMES.get(key, []))
+    if key == "mascot":
+        if DEFAULT_MASCOT_DROP_PATH:
+            p_name = Path(DEFAULT_MASCOT_DROP_PATH).name
+            if p_name not in candidate_names:
+                candidate_names.insert(0, p_name)
+        if DEFAULT_MASCOT_NAME:
+            clean_m = DEFAULT_MASCOT_NAME.lower().replace(" ", "_")
+            for ext in [".png", ".jpg", ".jpeg"]:
+                m_fname = f"{clean_m}_mascot{ext}"
+                if m_fname not in candidate_names:
+                    candidate_names.append(m_fname)
+                m_plain = f"{clean_m}{ext}"
+                if m_plain not in candidate_names:
+                    candidate_names.append(m_plain)
+
+    for d in dirs_to_check:
+        if not d.exists():
+            continue
+        for name in candidate_names:
+            p = d / name
+            if p.exists():
+                return p
     return None
 
 

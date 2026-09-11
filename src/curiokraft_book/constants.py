@@ -40,7 +40,10 @@ _cfg = _read_initial_book_config()
 _b_cfg = _cfg.get("book", {})
 _i_cfg = _b_cfg.get("interior", {})
 _aud_cfg = _b_cfg.get("target_audience", {})
+_sp_cfg = _b_cfg.get("special_pages", {})
+_m_cfg = _b_cfg.get("mascot", {})
 
+DEFAULT_BOOK_VOLUME = str(_b_cfg.get("volume", "vol1")).lower()
 DEFAULT_PAGES_MANIFEST = Path(str(_b_cfg.get("manifest", "manifest/pages.json")))
 DEFAULT_OBJECTS_REGISTRY = Path("manifest/objects.json")
 DEFAULT_CURRICULUM_CONFIG = Path("config/curriculum.yaml")
@@ -50,10 +53,44 @@ DEFAULT_AGENTS_CONFIG = Path("config/agents.yaml")
 DEFAULT_INTERIOR_MASTERS_DIR = Path("output/interior_masters")
 DEFAULT_RAW_GENERATED_DIR = Path("generated/raw_pages")
 DEFAULT_INBOX_DIR = Path("inbox/raw_pages")
-DEFAULT_SPECIAL_ASSETS_DIR = Path("inbox/special_assets")
+
+
+def get_special_assets_dir(volume: str | None = None) -> Path:
+    vol = (volume or DEFAULT_BOOK_VOLUME).lower()
+    candidates = [
+        Path(f"assets/special_assets/{vol}"),
+        Path("assets/special_assets"),
+        Path(f"inbox/special_assets/{vol}"),
+        Path("inbox/special_assets"),
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return Path("assets/special_assets")
+
+
+DEFAULT_SPECIAL_ASSETS_DIR = get_special_assets_dir(DEFAULT_BOOK_VOLUME)
 DEFAULT_FONTS_DIR = Path("assets/fonts")
 DEFAULT_LOGO_PATH = Path("assets/logo/curiokraft_logo.png")
 DEFAULT_EMBLEM_PATH = Path("assets/emblem/curiokraft_emblem.png")
+
+# Milestone Bookend Pages & Mascot Defaults
+DEFAULT_WELCOME_PAGE_ENABLED = bool(
+    _sp_cfg.get("welcome_page", {}).get("enabled", True)
+) if isinstance(_sp_cfg, dict) else True
+DEFAULT_CERTIFICATE_PAGE_ENABLED = bool(
+    _sp_cfg.get("certificate_page", {}).get("enabled", True)
+) if isinstance(_sp_cfg, dict) else True
+DEFAULT_MASCOT_ENABLED = bool(_m_cfg.get("enabled", True)) if isinstance(_m_cfg, dict) else False
+DEFAULT_MASCOT_NAME = _m_cfg.get("name") if isinstance(_m_cfg, dict) else None
+DEFAULT_MASCOT_GENERATE_PROMPT = bool(
+    _m_cfg.get("generate_prompt", False)
+) if isinstance(_m_cfg, dict) else False
+DEFAULT_MASCOT_DROP_PATH = (
+    Path(str(_m_cfg.get("drop_path", "inbox/special_assets/tiny_mascot.png")))
+    if isinstance(_m_cfg, dict)
+    else Path("inbox/special_assets/tiny_mascot.png")
+)
 
 DEFAULT_INTERIOR_PDF = Path("output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf")
 DEFAULT_COVER_OUTPUT_PNG = Path("output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png")
@@ -62,6 +99,17 @@ DEFAULT_BOOK_QA_REPORT = Path("output/reports/book_level_qa_audit.json")
 DEFAULT_COVER_COMPLIANCE_REPORT = Path("output/reports/cover_kdp_compliance_report.json")
 DEFAULT_PIPELINE_STATE_FILE = Path("output/pipeline_state.json")
 DEFAULT_DEBATE_LOG_FILE = Path("logs/agent_debates_log.md")
+
+# KDP Publishing & Forms Defaults
+DEFAULT_KDP_FORMS_INBOX_DIR = Path("inbox/kdp_forms")
+DEFAULT_KDP_OUTPUT_DIR = Path("output/kdp")
+DEFAULT_KDP_SUBMISSION_HTML = Path("output/kdp/kdp_submission_helper.html")
+DEFAULT_KDP_METADATA_JSON = Path("output/kdp/kdp_metadata.json")
+DEFAULT_KDP_FIELDS_MD = Path("output/kdp/kdp_fields.md")
+DEFAULT_KDP_LIST_PRICE = 6.99
+DEFAULT_KDP_ROYALTY_RATE = 0.60
+KDP_KEYWORD_MAX_CHARS = 50
+KDP_DESCRIPTION_MAX_CHARS = 4000
 
 # ==============================================================================
 # 2. Publishing Dimensions & KDP Print Geometry

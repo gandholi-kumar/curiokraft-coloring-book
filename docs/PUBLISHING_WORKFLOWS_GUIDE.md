@@ -124,8 +124,18 @@ curiokraft-book preflight run
 ```
 * Runs the full 18-point KDP diagnostic check (margins, bleed, resolution, page count, barcode clearance).
 * Generates official certificate: `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`.
-* **Upload both files to Amazon KDP!**
 
+---
+
+### Step 9: Generate KDP Submission Metadata & 1-Click Helper
+```powershell
+curiokraft-book kdp generate
+```
+* **4-Agent Deliberation:** Convenes AGT-KDP-001 (SEO), AGT-KDP-002 (Copywriter), AGT-KDP-003 (Compliance), and AGT-KDP-004 (Form Parser) to synthesize complete publishing data.
+* **Strict Zero Emojis:** Guarantees 100% standard characters to avoid Amazon's *"Emoji characters are not supported"* submission rejection.
+* **A9 Deduplicated Keywords:** Generates 7 keyword boxes ($\le 50$ chars) strictly excluding words in Title/Subtitle.
+* **1-Click Helper Dashboard:** Opens `output/kdp/kdp_submission_helper.html` in your browser with 1-click `[Copy]` buttons matching KDP's 3 publishing screens plus a 4th tab for agent audit logs.
+* **Upload files and paste metadata directly into Amazon KDP!**
 
 ---
 
@@ -184,12 +194,22 @@ curiokraft-book assemble interior
 
 ---
 
-### Step 5: Run Preflight Certification & Publish
+### Step 5: Run Preflight Certification
 ```powershell
 curiokraft-book preflight run
 ```
 * Executes the 18-point diagnostic.
-* **Upload to Amazon KDP!**
+* Confirms zero margin violations and barcode clearance.
+
+---
+
+### Step 6: Generate KDP Submission Metadata & 1-Click Helper
+```powershell
+curiokraft-book kdp generate
+```
+* Synthesizes full KDP metadata package, Category Modal trees, and 4-agent audit trail.
+* Opens `output/kdp/kdp_submission_helper.html` for 1-click clipboard pasting.
+* **Upload files and publish on Amazon KDP!**
 
 ---
 
@@ -205,6 +225,7 @@ curiokraft-book generate book --source mock
 curiokraft-book cover build
 curiokraft-book assemble interior
 curiokraft-book preflight run
+curiokraft-book kdp generate --no-open
 ```
 
 ---
@@ -224,7 +245,10 @@ curiokraft-book preflight run
 | `curiokraft-book cover build` | Composite 17.498×11.250" cover PNG & PDF | After interior masters ready |
 | `curiokraft-book cover validate` | Validate KDP cover dimensions, spine, and barcode zone | Cover compliance verification |
 | `curiokraft-book assemble interior` | Compile 110 master PNGs into print interior PDF | After interior masters ready |
-| `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight | Final step before upload |
+| `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight | Pre-publication certification |
+| `curiokraft-book kdp generate` | 4-agent KDP metadata & 1-click copy dashboard | Publishing submission |
+| `curiokraft-book kdp show` | Display formatted KDP submission table in terminal | Terminal preview |
+| `curiokraft-book kdp parse` | Parse HTML forms dropped into `inbox/kdp_forms/` | Schema inspection |
 | `curiokraft-book debate show -p P005` | Inspect 4-round agent debate log for a page | Debugging / Quality Audit |
 
 ---
@@ -233,6 +257,7 @@ curiokraft-book preflight run
 
 For detailed mathematical specifications, prompt presets, multi-volume scaling, and multi-agent system internals, consult these focused documents:
 
+* **[Amazon KDP Publishing & Metadata Guide](KDP_PUBLISHING_METADATA_GUIDE.md)** — Multi-agent A9 keyword deduplication, HTML description copywriting, 2024/2026 AI disclosure, and 1-click dashboard.
 * **[Google AI Studio Setup & Prompt Presets](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Aspect ratio, temperature, and copy-paste system instruction presets for web generation.
 * **[Amazon KDP Print Specifications & Barcode Rules](KDP_PRINT_SPECIFICATIONS.md)** — Official geometry tables, cover calculation formulas, spine thickness, safe margins, and barcode box positioning.
 * **[Amazon KDP Global Pricing & Royalty Strategy Guide](KDP_PRICING_AND_ROYALTY_GUIDE.md)** — Comprehensive analysis of the 60% vs. 50% royalty tier threshold, 14 regional marketplaces, European Fixed Price laws, and Expanded Distribution.

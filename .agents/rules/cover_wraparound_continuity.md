@@ -85,3 +85,34 @@ Across **all current and future volumes** (Vol 1, Vol 2, Vol 3+):
    - The underlying illustration MUST NOT leave empty white holes or cutout blanks in these positions.
    - Background assets — specifically the warm butter-cream canvas (`#FFF9E6`), the gentle rolling pastel turquoise/mint waves, golden/blue star dust, soft floating hearts, and playful toddler doodles — **ARE explicitly permitted and MUST flow continuously and seamlessly across the entire bottom region**.
    - The Publisher Brand Logo Badge (with its white card surface and soft drop shadow) and the Barcode Box (clean white solid fill) will be programmatically stamped on top of this rich, continuous background art during final compositing.
+
+### D. Double-Sided Printing Reality Mandate
+1. **Double-Sided Book Manufacturing**:
+   - CurioKraft publications are printed **double-sided** on white paper (all 110 pages are front-and-back toddler coloring pages, comprising 55 physical leaves).
+   - Strictly **NO agent, prompt, or cover copy** may claim the book contains "single-sided pages", "single sided anti-bleed pages", "blank backs", or similar misstatements.
+   - Parent-facing marketing bullets, callout pills, and descriptions must truthfully emphasize double-sided coloring value (e.g. *"110 Full Pages of Double-Sided Coloring Fun"*, *"100+ Big Preschool Drawings"*, *"Builds Early Vocabulary & Fine Motor Skills"*).
+
+### E. Zero Prompt Jargon in Customer-Facing Copy
+1. **Prohibition of Developer Prompt Jargon**:
+   - Customer-facing cover text, callout note pills, and description copy must NEVER expose internal diffusion prompt-engineering directives.
+   - Words and phrases such as `"thick 5pt bold outlines"`, `"5pt stroke"`, `"vector line art"`, `"binary line art"`, or `"prompt engineering"` are strictly forbidden in visible text.
+   - Use toddler-friendly parent benefits: *"Chunky Easy Outlines for Little Hands"*, *"Big & Simple Toddler Shapes"*, *"Develops Pencil Grip & Fine Motor Skills"*, *"Ages 1 to 4"*.
+
+### F. Dynamic Manifest Card Sampling & Distinct Volume Layouts
+1. **Dynamic Manifest Sampling**:
+   - Back cover preview cards must NEVER be hardcoded in Python code.
+   - For every volume, cards must be dynamically extracted from the active manifest (`manifest/pages.json`, `manifest/pages_vol2.json`, etc.), selecting 3 diverse objects representing distinct categories:
+     - 1 Food or Fruit item
+     - 1 Living Animal or Character item
+     - 1 Vehicle, Tool, or Everyday Living item
+2. **Distinct Layout Placements Across Volumes**:
+   - To avoid visual monotony, different volumes should feature distinct placements and arrangements of notes, cards, and decorative banners.
+
+### G. User Layout Blueprint Honor Protocol
+1. **User-Provided Blueprint Detection**:
+   - When a user drops a layout blueprint (image wireframe/mockup or YAML spec) into `inbox/blueprints/`, the multi-agent system must inspect the blueprint via multimodal vision or schema parsing.
+2. **Layout Geometry Preservation**:
+   - Agents must map the active manifest's objects and marketing copy into the layout slots specified by the user's blueprint (header style, card rows/columns, callout pill grid, wave baseline height).
+   - The user's blueprint overrides default layout heuristics while strictly obeying safety margins, double-sided printing reality, and exclusion zone mandates.
+
+</content>

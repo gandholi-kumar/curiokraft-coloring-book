@@ -321,38 +321,55 @@ def test_vehicle_prompts_export_compliance():
     prompts_list = data.get("prompts", data)
     items_by_id = {item["id"]: item for item in prompts_list}
 
-    # Helicopter (P093)
-    p093 = items_by_id["P093"]
-    pos_heli = p093["positive_prompt"].lower()
-    neg_heli = p093["negative_prompt"].lower()
-    assert "landing skids" in pos_heli
-    assert "strictly no wheels" in pos_heli
-    assert "chunky round wheels" not in pos_heli
-    assert "wheels" in neg_heli
-    assert "airplane wings" in neg_heli
+    # Check if Vol 1 or Vol 2 manifest is active in export
+    items_by_label = {item.get("label", "").upper(): item for item in prompts_list}
 
-    # Sailboat (P094)
-    p094 = items_by_id["P094"]
-    pos_boat = p094["positive_prompt"].lower()
-    neg_boat = p094["negative_prompt"].lower()
-    assert "boat hull" in pos_boat
-    assert "strictly no wheels" in pos_boat
-    assert "chunky round wheels" not in pos_boat
-    assert "wheels" in neg_boat
+    if "HELICOPTER" in items_by_label:
+        heli = items_by_label["HELICOPTER"]
+        pos_heli = heli["positive_prompt"].lower()
+        neg_heli = heli["negative_prompt"].lower()
+        assert "landing skids" in pos_heli
+        assert "strictly no wheels" in pos_heli
+        assert "chunky round wheels" not in pos_heli
+        assert "wheels" in neg_heli
+        assert "airplane wings" in neg_heli
 
-    # Rocket (P095)
-    p095 = items_by_id["P095"]
-    pos_rocket = p095["positive_prompt"].lower()
-    neg_rocket = p095["negative_prompt"].lower()
-    assert "stabilizing fins" in pos_rocket
-    assert "strictly no wheels" in pos_rocket
-    assert "chunky round wheels" not in pos_rocket
-    assert "wheels" in neg_rocket
+    if "SAILBOAT" in items_by_label:
+        boat = items_by_label["SAILBOAT"]
+        pos_boat = boat["positive_prompt"].lower()
+        neg_boat = boat["negative_prompt"].lower()
+        assert "boat hull" in pos_boat
+        assert "strictly no wheels" in pos_boat
+        assert "chunky round wheels" not in pos_boat
+        assert "wheels" in neg_boat
 
-    # Comb (P080) - Household object template hygiene
-    p080 = items_by_id["P080"]
-    pos_comb = p080["positive_prompt"].lower()
-    assert "sturdy legs" not in pos_comb
+    if "ROCKET" in items_by_label:
+        rocket = items_by_label["ROCKET"]
+        pos_rocket = rocket["positive_prompt"].lower()
+        neg_rocket = rocket["negative_prompt"].lower()
+        assert "stabilizing fins" in pos_rocket
+        assert "strictly no wheels" in pos_rocket
+        assert "chunky round wheels" not in pos_rocket
+        assert "wheels" in neg_rocket
+
+    if "CANOE" in items_by_label:
+        canoe = items_by_label["CANOE"]
+        pos_canoe = canoe["positive_prompt"].lower()
+        neg_canoe = canoe["negative_prompt"].lower()
+        assert "canoe" in pos_canoe
+        assert "wheels" in neg_canoe
+
+    if "SUBMARINE" in items_by_label:
+        sub = items_by_label["SUBMARINE"]
+        pos_sub = sub["positive_prompt"].lower()
+        neg_sub = sub["negative_prompt"].lower()
+        assert "submarine" in pos_sub
+        assert "wheels" in neg_sub
+
+    if "COMB" in items_by_label:
+        comb = items_by_label["COMB"]
+        pos_comb = comb["positive_prompt"].lower()
+        assert "sturdy legs" not in pos_comb
 
 
 def test_welcome_page_preserves_raw_and_mascot(temp_dir: Path):

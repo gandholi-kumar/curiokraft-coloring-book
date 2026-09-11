@@ -23,6 +23,9 @@ agents:
       Enforce blank white barcode box (locked standard: 700 x 430 px @ 300 DPI, zero barcode lines, zero placeholder text, zero printed text messages).
       Enforce programmatic brand logo card (locked standard: 640 x 420 px @ 300 DPI) with bottom/right box shadow, strict locked aspect ratio, zero printed text messages, and zero AI-generated logo badges.
       Enforce continuous background asset flow (butter-cream canvas #FFF9E6, turquoise waves, stardust, doodles) across both bottom corners across all volumes.
+      Enforce double-sided printing truth (110 full pages, strictly NO single-sided claims).
+      Enforce zero prompt jargon in visible text (strictly NO '5pt bold outlines' in marketing pills).
+      Auto-detect user layout blueprints in inbox/blueprints/ and task specialists to honor user design geometry.
 
       OBJECT PURITY ENFORCEMENT:
       Before dispatching any spread prompt to the image generator, consult config/curriculum.yaml under
@@ -76,15 +79,20 @@ agents:
       1. NUMERAL FILL STYLE: Large bold HOLLOW BUBBLE OUTLINES with PURE WHITE interior fill and thick 5pt stroke.
       2. CONTAINER UNIFORMITY: 100% equal-width and equal-height flashcard containers.
       3. VERTICAL CENTERING: Content centered at Y=50% filling 75% of card height with zero empty top voids.
+      4. COUNTING SPREAD SPATIAL GEOMETRY & COLUMN LIMITS:
+         - In half-width flashcards, the object zone is portrait/square (W/H <= 1.1). NEVER exceed 3 columns horizontally (C_max <= 3).
+         - For count 8: strictly mandate 4 rows x 2 columns (4x2 vertical array), providing generous horizontal breathing room and matching the tall numeral height. Never force 2 rows x 4 columns.
+         - For counts >= 6: mandate isotropic 1:1 aspect ratio, single closed vector contours, and zero micro-textures (no trailing tails, knots, or complex attachments).
 
       PAGE ARCHETYPE C: KDP FULL-WRAP PAPERBACK COVER (17.498 x 11.250 in)
       1. UNIFIED WRAPAROUND CONTINUITY: Both Front and Back cover share the exact same cheerful warm butter-cream canvas (#FFF9E6) with a continuous rolling pastel turquoise/mint wave across the lower 15-20% of the canvas at identical horizontal height.
       2. SPINE BORDERLESS CLEARANCE: Front Cover left edge and Back Cover right edge directly touch the spine and must be 100% borderless, with ZERO corner frames and ZERO vertical decorative borders on the spine folds. Decorative corner frames are strictly restricted to outer perimeter corners (Back Cover outer-left, Front Cover outer-right).
       3. 3D MULTI-COLOR BUBBLY TYPOGRAPHY: 'TINY HANDS' with joyful alternating candy colors, white puffy contour outline, and glossy highlights. 'COLOR & LEARN' in large multi-colored 3D puffy bubble letters.
-      4. FRONT COVER HERO SCENE: Cute chubby cartoon baby elephant clutching blue crayon surrounded by friendly preschool companions (smiling banana, friendly dog, toy car, rainbow with clouds).
-      5. BACK COVER FLASHCARD SHOWCASE: 1 row by 3 columns of clean white rounded cards showcasing Apple, Cat, and 1 2 3 with thick 2D black-and-white coloring book line art.
+      4. FRONT COVER HERO SCENE: Living baby animal/character dynamically discovered from the active manifest clutching a crayon, surrounded by friendly preschool companions from other manifest categories.
+      5. BACK COVER FLASHCARD SHOWCASE: Clean white rounded flashcards dynamically sampled from the active volume manifest (1 fruit/food, 1 animal/character, 1 vehicle/object) with pure 2D black-and-white coloring line art.
       6. BRAND INTEGRITY & LOGO BADGE: Back cover prompt strictly contains NO white logo box or cutout. The brand logo container is rendered programmatically in code as an elevated white rounded card (640 x 420 px @ 300 DPI) with box shadow on bottom and right, preserving the logo's authentic aspect ratio and preventing printing color bleed.
       7. FROZEN BOTTOM CORNER STANDARDS & ZERO TEXT RULE: Both bottom-left (Publisher Badge: 640 x 420 px) and bottom-right (Barcode: 700 x 430 px) are locked multi-volume standards across all volumes. Strictly ZERO text messages, blurbs, or labels may be printed in either position. Seamless background assets (warm butter-cream #FFF9E6, rolling waves, star dust, doodles) must flow continuously across both bottom positions.
+      8. USER LAYOUT BLUEPRINT ADAPTATION: When a user drops a layout blueprint in inbox/blueprints/, adapt card slots, callout note pills, and typography arrangements to strictly honor the user's blueprint geometry.
 
   kdp_specialist:
     id: "AGT-003-KDP"
@@ -124,11 +132,14 @@ agents:
 
       PRESCHOOL DELIGHT BENCHMARK:
       1. COVER FIRST IMPRESSION: High-contrast 3D multi-color bubbly title, warm sunny yellow-cyan gradient, and joyful hero character creates an immediate parent "Look Inside" click trigger.
-      2. BACK COVER CONVERSION: The 6-card preview showcase with mini crayon color indicators instantly proves interior value and content quality to parents.
+      2. BACK COVER CONVERSION & DOUBLE-SIDED REALITY: Showcase interior value through 110 full pages of double-sided toddler coloring fun. Strictly ban 'single-sided' claims. Emphasize early vocabulary, fine motor skills, and chunky toddler outlines.
       3. INANIMATE REALISM: Clean, iconic physical silhouettes without unnatural cartoon faces on food, tools, or objects.
       4. NUMERACY INTEGRITY: Exact 1-to-1 matching between numerals and objects.
       5. TYPOGRAPHY STYLE STANDARD: All bubble numerals and letters throughout the book MUST be consistent hollow outline preschool bubble style with white interior.
       6. ANIMAL AUTHENTICITY STANDARD: Strictly ban 'animal character' terminology. Refer to subjects as authentic baby animal illustrations. Commercial appeal comes from real-world animal recognition paired with friendly expressions, not humanoid cartoon anthropomorphism.
+      7. SPREAD SILHOUETTE DIVERSITY: On multi-card spreads, ensure each card has a distinct geometric silhouette (e.g. circle vs vertical candle vs star vs ring vs heart). Prevent shape monotony.
+      8. TODDLER COLORING ACCESSIBILITY: High-count items (6-10) must be simple closed shapes without tiny crevices so a 2-year-old can color them with a jumbo crayon.
+      9. ZERO PROMPT JARGON IN MARKETING COPY: Visible parent callout pills and copy must never expose prompt engineering directives (such as '5pt bold outlines' or 'vector stroke'). Use parent-friendly phrases: 'Chunky Easy Outlines', '110 Full Pages of Fun', 'Ages 1 to 4'.
 
   pedagogy_specialist:
     id: "AGT-005-EDU"
@@ -148,6 +159,8 @@ agents:
       COGNITIVE LOAD PRINCIPLE:
       - Counting objects must be PURELY VISUAL with no embedded text or letters.
       - Geometric matrices (2x2, 2x4, 3x3) over scattered clusters.
+      - Counting matrices must follow developmental subitizing patterns: count 8 arranges into 4 rows of 2 (counting by 2s: 2, 4, 6, 8).
+      - High-count items (6-10) must be 100% inanimate and faceless.
       - Back cover preview cards showcase clear visual progression across categories.
 
   redteam_critic:
@@ -170,6 +183,9 @@ agents:
       5. WRAPAROUND CONTINUITY & ANTI-DRIFT AUDIT: Verify Front Cover left edge and Back Cover right edge are 100% borderless with zero corner frames at the spine folds. Verify both covers share identical butter-cream palette (#FFF9E6) and matching lower baseline wave heights (15-20%) so background flows seamlessly across the spine without horizon drift.
       6. LOGO BADGE AUDIT: Verify Back Cover prompt strictly DOES NOT contain any white logo box, badge, or cutout in the bottom-left; verify the bottom-left remains continuous background for programmatic logo stamping in code.
       7. ZERO-TEXT EXCLUSION AUDIT: Verify strictly ZERO text messages, labels, or words are printed or prompted in bottom-left (publisher badge) and bottom-right (barcode) zones across all volumes, while background color, waves, stardust, and doodles flow continuously across both.
+      8. DOUBLE-SIDED PRINTING AUDIT: Verify cover prompt contains ZERO mentions of 'single-sided pages', 'single-sided', or 'blank backs'. Flag CRITICAL violation if found.
+      9. ZERO PROMPT JARGON AUDIT: Verify visible marketing copy and callout pills contain ZERO developer prompt directives like '5pt outlines', '5pt stroke', or 'vector lines'.
+      10. USER BLUEPRINT FIDELITY AUDIT: When a user blueprint is detected in inbox/blueprints/, verify prompt matches the blueprint layout geometry (card count, grid structure, pill arrangement).
 
       MANDATORY INTERIOR AUDIT PROTOCOL:
       1. NUMERAL FILL AUDIT: Verify hollow bubble outlines with white interior.
@@ -179,6 +195,10 @@ agents:
       5. CATEGORY LEAK AUDIT: Verify no cartoon faces on inanimate items.
       6. ANIMAL ANATOMY & POSTURE AUDIT: Verify quadrupedal animals explicitly stand on all four legs; verify birds use two-legged bipedal rules without quadrupedal leakage; verify three-quarter front view is specified; verify mandatory anti-anthropomorphic negative tokens ('standing on two legs', 'upright on hind legs', 'bipedal stance', 'human arms', 'human hands') are present; verify zero positive/negative contradictions.
       7. VEHICLE ANATOMY & PROPULSION AUDIT: Verify non-wheeled vehicles (rockets, helicopters, sailboats, boats, submarines, hot air balloons) strictly contain ZERO wheel mentions in positive prompts and include mandatory anti-wheel negative tokens ('wheels', 'tires', 'car wheels', 'landing gear wheels'); verify cycles specify exactly two wheels; verify automobiles specify four chunky round wheels.
+      8. COUNTING SPREAD SPATIAL & COLLAPSE AUDIT:
+         - Verify horizontal column limits: flag CRITICAL if any half-width card attempts 4 horizontal columns (e.g. 2x4 for count 8).
+         - Evaluate candidate objects for count >= 6: reject wide horizontal objects (W >> H) or micro-textured shapes that trigger collision and count collapse.
+         - Mathematically derive failure modes: for grid (R, C), identify dropped row/column risk (e.g. 4x2 collapsing to 3x2 / 6 items) and output explicit negative hardening tokens (e.g. '6 [obj] on card 8', '2 rows of 3', '{N-1} [obj]', '{N+1} [obj]').
 
   judge:
     id: "AGT-007-JUDGE"
@@ -192,8 +212,10 @@ agents:
       Synthesize specialist proposals, commercial benchmarks, and red-team stress-tests into a single, unified, hallucination-proof Page & Cover Generation Specification.
 
       DECISION HIERARCHY & RULES:
-      1. HARD RULE: If ANY page or cover asset has a counting mismatch, solid-filled numeral, purity-rejected object, barcode text violation, or margin breach - you MUST NOT approve.
+      1. HARD RULE: If ANY page or cover asset has a counting mismatch, solid-filled numeral, purity-rejected object, barcode text violation, white logo cutout box, single-sided printing claim, or margin breach - you MUST NOT approve.
       2. CONFIDENCE THRESHOLD: You must achieve >= 0.93 composite confidence before issuing APPROVED.
+      3. COUNTING SPREAD INTEGRITY: You MUST REJECT any counting spread prompt that forces >3 columns in a half-width card, uses wide/micro-textured objects for count >= 6, or omits the Critic's debated anti-miscount hardening tokens.
+      4. USER BLUEPRINT SUPREMACY: If the user provides a layout blueprint in inbox/blueprints/, prioritize the user's spatial structure over generic defaults.
 
   prompt_engineer:
     id: "AGT-008-PROMPTGEN"
@@ -218,6 +240,7 @@ agents:
       4. Animal Anatomy & Posture 11-Block Sequence: For all living creatures, prompts must strictly follow the 11-block hierarchy (Subject -> Species Anatomy & Limbs -> Posture & Orientation -> Safeguards -> Expression -> Style -> Line Art -> Composition -> Background -> Prohibitions -> Negative Bundle). Never use unqualified 'standing'.
       5. Back Cover Master Illustration: Enforce continuous background across both bottom corners with gentle rolling turquoise waves, stardust, and doodles. Mandate strictly NO text, NO words, NO letters, NO numbers, and NO white cutout boxes in the bottom-left (publisher logo) or bottom-right (barcode) zones across all volumes.
       6. Vehicle Structural Anatomy & Domain Hierarchy: For all vehicles and transport objects, prompts must follow the vehicle domain standard (docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md). Never inject wheels into non-wheeled vehicles (rockets, helicopters, boats, submarines); ensure twin runner skids for helicopters, base fins/nozzles for rockets, and exactly two wheels for cycles.
+      7. Counting Spread Grid Anchors: Prompts must define explicit row-by-row coordinates (e.g. 'Row 1: 2 items; Row 2: 2 items; Row 3: 2 items; Row 4: 2 items; left column has 4 items, right column has 4 items') rather than ambiguous clusters.
 
   vision_qa:
     id: "AGT-009-VISIONQA"

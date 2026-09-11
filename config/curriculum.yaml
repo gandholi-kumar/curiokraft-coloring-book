@@ -127,12 +127,6 @@ layout_templates:
     layout_description: 'Exactly {total_cards} individual discrete rounded-corner flashcard boxes arranged in a {row_structure}. Total exactly {total_cards} cards on canvas, strictly NO extra box, strictly NO duplicate numerals.'
     sequence_rule: 'STRICT NUMERACY RULE: Cards appear in strict ascending numeral order with no gaps, no repeated numerals, and no extra cards.'
     shared_negative_tokens:
-    - cubes
-    - boxes on card 8
-    - wooden blocks
-    - 6 cookies on card 8
-    - 7 cookies on card 8
-    - 9 cookies
     - repeated numbers
     - duplicate numerals
     - extra cards
@@ -142,6 +136,11 @@ layout_templates:
     - scattered uncounted dots
     - messy random dots
     - cartoon faces on counting objects
+    - uneven row spacing
+    - overlapping items
+    - distorted grid
+    - cubes
+    - wooden blocks
 object_purity_rules:
   rejections:
   - pattern: alphabet_blocks
@@ -232,27 +231,34 @@ cover_styling:
       badge_bg_color: '#FFFFFF'
       badge_border_color: '#1E3A8A'
   back_cover:
-    headline: LITTLE HANDS, BIG DISCOVERIES!
-    bullets:
-    - icon: 🍎
-      text: 100+ Everyday Objects, First Words, Letters & Numbers
-    - icon: ✏️
-      text: Extra-Thick Bold Outlines for Tiny Hands & Motor Skills
-    - icon: ⭐
-      text: Simple Wax-Crayon Color Guides on Every Page
+    headline_options:
+      - "DISCOVER, COLOR & LEARN!"
+      - "LITTLE HANDS, BIG DISCOVERIES!"
+      - "EXPLORE, COLOR & GROW!"
+    parent_benefit_pills:
+      - icon: "★"
+        text: "110+ Brand-New Simple Drawings"
+      - icon: "★"
+        text: "Chunky Outlines for Tiny Hands"
+      - icon: "★"
+        text: "110 Full Pages of Double-Sided Coloring"
+      - icon: "★"
+        text: "Builds Early Vocabulary & Motor Skills"
+      - icon: "★"
+        text: "Perfect for Ages 1 to 4"
+    preview_cards:
+      count: 3
+      layout: "1_row_3_cols"
+      category_distribution:
+        - "fruit_or_food"
+        - "living_animal"
+        - "vehicle_or_object"
     preview_grid:
-      rows: 2
+      rows: 1
       cols: 3
       card_bg: '#FFFFFF'
       card_border: '#1E293B'
       card_radius_px: 28
-      crayon_colors:
-      - '#E74C3C'
-      - '#F1C40F'
-      - '#3498DB'
-      - '#E67E22'
-      - '#E67E22'
-      - '#3498DB'
   barcode_box:
     width_px: 700
     height_px: 430

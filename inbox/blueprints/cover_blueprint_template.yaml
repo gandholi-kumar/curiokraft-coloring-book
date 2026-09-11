@@ -1,0 +1,28 @@
+# CurioKraft Cover Layout Blueprint Template
+target_type: "back_cover"
+
+headline_style: "bold uppercase headline centered at top"
+description_style: "friendly parent description in clean dark navy typography"
+
+card_grid:
+  rows: 1
+  columns: 3
+  card_shape: "rounded_rectangle"
+  border_style: "thin dark charcoal border"
+  notes: "equal-sized upright flashcard containers in a single neat horizontal row"
+
+feature_callouts:
+  layout: "2x2_grid"   # Options: "2x2_grid", "1x4_row", "vertical_list", "pill_banner"
+  count: 4
+  shape: "rounded_pill"
+  bullet_style: "star"
+  placement: "directly below flashcards and above bottom rolling wave"
+
+baseline_wave:
+  height_percentage: 20
+  style: "smooth rolling wave in pastel turquoise and mint"
+  spine_continuity: "horizontally flat at spine fold, borderless"
+
+custom_directives:
+  - "strictly zero white cutout boxes in bottom corners"
+  - "continuous turquoise wave across entire bottom 20%"

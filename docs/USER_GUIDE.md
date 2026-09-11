@@ -4,6 +4,7 @@
 > **THIS DOCUMENT IS ARCHIVED & OBSOLETE.**
 > Please use the new, streamlined publishing guide and modular documentation:
 > * 🚀 **Main Interactive Guide:** [docs/PUBLISHING_WORKFLOWS_GUIDE.md](PUBLISHING_WORKFLOWS_GUIDE.md) (Clear Track 1 Free Web UI vs. Track 2 Automated API separation)
+> * 📑 **Amazon KDP Publishing & Metadata Guide:** [docs/KDP_PUBLISHING_METADATA_GUIDE.md](KDP_PUBLISHING_METADATA_GUIDE.md) (Zero emojis, A9 keywords, Category trees, 4-agent audit & 1-click helper)
 > * 🎨 **Special Pages & Mascot Guide:** [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md) (Welcome & Certificate bookends)
 > * ⚙️ **Google AI Studio Setup:** [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)
 > * 📐 **KDP Print Geometry & Barcode Rules:** [docs/KDP_PRINT_SPECIFICATIONS.md](KDP_PRINT_SPECIFICATIONS.md)
@@ -17,10 +18,11 @@
 
 ## 1. Categorized CLI Command Map
 
-The commands are divided into **three distinct operational tracks**:
+The commands are divided into **four distinct operational tracks**:
 1. 🧪 **Code Quality & Health Verification:** Fast local tests, doctor checks, and manifest audits (0 API cost, run anytime).
 2. 💡 **AI Prompt Synthesis & Transparency:** Multi-agent debate transcript audit, 1-click prompt exports for all 110 pages + Cover Hero transparent asset.
 3. 🚀 **Book Production, Ingestion & Assembly:** Sample visual review, web image ingestion, batch generation, cover compositing, and print PDF compilation.
+4. 📑 **KDP Submission & Metadata Automation:** 4-agent metadata synthesis, zero-emoji validation, A9 keyword deduplication, live HTML form parser, and 1-click browser helper.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -49,6 +51,11 @@ The commands are divided into **three distinct operational tracks**:
 │   • curiokraft-book cover build        ──► Build 17.498x11.250" cover       │
 │   • curiokraft-book assemble interior  ──► Compile 110-page print PDF       │
 │   • curiokraft-book preflight run      ──► Official 18-point certificate    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 📑 TRACK D: KDP SUBMISSION & PUBLISHING METADATA                            │
+│   • curiokraft-book kdp generate       ──► 4-agent metadata & 1-click helper│
+│   • curiokraft-book kdp show           ──► Formatted terminal summary table │
+│   • curiokraft-book kdp parse          ──► Ingest live KDP HTML drop forms  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -70,7 +77,8 @@ Execute the commands in this sequential order for your publication workflow:
 | **7** | `curiokraft-book generate book` | Production | Executes 4-round multi-agent debate, code rescue, and vector typography across all 110 pages in `output/interior_masters/`. | `curiokraft-book cover build` | Run `curiokraft-book manifest status` to see flagged pages. |
 | **8** | `curiokraft-book cover build` | Production | Composites $17.498 \times 11.250\text{ in}$ cover PNG and CMYK PDF with $0.248\text{ in}$ spine and barcode safe zone (incorporating `inbox/cover_hero.png`). | `curiokraft-book assemble interior` | Verify `assets/logo/` and `assets/emblem/` image integrity. |
 | **9** | `curiokraft-book assemble interior` | Production | Compiles all 110 master PNGs into `output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf`. | `curiokraft-book preflight run` | Ensure all 110 pages exist in `output/interior_masters/`. |
-| **10** | `curiokraft-book preflight run` | Certification | Executes full 18-point diagnostic and writes official `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`. | **PUBLISH TO KDP!** | Inspect failed check numbers in preflight table. |
+| **10** | `curiokraft-book preflight run` | Certification | Executes full 18-point diagnostic and writes official `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`. | `curiokraft-book kdp generate` | Inspect failed check numbers in preflight table. |
+| **11** | `curiokraft-book kdp generate` | Publishing | Convenes 4 specialist agents, parses dropped KDP forms, enforces zero-emoji rule, and launches `output/kdp/kdp_submission_helper.html`. | **SUBMIT ON KDP!** | Check `output/kdp/kdp_fields.md` or logs. |
 
 ---
 
@@ -205,6 +213,30 @@ Executes all 18 deterministic Amazon KDP preflight checks and issues the officia
 curiokraft-book preflight run
 ```
 - **Output:** `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`.
+
+### 📑 Track D: KDP Submission & Metadata Commands
+
+#### 1. `curiokraft-book kdp generate`
+Convenes the 4-agent publishing team (AGT-KDP-001 through AGT-KDP-004), parses live forms in `inbox/kdp_forms/`, enforces the zero-emoji policy, synthesizes deduplicated A9 keywords and Category Modal trees, and launches the interactive 1-click clipboard helper.
+```powershell
+curiokraft-book kdp generate
+```
+- **Outputs:**
+  - `output/kdp/kdp_submission_helper.html` (Interactive browser dashboard with 4 tabs and copy buttons)
+  - `output/kdp/kdp_fields.md` (Markdown publishing cheat sheet)
+  - `output/kdp/kdp_metadata.json` (Machine-readable metadata payload)
+
+#### 2. `curiokraft-book kdp show`
+Displays a quick-reference formatted summary of all publishing fields, title lengths (against the 200-char limit), keywords, and AI disclosures directly in your terminal.
+```powershell
+curiokraft-book kdp show
+```
+
+#### 3. `curiokraft-book kdp parse`
+Inspects and parses live Amazon KDP HTML forms dropped into `inbox/kdp_forms/`, reporting all 82 detected inputs, textareas, selects, and character limits.
+```powershell
+curiokraft-book kdp parse
+```
 
 ---
 

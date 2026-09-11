@@ -388,12 +388,16 @@ class DebateResult(BaseModel):
 def classify_living_taxonomy(canonical: str, section: str) -> bool:
     """Dynamically determine if a subject is a living creature/character or inanimate.
 
-    Reads inanimate_exceptions and living_keywords from config/taxonomy.yaml.
+    Reads inanimate_exceptions, inanimate_sections, and living_keywords from config/taxonomy.yaml.
     Zero hardcoded data in this function.
     """
     tax = _TAXONOMY
     inanimate_exceptions = set(tax.get("inanimate_exceptions", []))
     if canonical.lower() in inanimate_exceptions:
+        return False
+
+    inanimate_sections = {s.lower() for s in tax.get("inanimate_sections", [])}
+    if section.lower() in inanimate_sections:
         return False
 
     living_keywords = set(tax.get("living_keywords", []))
@@ -451,13 +455,16 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
     Falls back gracefully to natural quadrupedal mammal defaults if not found.
     """
     canon_lower = canonical.lower().strip()
+    canon_tokens = set(canon_lower.replace("_", " ").split())
     matrix = _TAXONOMY.get("animal_locomotion_matrix", {})
     profiles = _TAXONOMY.get("animal_species_profiles", {})
 
-    # Check for direct match or substring in canonical
+    # Check for direct match or full token match in canonical
     matched_profile = None
     for key, prof in profiles.items():
-        if key in canon_lower or canon_lower in key:
+        key_lower = key.lower().strip()
+        key_tokens = set(key_lower.replace("_", " ").split())
+        if key_lower == canon_lower or key_lower in canon_tokens or (key_tokens and key_tokens.issubset(canon_tokens)):
             matched_profile = prof
             break
 
@@ -647,7 +654,10 @@ def is_vehicle_object(canonical: str, section: str, category: str = "") -> bool:
         "police_car",
         "hot_air_balloon",
     }
-    return any(k in c for k in vehicle_keywords)
+    c_tokens = set(c.replace("_", " ").split())
+    if c_tokens & vehicle_keywords:
+        return True
+    return any(c == k or c.startswith(f"{k}_") or c.endswith(f"_{k}") for k in vehicle_keywords)
 
 
 def generate_dynamic_visual_spec(
@@ -777,15 +787,114 @@ def _detect_spread_layout_key(canonical: str, label: str) -> str:
     return "numbers_6_10"
 
 
-def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, str]:
+def calculate_optimal_counting_grid(count: int, is_full_width: bool = False) -> tuple[int, int, list[int]]:
+    """Generic mathematical calculation of counting grid (rows, cols, row_counts).
+
+    Enforces the Horizontal Column Limit Law:
+    - Half-width partitioned cards: max_cols = 3 (portrait/square zone).
+    - Full-width hero cards: max_cols = 5 (landscape zone).
+
+    Returns (rows, cols, row_counts_list).
+    """
+    if count <= 0:
+        return 1, 1, [0]
+    if count == 1:
+        return 1, 1, [1]
+
+    max_cols = 5 if is_full_width else 3
+
+    # Check exact factor pairs where cols <= max_cols
+    valid_factors = []
+    for c in range(1, max_cols + 1):
+        if count % c == 0:
+            r = count // c
+            valid_factors.append((r, c))
+
+    if valid_factors:
+        # Prefer the pair with the most columns up to max_cols (to avoid overly tall vertical stacks)
+        best_r, best_c = max(valid_factors, key=lambda p: p[1])
+        return best_r, best_c, [best_c] * best_r
+
+    # Irregular / Prime counts: distribute across balanced rows
+    num_rows = 2 if count <= 7 else 3
+    base_per_row = count // num_rows
+    rem = count % num_rows
+    row_counts = []
+    for i in range(num_rows):
+        c_i = base_per_row + (1 if i < rem else 0)
+        row_counts.append(c_i)
+    max_row_c = max(row_counts) if row_counts else 1
+    return len(row_counts), max_row_c, row_counts
+
+
+def audit_spread_card_miscount_risks(
+    numeral: Any,
+    count: int,
+    object_name: str,
+    rows: int,
+    cols: int,
+    row_counts: list[int],
+) -> tuple[list[str], list[str]]:
+    """Generic adversarial audit deriving diffusion failure modes for any count N and grid (R, C).
+
+    Returns (stress_test_findings, recommended_hardening_tokens).
+    """
+    findings: list[str] = []
+    hardening: list[str] = []
+
+    clean_obj = str(object_name).replace("_", " ").strip().lower()
+    plural_obj = f"{clean_obj}s" if not clean_obj.endswith("s") else clean_obj
+
+    if count <= 0:
+        findings.append(f"Card {numeral}: Zero objects represented. Ensure AI renders single hollow outline without items inside.")
+        hardening.extend([f"items on card {numeral}", f"objects on card {numeral}"])
+        return findings, hardening
+
+    # Standard count neighbor hallucinations
+    if count >= 2:
+        hardening.append(f"{count - 1} {plural_obj}")
+        hardening.append(f"{count + 1} {plural_obj}")
+    if count >= 3:
+        hardening.append(f"{count - 2} {plural_obj}")
+    if count >= 1:
+        hardening.append(f"wrong count of {plural_obj}")
+        hardening.append(f"extra {clean_obj}")
+        hardening.append(f"face on {clean_obj}")
+
+    # Grid collapse failure modes (dropped row or dropped column)
+    if rows >= 2 and cols >= 2:
+        dropped_col_count = rows * (cols - 1)
+        dropped_row_count = (rows - 1) * cols
+
+        findings.append(
+            f"Card {numeral}: In a {rows}x{cols} grid for count {count}, diffusion models risk dropping a row or column "
+            f"resulting in {dropped_row_count} or {dropped_col_count} items."
+        )
+        if dropped_row_count != count:
+            hardening.append(f"{dropped_row_count} {plural_obj} on card {numeral}")
+            hardening.append(f"{rows - 1} rows of {cols}")
+        if dropped_col_count != count and dropped_col_count != dropped_row_count:
+            hardening.append(f"{dropped_col_count} {plural_obj} on card {numeral}")
+            hardening.append(f"{rows} rows of {cols - 1}")
+    else:
+        findings.append(
+            f"Card {numeral}: Ensure AI renders exactly {count} {plural_obj} with clear vector outlines and white spacing."
+        )
+
+    return findings, hardening
+
+
+def generate_dynamic_spread_prompt(
+    page_record: dict[str, Any], extra_negative_tokens: list[str] | None = None
+) -> tuple[str, str]:
     """Construct multi-item flashcard overview prompts from manifest card data.
 
-    Card content (letter/numeral → object) is read from page_record["cards"],
-    which lives in the manifest. This is entirely per-volume — no card data
+    Card content (letter/numeral -> object) is read from page_record["cards"],
+    which lives in the manifest. This is entirely per-volume - no card data
     is hardcoded anywhere in Python or in curriculum.yaml.
 
     Style rules (numeral fill mandate, container uniformity, base style, negative
-    tokens) are read from config/curriculum.yaml — these are volume-agnostic.
+    tokens) are read from config/curriculum.yaml - these are volume-agnostic.
     """
     label = page_record.get("display_label", "")
     canonical = page_record.get("canonical_object", "")
@@ -822,9 +931,9 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
     card_descriptions: list[str] = []
     per_card_neg: list[str] = []
 
-    # Letter I disambiguation map — prevent the model confusing I with H
+    # Letter I disambiguation map - prevent the model confusing I with H
     _LETTER_DISAMBIGUATION = {
-        "I": "letter I (the 9th letter of the alphabet, a single tall vertical stroke — NOT the letter H)"
+        "I": "letter I (the 9th letter of the alphabet, a single tall vertical stroke - NOT the letter H)"
     }
 
     for card in cards:
@@ -847,6 +956,9 @@ def generate_dynamic_spread_prompt(page_record: dict[str, Any]) -> tuple[str, st
                 f"Card {numeral}: large bubble numeral {numeral} on left, {clean_desc} (numeral and objects MUST be in the SAME Card {numeral} box)"
             )
         per_card_neg.extend(card.get("negative_tokens", []))
+
+    if extra_negative_tokens:
+        per_card_neg.extend(extra_negative_tokens)
 
     cards_str = "; ".join(card_descriptions) + "."
 
@@ -959,9 +1071,50 @@ class DebateEngine:
         # Round 1: Parallel Specialist Proposals
         # ------------------------------------------------------------------
         if is_spread:
+            cards = page_record.get("cards", [])
+            is_counting = (page_type == "counting_spread") or ("numbers" in canonical.lower())
+
+            spread_design_notes: list[str] = []
+            spread_critic_findings: list[str] = [
+                "Ensure AI renders 100% equal-sized containers without tall bottom boxes.",
+                "Ensure AI centers content vertically inside cards without empty top voids.",
+                "Ensure all numerals rendered as HOLLOW BUBBLE OUTLINES with white interior, not solid black.",
+            ]
+            debated_hardening_tokens: list[str] = []
+
+            if is_counting:
+                total_cards = len(cards)
+                for idx, c_item in enumerate(cards):
+                    num = c_item.get("numeral", idx)
+                    cnt = c_item.get("count", c_item.get("numeral", 0))
+                    obj = c_item.get("object", "item")
+                    is_hero = (idx == total_cards - 1) and (total_cards % 2 == 1)
+
+                    rows, cols, row_counts = calculate_optimal_counting_grid(cnt, is_full_width=is_hero)
+                    spread_design_notes.append(
+                        f"Card {num}: {rows}x{cols} {'hero ' if is_hero else ''}grid ({cnt} {obj}s, row distribution {row_counts})"
+                    )
+
+                    c_findings, c_tokens = audit_spread_card_miscount_risks(
+                        num, cnt, obj, rows, cols, row_counts
+                    )
+                    spread_critic_findings.extend(c_findings)
+                    debated_hardening_tokens.extend(c_tokens)
+            else:
+                spread_critic_findings.append(
+                    "Ensure AI renders exact object counts per card as specified in manifest cards array."
+                )
+                spread_critic_findings.append(
+                    "Ensure AI does not draw cartoon eyes on inanimate food/objects."
+                )
+
             r1_outputs = {
                 "AGT-002-DESIGN": {
-                    "composition": f"Balanced educational flashcard spread for {label}. 100% equal-sized uniform rounded-corner cards across all rows, vertically centered content with balanced margins.",
+                    "composition": (
+                        f"Balanced educational flashcard spread for {label}. 100% equal-sized uniform rounded-corner cards "
+                        f"across all rows, vertically centered content with balanced margins. "
+                        f"Grid structures: {'; '.join(spread_design_notes[:4]) if spread_design_notes else 'uniform cards'}."
+                    ),
                     "line_weight": "Thick 6pt bold black vector outlines enclosing large, open coloring shapes.",
                     "prohibited": [
                         "empty grid boxes",
@@ -977,7 +1130,7 @@ class DebateEngine:
                     "compliance": "Pure binary black & white (#000000 / #FFFFFF). Zero grayscale or drop-shadows.",
                 },
                 "AGT-004-MARKET": {
-                    "commercial_appeal": "High parent perceived value for early childhood literacy. All living animals/characters MUST feature sweet smiling faces, while inanimate objects must remain clean and faceless. Exact 1-to-1 counting accuracy.",
+                    "commercial_appeal": "High parent perceived value for early childhood literacy. Distinct geometric silhouettes across spread cards to avoid visual monotony. All living animals/characters MUST feature sweet smiling faces, while inanimate objects must remain clean and faceless. Exact 1-to-1 counting accuracy.",
                     "prohibited": [
                         "faceless animals",
                         "faces on fruits/objects",
@@ -986,7 +1139,7 @@ class DebateEngine:
                     ],
                 },
                 "AGT-005-EDU": {
-                    "pedagogical_hook": "Direct letter/numeral-to-illustration correspondence. Card assignments sourced from manifest/pages.json cards array.",
+                    "pedagogical_hook": "Direct letter/numeral-to-illustration correspondence. Counting spreads follow cognitive subitizing groupings (pairs and symmetrical matrices).",
                     "target_milestone": "Ages 1-4 early phonetic awareness and numeracy.",
                 },
             }
@@ -995,15 +1148,14 @@ class DebateEngine:
             }
             r3_outputs = {
                 "AGT-006-CRITIC": {
-                    "stress_test_findings": [
-                        "Ensure AI renders 100% equal-sized containers without tall bottom boxes.",
-                        "Ensure AI centers content vertically inside cards without empty top voids.",
-                        "Ensure AI renders exact object counts per card as specified in manifest cards array.",
-                        "Ensure AI does not draw cartoon eyes on inanimate food/objects.",
-                        "Ensure all numerals rendered as HOLLOW BUBBLE OUTLINES with white interior, not solid black.",
-                    ],
+                    "stress_test_findings": spread_critic_findings,
                     "risk_level": "LOW",
-                    "recommended_hardening": "Merge negative tokens from curriculum.yaml spread_style.common_negative_tokens + layout_templates.shared_negative_tokens + per-card negative_tokens.",
+                    "recommended_hardening": (
+                        "Merge base negative tokens with debated per-card hardening tokens: "
+                        + ", ".join(debated_hardening_tokens[:6])
+                        if debated_hardening_tokens
+                        else "Merge negative tokens from curriculum.yaml spread_style.common_negative_tokens + layout_templates.shared_negative_tokens."
+                    ),
                 }
             }
         elif is_living:
@@ -1168,7 +1320,9 @@ class DebateEngine:
         # Round 4: Judge Synthesis & Prompt Generation
         # ------------------------------------------------------------------
         if is_spread:
-            positive_prompt, negative_prompt = generate_dynamic_spread_prompt(page_record)
+            positive_prompt, negative_prompt = generate_dynamic_spread_prompt(
+                page_record, extra_negative_tokens=debated_hardening_tokens
+            )
         else:
             cat_cfg, _ = _find_category_config(canonical, section, object_category)
             cat_rule = cat_cfg.get("category_rule", "").strip()
@@ -1398,6 +1552,452 @@ class DebateEngine:
             judge_rationale=judge_rationale,
         )
 
+    def run_cover_debate(
+        self,
+        cover_type: str = "back_cover",
+        manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
+        book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+        blueprint_path: str | Path | None = None,
+    ) -> DebateResult:
+        """Execute 4-round multi-agent debate for Front or Back Cover Master Illustration."""
+        from curiokraft_book.orchestrator.blueprint_reader import LayoutBlueprintReader
+
+        b_cfg = _load_yaml(book_config_path).get("book", {})
+        title = b_cfg.get("title", DEFAULT_BOOK_TITLE)
+        subtitle = b_cfg.get("subtitle", "FUN & EASY FIRST WORDS")
+        brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
+        age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
+        age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
+        # Resolve volume name dynamically from manifest or config
+        volume_name = ""
+        if manifest_path:
+            mp_str = str(manifest_path).lower()
+            import re
+            m_vol = re.search(r'vol(?:ume)?[_-]?(\d+)', mp_str)
+            if m_vol:
+                volume_name = f"Volume {m_vol.group(1)}"
+            elif "pages.json" in mp_str:
+                volume_name = "Volume 1"
+        if not volume_name:
+            cfg_vol = str(b_cfg.get("volume", "")).strip()
+            if cfg_vol:
+                m_vol = re.search(r'vol(?:ume)?[_-]?(\d+)', cfg_vol.lower())
+                volume_name = f"Volume {m_vol.group(1)}" if m_vol else cfg_vol.title()
+
+
+        # Check for user layout blueprint in inbox/blueprints/
+        bp_reader = LayoutBlueprintReader()
+        blueprint_spec = None
+        if blueprint_path:
+            try:
+                blueprint_spec = bp_reader.read_blueprint(blueprint_path)
+            except Exception as e:
+                logger.warning(f"Could not read specified blueprint {blueprint_path}: {e}")
+        if not blueprint_spec:
+            blueprint_spec = bp_reader.get_layout_spec(cover_type)
+
+        rounds: list[DebateRound] = []
+
+        if cover_type == "back_cover":
+            # 1. Dynamically extract 3 representative interior cards from active manifest
+            cards = extract_cover_showcase_cards(manifest_path, count=3)
+            cards_desc_list = [f"{c['category_name']}: {c['description']}" for c in cards]
+            cards_summary = "; ".join(cards_desc_list)
+
+            # 2. Marketing Copy & Benefit Pills (Strictly double-sided, zero developer prompt jargon)
+            c_back = _CURRICULUM.get("cover_styling", {}).get("back_cover", {})
+            headlines = c_back.get(
+                "headline_options", ["DISCOVER, COLOR & LEARN!", "LITTLE HANDS, BIG DISCOVERIES!"]
+            )
+            headline = headlines[0] if headlines else "DISCOVER, COLOR & LEARN!"
+
+            # Dynamic page count from manifest
+            page_count = 110
+            try:
+                m_p = Path(manifest_path)
+                if not m_p.is_absolute():
+                    candidates = [
+                        Path.cwd() / manifest_path,
+                        Path(__file__).parent.parent.parent.parent / manifest_path,
+                    ]
+                    for c in candidates:
+                        if c.exists():
+                            m_p = c
+                            break
+                if m_p.exists():
+                    with open(m_p, "r", encoding="utf-8") as mf:
+                        m_data = json.load(mf)
+                        page_count = len(m_data.get("pages", [])) or 110
+            except Exception:
+                pass
+
+            vol_label = f" {volume_name}" if volume_name else ""
+            description = (
+                f"Continue your little one's joyful learning journey with{vol_label}! "
+                f"Packed with {page_count}+ adorable preschool illustrations and everyday first words, "
+                "it's perfect for building fine motor skills, early vocabulary, and creative confidence!"
+            )
+
+            # Layout slots: from user blueprint if present, else standard responsive
+            if blueprint_spec:
+                card_rows = blueprint_spec.card_grid.rows
+                card_cols = blueprint_spec.card_grid.columns
+                pill_count = blueprint_spec.feature_callouts.count
+                pill_layout = blueprint_spec.feature_callouts.layout.replace("_", " ")
+                wave_pct = blueprint_spec.baseline_wave.height_percentage
+            else:
+                card_rows = 1
+                card_cols = 3
+                pill_count = 4
+                pill_layout = "2x2 grid"
+                wave_pct = 20
+
+            pills_text = (
+                f"'{pill_count}+ Brand-New Simple Drawings', 'Chunky Outlines for Little Hands', "
+                f"'{page_count} Full Pages of Double-Sided Coloring', 'Perfect for Ages {age_min}-{age_max}'"
+            )
+
+            # Round 1: Specialist Proposals
+            r1_outputs = {
+                "AGT-002-DESIGN": {
+                    "composition": (
+                        f"Back cover master illustration matching front cover style and palette (#FFF9E6). "
+                        f"Flashcard grid: exactly {card_cols} upright white rounded cards in a single row ({cards_summary}). "
+                        f"Middle-lower zone: {pill_count} pastel rounded feature pills in {pill_layout}. "
+                        f"Spine continuity: RIGHT edge directly abuts book spine — must remain 100% borderless and horizontally flat. "
+                        f"Bottom layout: lower {wave_pct}% continuous pastel turquoise and mint wave with zero white cutout boxes or placeholder badges."
+                    ),
+                    "prohibited": [
+                        "white box on left",
+                        "white cutout box",
+                        "logo placeholder",
+                        "text in bottom corners",
+                        "barcode on artwork",
+                        "border on right edge",
+                        "crayons on cards",
+                        "single-sided claims",
+                        "5pt outlines jargon",
+                    ],
+                },
+                "AGT-004-MARKET": {
+                    "commercial_messaging": (
+                        f"Headline: '{headline}'. Description: '{description}'. "
+                        f"Pills: {pills_text}. Highlighting double-sided preschool value, zero developer prompt jargon."
+                    ),
+                    "prohibited": [
+                        "single-sided pages",
+                        "blank backs",
+                        "5pt outlines",
+                        "vector stroke",
+                    ],
+                },
+                "AGT-005-EDU": {
+                    "pedagogical_milestone": f"Ages {age_min}-{age_max} early vocabulary and fine motor dexterity.",
+                },
+            }
+
+            # Round 2: Cross-Specialist Consensus
+            r2_outputs = {
+                "cross_consensus": (
+                    "Agreed on 100% continuous turquoise wave across bottom 20% (strictly zero white boxes for logo/barcode), "
+                    "truthful double-sided printing messaging, zero developer prompt jargon, and authentic manifest card showcase."
+                )
+            }
+
+            # Round 3: Adversarial Red-Team Stress-Test
+            r3_outputs = {
+                "AGT-006-REDTEAM": {
+                    "stress_test_findings": [
+                        "Verify zero AI white box / cutout at bottom-left: background wave and stardust must flow continuously.",
+                        "Verify double-sided truth: strictly prohibit 'single-sided' or 'blank backs' tokens.",
+                        "Verify zero developer prompt jargon: ban '5pt bold outlines' from visible copy.",
+                        "Verify right edge is borderless and horizontally flat to seamlessly match spine and front cover.",
+                    ],
+                    "risk_level": "LOW",
+                    "recommended_hardening": (
+                        "Mandate strictly NO text, NO words, NO letters, and NO white cutout boxes in bottom corners. "
+                        "Reinforce negative tokens: white badge on left, white box on left, single-sided, 5pt outlines."
+                    ),
+                }
+            }
+
+            # Round 4: Judge Synthesis
+            pos = (
+                f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
+                "perfectly matching and continuing the visual style, color palette, and organic framing of the front cover. "
+                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6), perfectly matching the front cover. "
+                f"Bottom baseline features the exact same smooth, gentle rolling wave in pastel turquoise and mint across the lower 15-{wave_pct}% of the canvas at the exact same horizontal height. "
+                "WRAPAROUND SPINE CONTINUITY MANDATE: The RIGHT edge of this back cover directly abuts the book spine — keep the entire RIGHT edge completely clean, borderless, and horizontally flat with zero corner frames, zero diagonal rivers, and zero vertical decorative borders, ensuring a 100% continuous, uninterrupted horizontal flow across the spine into the front cover. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER LEFT corners only. "
+                "The entire canvas is sprinkled with subtle celebratory toddler star dust: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue, and soft pastel floating love hearts in pink and lilac. "
+                f"Top section: bold uppercase headline in dark navy '{headline}'. "
+                f"Directly below the headline, a friendly parent description in clean, dark navy rounded typography: '{description}' "
+                f"Middle section: exactly {card_cols} clean, upright white rounded flashcard preview boxes arranged in a single neat horizontal row (1 row by {card_cols} columns), showcasing authentic black-and-white coloring book sample pages from inside this specific volume. "
+                "Each card is a clean rounded white rectangle with a thin dark charcoal border. (CRITICAL: Strictly NO crayons on cards, NO angled crayons, and NO coloring tools—display pure, clean coloring pages). "
+                f"Inside each card is pure 2D black-and-white coloring book line art with bold outlines and large open spaces for toddlers to color: "
+                f"{cards_summary}. "
+                f"Middle-lower zone (directly below the flashcards and above the bottom rolling wave): utilizes the space with {pill_count} neat, colorful pastel rounded feature note pills arranged in a balanced {pill_layout} with playful star bullets: "
+                f"'★ {page_count}+ Brand-New Simple Drawings', '★ Chunky Easy Outlines for Little Hands', '★ {page_count} Full Pages of Double-Sided Coloring', and '★ Perfect for Ages {age_min}–{age_max}'. "
+                "Bottom layout: The bottom-left and bottom-right corners feature clean, unbroken continuous pastel background artwork with the gentle wavy turquoise baseline, delicate twinkling star dust, soft floating hearts, and subtle playful doodles. "
+                "(CRITICAL INVIOLABLE MULTI-VOLUME MANDATE: The lower 20% of the canvas containing the wavy turquoise baseline must remain 100% flat, continuous, and clear with strictly ZERO text, ZERO cards, ZERO notes, and ZERO white cutout boxes or placeholder badges anywhere in the bottom-left or bottom-right positions. Background color (#FFF9E6), rolling waves, star dust, and doodles MUST flow continuously and seamlessly across both bottom positions; strictly ZERO text is to be printed in these two locations, as the publisher logo badge and barcode are programmatically composited in code post-generation). "
+                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly balanced typography, cards, and colors."
+            )
+
+            neg = (
+                "text in bottom-left corner, text in bottom-right corner, barcode numbers, publisher text, bottom labels, "
+                "letters in bottom left, letters in bottom right, text on turquoise wave, words on bottom baseline, "
+                "white badge on left, white box on left, logo badge, empty white rectangle on left, white badge cutout, placeholder box, "
+                "single-sided, single-sided pages, single sided, blank backs, anti-bleed blank backs, "
+                "5pt bold outlines, 5pt stroke, vector stroke, prompt engineering, "
+                "corner frame on right edge, border on right edge, right vertical border, diagonal river across right edge, "
+                "numbers in corners, dimensions, measurements, margin text, technical annotations, labels, 0.60 in, 180px, "
+                "white rectangle on right, barcode box, barcode placeholder, printed barcode, barcode lines, qr code, "
+                "fake logo, gibberish text in badge, text inside white badge, crayons on cards, wax crayons, "
+                "colored drawings inside cards, colored line art inside cards, realistic shading, grayscale shading in cards, "
+                "2x3 grid, 6 cards, blurry, low resolution, dark moody colors, photographic, realistic textures, "
+                "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges"
+            )
+
+            page_id = "COVER_BACK"
+            label = "BACK COVER MASTER ARTWORK"
+            canonical = "back_cover"
+            section = "Covers"
+
+        else:  # front_cover
+            hero_char, companions, page_count = extract_front_cover_ensemble(manifest_path)
+            companions_desc = ", ".join(companions)
+
+            r1_outputs = {
+                "AGT-002-DESIGN": {
+                    "composition": (
+                        f"Front cover master illustration. Central hero: {hero_char}. "
+                        f"Companions: {companions_desc}. 3D puffy candy title 'TINY HANDS' arched at top. "
+                        "Butter-cream canvas (#FFF9E6) with rolling turquoise wave across lower 15-20%. "
+                        "Spine continuity: LEFT edge directly abuts spine — 100% borderless and horizontally flat."
+                    ),
+                    "prohibited": [
+                        "border on left edge",
+                        "spine crease shadow",
+                        "black drop shadows",
+                        "barcode on front",
+                    ],
+                },
+                "AGT-004-MARKET": {
+                    "commercial_appeal": "Instant preschool delight with candy-colored 3D bubbly title and adorable hero animal.",
+                },
+            }
+            r2_outputs = {
+                "cross_consensus": "Agreed on vibrant 2D sticker art with white puffy die-cut outlines."
+            }
+            r3_outputs = {
+                "AGT-006-REDTEAM": {
+                    "stress_test_findings": [
+                        "Verify spine shadow removal: left edge must have zero vertical crease or shadow.",
+                        "Verify safe live area: top banner comfortably 1.0 inch below top margin.",
+                    ],
+                    "risk_level": "LOW",
+                    "recommended_hardening": "Add negative tokens against spine lines, vertical crease, and dark shadows.",
+                }
+            }
+
+            pos = (
+                f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
+                f"Generous top safety margin: leave the top 10-12% of the canvas as clean sunny golden-cream background. Position the top text banner '{brand} Presents' comfortably inside the safe live area, centered at least 1.0 inch / 300px below the top canvas edge in clean, bold navy preschool lettering so it will not be cut off during physical trimming. "
+                "Directly below, main title 'TINY HANDS' rendered in a joyful upward rainbow arch in large, chunky 3D puffy inflated bubble jelly/candy letters with high-gloss specular reflections (white highlight curves on the top surfaces). "
+                "Each letter in 'TINY HANDS' has an individual vibrant saturated candy color: T (warm orange), I (sunny yellow), N (electric cyan blue), Y (peach orange), H (hot pink), A (golden yellow), N (bright red/coral), D (sky blue), S (tangerine orange). "
+                "The letters feature a clean bright white puffy die-cut contour outline with soft warm pastel depth (strictly NO dark black drop shadows, NO harsh black outlines). "
+                "Directly below 'TINY HANDS', the words 'COLOR & LEARN' are also rendered in large, vibrant multi-colored 3D puffy bubble letters (NOT plain white): C (hot pink), O (bright yellow), L (cyan blue), O (lime green), R (vibrant purple), & (golden orange), L (hot pink), E (sunny yellow), A (electric blue), R (lime green), N (violet purple), with glossy candy highlights and a clean thick puffy white contour outline. "
+                f"Directly underneath the arched title lockup, clean bold dark navy rounded lettering reading '{subtitle}', flanked by cute little decorative stars. "
+                f"Central joyful toddler illustration: {hero_char}. "
+                f"Surrounding the hero character is a rich ensemble of adorable, chunky preschool objects: {companions_desc}, plus a curved floating rainbow wax crayon with colorful motion lines in the sky. "
+                "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
+                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6) with a gentle, smooth pastel turquoise and mint rolling wave across the lower 15-20% of the canvas. "
+                "WRAPAROUND SPINE CONTINUITY MANDATE: The LEFT edge of this front cover directly abuts the book spine — keep the entire LEFT edge completely clean, borderless, and horizontally flat with zero corner frames and zero vertical decorative borders, allowing the butter-cream sky and bottom turquoise wave to flow seamlessly and continuously into the spine without any seams or step jumps. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER RIGHT corners only. "
+                "The entire atmosphere is filled with celebratory toddler star dust and magical confetti: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue; soft pastel floating love hearts in pink and lilac; and colorful tiny confetti dots, sparkles, and sprinkles floating merrily through the air. "
+                f"Bottom layout: a wide clean white rounded pill banner with bold navy text '{page_count}+ EVERYDAY OBJECTS' and 'FIRST WORDS • LETTERS & NUMBERS', accompanied on the right by a circular sunny yellow roundel badge reading 'AGES {age_min}-{age_max} YEARS'. "
+                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
+            )
+
+            neg = (
+                "corner frame on left edge, border on left edge, left vertical border, clean pastel floor, text on floor, words on floor, "
+                "floor label, dark black shadows, heavy black shadows, black drop shadows, dark ground shadows, harsh contact shadows, "
+                "spine shadow line, vertical crease, spine crease shadow, book fold shadow, 3d book mockup shadow, shading line along spine, "
+                "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, "
+                "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
+                "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, "
+                "barcode on front cover, spine lines across front cover"
+            )
+
+            page_id = "COVER_FRONT"
+            label = "FRONT COVER MASTER ARTWORK"
+            canonical = "front_cover"
+            section = "Covers"
+
+        judge_verdict = "APPROVED"
+        judge_rationale = (
+            f"Approved {label} specification: Enforced 100% continuous turquoise wave across bottom baseline, "
+            f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+        )
+
+        r4_outputs = {
+            "AGT-007-JUDGE": {
+                "verdict": judge_verdict,
+                "winner": "AGT-002-DESIGN",
+                "score": 98.0,
+                "rationale": judge_rationale,
+            },
+            "AGT-008-PROMPT": {
+                "positive_prompt": pos,
+                "negative_prompt": neg,
+            },
+        }
+
+        rounds.append(
+            DebateRound(round_number=1, round_name="Specialist Proposals", agent_outputs=r1_outputs)
+        )
+        rounds.append(
+            DebateRound(
+                round_number=2, round_name="Cross-Specialist Review", agent_outputs=r2_outputs
+            )
+        )
+        rounds.append(
+            DebateRound(
+                round_number=3, round_name="Adversarial Red-Team Critique", agent_outputs=r3_outputs
+            )
+        )
+        rounds.append(
+            DebateRound(
+                round_number=4,
+                round_name="Judge Synthesis & Specification Lock",
+                agent_outputs=r4_outputs,
+            )
+        )
+
+        return DebateResult(
+            page_id=page_id,
+            canonical_object=canonical,
+            display_label=label,
+            section=section,
+            winner_agent="AGT-002-DESIGN",
+            final_score=98.0,
+            positive_prompt=pos,
+            negative_prompt=neg,
+            rounds=rounds,
+            judge_verdict=judge_verdict,
+            judge_rationale=judge_rationale,
+        )
+
+    def run_mascot_debate(
+        self,
+        mascot_name: str,
+        book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+    ) -> DebateResult:
+        """Execute 4-round multi-agent debate synthesizing the Volume Mascot prompt for Welcome & Certificate pages."""
+        mascot_clean = mascot_name.replace("_", " ").strip()
+        mascot_title = mascot_clean.title()
+
+        rounds: list[DebateRound] = []
+
+        # Round 1: Developmental & Toddler Psychology Specialist
+        r1 = DebateRound(
+            round_number=1,
+            round_name="Developmental & Toddler Psychology Specialist",
+            agent_outputs={
+                "AGT-005-EDU": {
+                    "age_target": "Ages 1-4 toddler range",
+                    "hero_mascot": mascot_title,
+                    "psychology_rationale": (
+                        f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
+                        f"It introduces the child on Page 001 ('THIS BOOK BELONGS TO') and celebrates their achievement on Page 110 ('SUPER COLORIST'). "
+                        f"Must have an endearing chubby baby anatomy, sweet smiling round eyes, joyful rosy blushing cheeks, and a friendly waving paw to encourage immediate bonding."
+                    ),
+                    "character_pose": "Sitting joyfully in an upright posture, waving one front paw welcomingly toward the child.",
+                }
+            },
+        )
+        rounds.append(r1)
+
+        # Round 2: Line Art & Visual Purity Specialist
+        r2 = DebateRound(
+            round_number=2,
+            round_name="Line Art & Visual Purity Specialist",
+            agent_outputs={
+                "AGT-002-DESIGN": {
+                    "outline_specification": "5pt ultra-clean black vector outline, uniform stroke width",
+                    "coloring_regions": "Wide open interior coloring spaces suitable for chunky wax crayons",
+                    "purity_mandates": (
+                        "Strictly zero color fills, zero grayscale shading, zero shadow gradients, zero crosshatching, "
+                        "and zero micro-details. Unbroken continuous contours for effortless coloring."
+                    ),
+                }
+            },
+        )
+        rounds.append(r2)
+
+        # Round 3: Print Geometry & Compositor Specialist
+        r3 = DebateRound(
+            round_number=3,
+            round_name="Print Geometry & Compositor Specialist",
+            agent_outputs={
+                "AGT-003-KDP": {
+                    "canvas_dimensions": "3:4 vertical portrait framing with generous empty margin buffers",
+                    "background_isolation": (
+                        "CRITICAL: Solid pure white background (#FFFFFF). Absolutely isolated with zero scenery, "
+                        "zero furniture, zero floor lines. MANDATE: Strictly NO checkerboard patterns, NO faux Photoshop "
+                        "transparency grids, NO gray pixel patterns. Must allow Python PIL luminance thresholding (>140 -> 255) "
+                        "to extract an ultra-clean alpha mask for programmatic placement on Page 001 and Page 110."
+                    ),
+                    "continuity_mandate": "Exact same mascot image asset will be composited into both Page 001 and Page 110.",
+                }
+            },
+        )
+        rounds.append(r3)
+
+        # Round 4: Executive Creative Judge & Synthesizer
+        pos = (
+            f"Ultra-clean 2D preschool toddler coloring book line art illustration of a cute friendly baby {mascot_clean} for ages 1-4. "
+            f"Adorable chubby rounded body, sweet gentle smiling expression, big friendly round eyes, rosy blushing cheeks, "
+            f"sitting joyfully and waving one front paw. Thick clean black vector outline, 5pt stroke, wide open coloring areas. "
+            f"Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. "
+            f"Vertical portrait framing with generous empty margin space on all sides. "
+            f"Strictly NO text, NO letters, NO numbers, NO color fills, zero shading, zero grayscale, zero gradients, zero shadows. "
+            f"Pure black and white line art only."
+        )
+
+        neg = (
+            "text, letters, numbers, words, watermark, logo, title, label, color, colors, colored, color fills, "
+            "shading, grayscale, gray fills, shadows, drop shadows, gradients, realistic textures, realistic animal, "
+            "photographic, 3d render, complex details, crosshatching, thin lines, broken lines, sketchy lines, dirty lines, "
+            "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, clothes, "
+            "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
+        )
+
+        r4 = DebateRound(
+            round_number=4,
+            round_name="Executive Creative Judge & Synthesizer",
+            agent_outputs={
+                "AGT-007-JUDGE": {
+                    "final_score": 99.5,
+                    "status": "APPROVED FOR MULTI-VOLUME MILESTONE PAGES",
+                    "verdict": f"Synthesized official {mascot_title} mascot illustration prompt complying with 5pt KDP purity and dual Page 001/110 reuse rules.",
+                }
+            },
+        )
+        rounds.append(r4)
+
+        return DebateResult(
+            page_id="MASCOT",
+            canonical_object=mascot_name,
+            display_label=f"{mascot_clean.upper()} (VOLUME MASCOT)",
+            section="Special Assets",
+            winner_agent="AGT-007-JUDGE",
+            final_score=99.5,
+            positive_prompt=pos,
+            negative_prompt=neg,
+            rounds=rounds,
+            judge_verdict="APPROVED FOR MULTI-VOLUME PRODUCTION",
+            judge_rationale=f"Full consensus reached across specialists for {mascot_title} mascot.",
+        )
+
     def export_full_debate_log(
         self,
         manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
@@ -1514,158 +2114,260 @@ def _get_crayon_color_for_object(obj_name: str) -> str:
     return "bright colorful"
 
 
-def generate_front_cover_prompt(
-    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+def extract_cover_showcase_cards(
     manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
-) -> tuple[str, str]:
-    """Construct dynamic Front Cover Master Illustration prompt synthesized from manifest contents."""
-    b_cfg = _load_yaml(book_config_path).get("book", {})
-    title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
-    subtitle = b_cfg.get("subtitle", "FUN & EASY FIRST WORDS")
-    brand = b_cfg.get("brand", "CURIOKRAFT-KIDS")
-    age_min = b_cfg.get("target_audience", {}).get("age_min", 1)
-    age_max = b_cfg.get("target_audience", {}).get("age_max", 4)
+    count: int = 3,
+) -> list[dict[str, str]]:
+    """Dynamically select representative interior coloring pages from the active manifest across diverse categories.
 
-    # Discover primary hero animal from manifest (priority: elephant, teddy bear, puppy, kitten, lion)
-    hero_char = "an adorable chubby baby cartoon elephant with sweet smiling round eyes, blushing pink cheeks, and large soft ears, sitting joyfully while clutching a chunky wax crayon with little sparkle motion lines"
-    companion_items = [
-        "a shiny smiling cartoon red apple with round eyes, rosy cheeks, and a green leaf",
-        "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds",
-        "a happy smiling yellow cartoon flower with cute round face and soft green leaves",
-        "a cheerful chunky preschool toy beetle car with round cartoon headlights and smiling bumper",
-    ]
-    page_count = 100
-
+    Returns a list of card dicts with:
+      - slot: index 1..count
+      - title: Uppercase display word
+      - category_name: Educational category label
+      - description: Clean 2D coloring book line art description
+    """
     m_p = Path(manifest_path)
+    if not m_p.is_absolute():
+        candidates = [
+            Path.cwd() / manifest_path,
+            Path(__file__).parent.parent.parent.parent / manifest_path,
+        ]
+        for c in candidates:
+            if c.exists():
+                m_p = c
+                break
+
+    pages = []
+    if m_p.exists():
+        try:
+            with open(m_p, encoding="utf-8") as f:
+                data = json.load(f)
+                pages = [
+                    p
+                    for p in data.get("pages", [])
+                    if p.get("page_number", 0) >= 4 and p.get("type") in ["coloring_page", None]
+                ]
+        except Exception as e:
+            logger.warning(f"Error loading manifest pages: {e}")
+
+    # Group pages into distinct preschool domains
+    group_food = []
+    group_animals = []
+    group_vehicles = []
+    group_objects = []
+
+    for p in pages:
+        canon = str(p.get("canonical_object", "")).lower()
+        sec = str(p.get("section", "")).lower()
+        canon_tokens = set(canon.replace("_", " ").split())
+        sec_tokens = set(sec.replace("_", " ").split())
+
+        is_living = classify_living_taxonomy(canon, sec)
+        is_food = bool(
+            (canon_tokens | sec_tokens)
+            & {
+                "fruit",
+                "food",
+                "vegetable",
+                "sweet",
+                "drink",
+                "apple",
+                "cherry",
+                "banana",
+                "strawberry",
+                "grape",
+                "orange",
+                "carrot",
+            }
+        )
+        is_veh = is_vehicle_object(canon, sec)
+
+        if is_food and not is_living:
+            group_food.append(p)
+        elif is_living:
+            group_animals.append(p)
+        elif is_veh and not is_living:
+            group_vehicles.append(p)
+        else:
+            group_objects.append(p)
+
+    selected_pages = []
+    if group_food:
+        selected_pages.append((group_food[0], "First Words & Fruit"))
+    if group_animals:
+        selected_pages.append((group_animals[0], "Cute Animals & Nature"))
+    if group_vehicles:
+        selected_pages.append((group_vehicles[0], "Vehicles & First Transport"))
+    elif group_objects:
+        selected_pages.append((group_objects[0], "Everyday Objects"))
+
+    # Fallback to remaining pages if any category was missing
+    if len(selected_pages) < count:
+        seen_ids = {p.get("page_id") for p, _ in selected_pages}
+        for p in pages:
+            if p.get("page_id") not in seen_ids:
+                selected_pages.append((p, "Preschool First Words"))
+                seen_ids.add(p.get("page_id"))
+                if len(selected_pages) >= count:
+                    break
+
+    cards_out = []
+    for idx, (p, cat_label) in enumerate(selected_pages[:count], start=1):
+        word = (
+            str(p.get("display_label") or p.get("canonical_object", f"ITEM {idx}"))
+            .upper()
+            .replace("_", " ")
+        )
+        canon = str(p.get("canonical_object", word.lower()))
+        desc = p.get("positive_description") or p.get("description")
+        if not desc:
+            is_living = classify_living_taxonomy(canon, p.get("section", ""))
+            desc = generate_dynamic_visual_spec(canon, p.get("section", ""), is_living)
+        # Format clean card outline spec
+        card_desc = f"hollow bubble-letter coloring title '{word}' across the top, {desc.strip().rstrip('.')}"
+        cards_out.append(
+            {
+                "slot": str(idx),
+                "title": word,
+                "category_name": cat_label,
+                "description": card_desc,
+            }
+        )
+
+    return cards_out
+
+
+def extract_front_cover_ensemble(
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
+) -> tuple[str, list[str], int]:
+    """Dynamically discover the hero character, companion objects, and page count from active manifest."""
+    m_p = Path(manifest_path)
+    if not m_p.is_absolute():
+        candidates = [
+            Path.cwd() / manifest_path,
+            Path(__file__).parent.parent.parent.parent / manifest_path,
+        ]
+        for c in candidates:
+            if c.exists():
+                m_p = c
+                break
+
+    pages = []
+    page_count = 110
     if m_p.exists():
         try:
             with open(m_p, encoding="utf-8") as f:
                 data = json.load(f)
                 pages = data.get("pages", [])
-                page_count = len(pages)
-
-                # Check for hero animal in manifest
-                found_animal = None
-                for p in pages:
-                    canon = p.get("canonical_object", "").lower()
-                    sec = p.get("section", "").lower()
-                    if canon == "elephant":
-                        found_animal = "an adorable chubby baby cartoon elephant with sweet smiling round eyes, blushing pink cheeks, and large soft ears, sitting joyfully while clutching a chunky wax crayon with little sparkle motion lines"
-                        break
-                    elif ("animal" in sec or "pet" in sec) and not found_animal:
-                        label = p.get("display_label", canon.replace("_", " ")).title()
-                        found_animal = f"an adorable chubby cartoon baby {label.lower()} with sweet smiling round eyes and rosy cheeks, sitting joyfully while holding a bright wax crayon"
-                if found_animal:
-                    hero_char = found_animal
-
-                # Discover dynamic companion objects across manifest categories
-                dynamic_companions: list[str] = []
-                for p in pages:
-                    canon = p.get("canonical_object", "").lower()
-                    sec = p.get("section", "").lower()
-                    label = p.get("display_label", canon.replace("_", " ")).title()
-                    if ("fruit" in sec or canon in ["apple", "banana", "strawberry"]) and len(
-                        dynamic_companions
-                    ) < 1:
-                        dynamic_companions.append(
-                            f"a shiny cute smiling cartoon {label.lower()} with big sweet round eyes, rosy cheeks, and leafy stem"
-                        )
-                    elif ("nature" in sec or canon in ["flower", "sun", "tree"]) and len(
-                        dynamic_companions
-                    ) < 2:
-                        dynamic_companions.append(
-                            f"a cute happy smiling cartoon {label.lower()} with cheerful sunny face and soft petals"
-                        )
-                    elif ("vehicle" in sec or canon in ["car", "bus", "train", "truck"]) and len(
-                        dynamic_companions
-                    ) < 3:
-                        dynamic_companions.append(
-                            f"a cheerful chunky preschool toy {label.lower()} with round cartoon headlights and friendly smiling details"
-                        )
-
-                # Always include iconic preschool rainbow staple
-                if len(dynamic_companions) >= 3:
-                    dynamic_companions.append(
-                        "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds"
-                    )
-                    companion_items = dynamic_companions
+                page_count = len(pages) or 110
         except Exception:
             pass
 
-    companions_desc = ", ".join(companion_items)
+    mascot_priorities = [
+        "elephant",
+        "panda",
+        "teddy_bear",
+        "bear",
+        "puppy",
+        "dog",
+        "kitten",
+        "cat",
+        "lion",
+        "bunny",
+        "rabbit",
+        "monkey",
+    ]
+    found_hero = None
 
-    pos = (
-        f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
-        f"Generous top safety margin: leave the top 10-12% of the canvas as clean sunny golden-cream background. Position the top text banner '{brand} Presents' comfortably inside the safe live area, centered at least 1.0 inch / 300px below the top canvas edge in clean, bold navy preschool lettering so it will not be cut off during physical trimming. "
-        "Directly below, main title 'TINY HANDS' rendered in a joyful upward rainbow arch in large, chunky 3D puffy inflated bubble jelly/candy letters with high-gloss specular reflections (white highlight curves on the top surfaces). "
-        "Each letter in 'TINY HANDS' has an individual vibrant saturated candy color: T (warm orange), I (sunny yellow), N (electric cyan blue), Y (peach orange), H (hot pink), A (golden yellow), N (bright red/coral), D (sky blue), S (tangerine orange). "
-        "The letters feature a clean bright white puffy die-cut contour outline with soft warm pastel depth (strictly NO dark black drop shadows, NO harsh black outlines). "
-        "Directly below 'TINY HANDS', the words 'COLOR & LEARN' are also rendered in large, vibrant multi-colored 3D puffy bubble letters (NOT plain white): C (hot pink), O (bright yellow), L (cyan blue), O (lime green), R (vibrant purple), & (golden orange), L (hot pink), E (sunny yellow), A (electric blue), R (lime green), N (violet purple), with glossy candy highlights and a clean thick puffy white contour outline. "
-        f"Directly underneath the arched title lockup, clean bold dark navy rounded lettering reading '{subtitle}', flanked by cute little decorative stars. "
-        f"Central joyful toddler illustration: {hero_char}. "
-        f"Surrounding the hero character is a rich ensemble of adorable, chunky preschool objects: {companions_desc}, plus a curved floating rainbow wax crayon with colorful motion lines in the sky. "
-        "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
-        "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6) with a gentle, smooth pastel turquoise and mint rolling wave across the lower 15-20% of the canvas. "
-        "WRAPAROUND SPINE CONTINUITY MANDATE: The LEFT edge of this front cover directly abuts the book spine — keep the entire LEFT edge completely clean, borderless, and horizontally flat with zero corner frames and zero vertical decorative borders, allowing the butter-cream sky and bottom turquoise wave to flow seamlessly and continuously into the spine without any seams or step jumps. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER RIGHT corners only. "
-        "The entire atmosphere is filled with celebratory toddler star dust and magical confetti: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue; soft pastel floating love hearts in pink and lilac; and colorful tiny confetti dots, sparkles, and sprinkles floating merrily through the air. "
-        f"Bottom layout: a wide clean white rounded pill banner with bold navy text '{page_count}+ EVERYDAY OBJECTS' and 'FIRST WORDS • LETTERS & NUMBERS', accompanied on the right by a circular sunny yellow roundel badge reading 'AGES {age_min}-{age_max} YEARS'. "
-        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
+    interior_pages = [p for p in pages if p.get("page_number", 0) >= 4]
+
+    for mascot in mascot_priorities:
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon == mascot:
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                found_hero = (
+                    f"an adorable chubby cartoon baby {lbl} with sweet smiling round eyes, blushing pink cheeks, "
+                    f"and friendly gentle expression, sitting joyfully while clutching a chunky wax crayon with little sparkle motion lines"
+                )
+                break
+        if found_hero:
+            break
+
+    if not found_hero:
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            sec = str(p.get("section", "")).lower()
+            if classify_living_taxonomy(canon, sec):
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                found_hero = (
+                    f"an adorable chubby cartoon baby {lbl} with sweet smiling round eyes and rosy cheeks, "
+                    f"sitting joyfully while holding a bright wax crayon"
+                )
+                break
+
+    hero_char = (
+        found_hero
+        or "an adorable chubby cartoon baby mascot with sweet smiling round eyes, sitting joyfully while holding a bright wax crayon"
     )
 
-    neg = (
-        "corner frame on left edge, border on left edge, left vertical border, clean pastel floor, text on floor, words on floor, "
-        "floor label, dark black shadows, heavy black shadows, black drop shadows, dark ground shadows, harsh contact shadows, "
-        "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, "
-        "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
-        "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, "
-        "barcode on front cover, spine lines across front cover"
+    dynamic_companions: list[str] = []
+    for p in interior_pages:
+        canon = str(p.get("canonical_object", "")).lower()
+        sec = str(p.get("section", "")).lower()
+        lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+        if (
+            "fruit" in sec or canon in ["apple", "cherry", "banana", "strawberry"]
+        ) and len(dynamic_companions) < 1:
+            dynamic_companions.append(
+                f"a shiny cute smiling cartoon {lbl} with big sweet round eyes, rosy cheeks, and leafy stem"
+            )
+        elif ("nature" in sec or canon in ["flower", "sun", "tree"]) and len(
+            dynamic_companions
+        ) < 2:
+            dynamic_companions.append(
+                f"a cute happy smiling cartoon {lbl} with cheerful sunny face and soft petals"
+            )
+        elif ("vehicle" in sec or canon in ["car", "airplane", "bus", "train", "truck"]) and len(
+            dynamic_companions
+        ) < 3:
+            dynamic_companions.append(
+                f"a cheerful chunky preschool toy {lbl} with round cartoon headlights and friendly smiling details"
+            )
+
+    dynamic_companions.append(
+        "a vibrant multi-colored arching rainbow emerging from two fluffy white cumulus clouds"
     )
-    return pos, neg
+
+    return hero_char, dynamic_companions, page_count
+
+
+def generate_front_cover_prompt(
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
+) -> tuple[str, str]:
+    """Construct dynamic Front Cover Master Illustration prompt synthesized via multi-agent debate."""
+    engine = DebateEngine()
+    res = engine.run_cover_debate(
+        cover_type="front_cover",
+        manifest_path=manifest_path,
+        book_config_path=book_config_path,
+    )
+    return res.positive_prompt, res.negative_prompt
 
 
 def generate_back_cover_prompt(
     book_config_path: str = str(DEFAULT_BOOK_CONFIG),
     manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
 ) -> tuple[str, str]:
-    """Construct dynamic Back Cover Master Illustration prompt synthesized from manifest contents."""
-    b_cfg = _load_yaml(book_config_path).get("book", {})
-    title = b_cfg.get("title", "TINY HANDS COLOR & LEARN")
-
-    pos = (
-        f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
-        "perfectly matching and continuing the visual style, color palette, and organic framing of the front cover. "
-        "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6), perfectly matching the front cover. "
-        "Bottom baseline features the exact same smooth, gentle rolling wave in pastel turquoise and mint across the lower 15-20% of the canvas at the exact same horizontal height. "
-        "WRAPAROUND SPINE CONTINUITY MANDATE: The RIGHT edge of this back cover directly abuts the book spine — keep the entire RIGHT edge completely clean, borderless, and horizontally flat with zero corner frames, zero diagonal rivers, and zero vertical decorative borders, ensuring a 100% continuous, uninterrupted horizontal flow across the spine into the front cover. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER LEFT corners only. "
-        "The entire canvas is sprinkled with subtle celebratory toddler star dust: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue, and soft pastel floating love hearts in pink and lilac. "
-        "Top section: bold uppercase headline in dark navy 'EXPLORE & COLOR!'. "
-        "Directly below the headline, a friendly 3-line parent description in clean, dark navy rounded typography: "
-        "'Introduce your little one to a world of creativity and learning with this fun coloring book. Packed with simple illustrations and basic words, it's perfect for developing motor skills and vocabulary!' "
-        "Middle section: exactly 3 clean, upright white rounded flashcard preview boxes arranged in a single neat horizontal row (1 row by 3 columns), showcasing authentic black-and-white coloring book sample pages from inside the book. "
-        "Each card is a clean rounded white rectangle with a thin dark charcoal border. (CRITICAL: Strictly NO crayons on cards, NO angled crayons, and NO coloring tools—display pure, clean coloring pages). "
-        "Inside each card is pure 2D black-and-white coloring book line art with thick bold outlines and large open spaces for toddlers to color: "
-        "Card 1 (First Words & Fruit): hollow bubble-letter coloring title 'APPLE' across the top, a bold outline smiling cartoon apple in the center, bold outline letter 'E', letters 'A' and 'B', and word 'fruits' below; "
-        "Card 2 (Cute Animals): hollow bubble-letter coloring title 'CAT' across the top, an adorable sitting cartoon kitten with smiling eyes, whiskers, paws, and playful outline paw prints; "
-        "Card 3 (Numbers & Counting): hollow bubble-letter coloring numbers '1 2 3' across the top, surrounded by cute mini outline counting objects (apples, cookies, carrots, cupcakes, little hearts, and paw prints). "
-        "Bottom layout: The bottom-left and bottom-right corners feature clean, unbroken continuous pastel background artwork with the gentle wavy turquoise baseline, delicate twinkling star dust, soft floating hearts, and subtle playful doodles. "
-        "(CRITICAL MULTI-VOLUME INVIOLABLE MANDATE: Strictly NO text, NO words, NO letters, NO numbers, NO labels, NO typography, and NO white cutout boxes or placeholder badges anywhere in the bottom-left or bottom-right positions. Background color (#FFF9E6), rolling waves, star dust, and doodles MUST flow continuously and seamlessly across both bottom positions; strictly ZERO text is to be printed in these two locations, as the publisher logo badge and barcode are programmatically composited in code post-generation). "
-        "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly balanced typography, cards, and colors."
+    """Construct dynamic Back Cover Master Illustration prompt synthesized via multi-agent debate."""
+    engine = DebateEngine()
+    res = engine.run_cover_debate(
+        cover_type="back_cover",
+        manifest_path=manifest_path,
+        book_config_path=book_config_path,
     )
-
-    neg = (
-        "text in bottom corners, words near bottom, barcode numbers, publisher text, bottom labels, letters in bottom left, letters in bottom right, text in lower region, typography at bottom, "
-        "white badge on left, white box on left, logo badge, empty white rectangle on left, white badge cutout, placeholder box, "
-        "corner frame on right edge, border on right edge, right vertical border, diagonal river across right edge, "
-        "bullet points, bullet list, text list, feature list, 110 High-Quality Pages, Large 8.5x11, "
-        "Easy-to-Color Drawings, Perfect for Ages, Single-Sided Pages, text below cards, paragraph below cards, "
-        "numbers, dimensions, measurements, margin text, technical annotations, labels, 0.60 in, 180px, "
-        "white rectangle on right, barcode box, barcode placeholder, printed barcode, barcode lines, qr code, "
-        "fake logo, gibberish text in badge, text inside white badge, crayons on cards, wax crayons, "
-        "colored drawings inside cards, colored line art inside cards, realistic shading, grayscale shading in cards, "
-        "2x3 grid, 6 cards, blurry, low resolution, dark moody colors, photographic, realistic textures, "
-        "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges"
-    )
-    return pos, neg
+    return res.positive_prompt, res.negative_prompt
 
 
 def generate_dynamic_cover_prompt(
@@ -1673,3 +2375,88 @@ def generate_dynamic_cover_prompt(
 ) -> tuple[str, str]:
     """Backward-compatible alias for Front Cover Master Prompt."""
     return generate_front_cover_prompt(book_config_path)
+
+
+def auto_pick_volume_mascot(
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+) -> str:
+    """Resolve or auto-pick the volume's flagship mascot identity based on config and manifest theme."""
+    # 1. Check explicit name in book_config.yaml
+    b_cfg = _load_yaml(book_config_path).get("book", {})
+    m_cfg = b_cfg.get("mascot", {})
+    if isinstance(m_cfg, dict):
+        cfg_name = m_cfg.get("name")
+        if cfg_name and str(cfg_name).strip():
+            return str(cfg_name).strip().lower()
+
+    # 2. Inspect active manifest
+    try:
+        m_data = _load_json(manifest_path)
+    except Exception:
+        return "panda"
+
+    pages = m_data.get("pages", [])
+    interior_pages = [p for p in pages if p.get("page_number", 0) >= 2]
+
+    # Priority candidate list across themes (land animals, sea creatures, vehicles)
+    mascot_priorities = [
+        "panda",
+        "bear",
+        "teddy_bear",
+        "puppy",
+        "dog",
+        "kitten",
+        "cat",
+        "bunny",
+        "rabbit",
+        "koala",
+        "dolphin",
+        "turtle",
+        "sea_turtle",
+        "whale",
+        "penguin",
+        "owl",
+        "fox",
+        "deer",
+        "lion",
+        "monkey",
+        "elephant",
+        "tugboat",
+        "train",
+        "airplane",
+    ]
+
+    for cand in mascot_priorities:
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon == cand:
+                return canon
+
+    # 3. Fallback: Find first living creature in manifest
+    for p in interior_pages:
+        canon = str(p.get("canonical_object", "")).lower()
+        sec = str(p.get("section", "")).lower()
+        if (
+            "animal" in sec
+            or "creature" in sec
+            or "sea" in sec
+            or classify_living_taxonomy(canon, sec)
+        ):
+            return canon
+
+    # 4. Ultimate fallback
+    return "panda"
+
+
+def generate_mascot_prompt(
+    mascot_name: str | None = None,
+    book_config_path: str = str(DEFAULT_BOOK_CONFIG),
+    manifest_path: str = str(DEFAULT_PAGES_MANIFEST),
+) -> tuple[str, str]:
+    """Construct dynamic Volume Mascot prompt synthesized via multi-agent debate."""
+    name = mascot_name or auto_pick_volume_mascot(manifest_path, book_config_path)
+    engine = DebateEngine()
+    res = engine.run_mascot_debate(mascot_name=name, book_config_path=book_config_path)
+    return res.positive_prompt, res.negative_prompt
+

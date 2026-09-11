@@ -23,6 +23,26 @@ inanimate_exceptions:
   - stuffed_animal
   - rubber_duck
   - wind_up_toy
+  - hot_dog
+  - hotdog
+  - corn_dog
+  - corndog
+  - butterfly_pasta
+  - dragonfruit
+  - catfish
+
+# Sections that strictly contain inanimate objects.
+# Any object in these sections is inanimate by default unless explicitly overridden.
+inanimate_sections:
+  - "Food & Drinks"
+  - "Fruits & Vegetables"
+  - "Household & Daily Living"
+  - "Clothing & Accessories"
+  - "Vehicles & Transport"
+  - "Musical Instruments"
+  - "Shapes & Geometry"
+  - "Numbers & Counting"
+  - "Alphabet & Letters"
 
 # Any token in canonical_object or section that signals a living being.
 # The engine tokenizes the string and checks for intersection with this list.
@@ -165,6 +185,7 @@ categories:
       - taco
       - sushi
       - hotdog
+      - hot_dog
       - pretzel
       - waffle
       - croissant
