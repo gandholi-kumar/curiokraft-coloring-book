@@ -18,13 +18,30 @@ from pydantic import BaseModel, Field
 
 from curiokraft_book.compositor.brand import create_publisher_badge, get_brand_emblem
 from curiokraft_book.compositor.fonts import get_typography_font
-
-KDP_PAPER_MULTIPLIERS = {
-    "white": 0.002252,
-    "cream": 0.002500,
-    "standard_color": 0.002252,
-    "premium_color": 0.002347,
-}
+from curiokraft_book.constants import (
+    BARCODE_BOX_X1,
+    BARCODE_BOX_X2,
+    BARCODE_BOX_Y1,
+    BARCODE_BOX_Y2,
+    CANVAS_DPI,
+    DEFAULT_BLEED_IN,
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_COVER_HEIGHT_IN,
+    DEFAULT_COVER_OUTPUT_PDF,
+    DEFAULT_COVER_OUTPUT_PNG,
+    DEFAULT_COVER_WIDTH_IN,
+    DEFAULT_CURRICULUM_CONFIG,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_SPINE_WIDTH_IN,
+    DEFAULT_TRIM_HEIGHT_IN,
+    DEFAULT_TRIM_WIDTH_IN,
+    KDP_PAPER_MULTIPLIERS,
+    PUBLISHER_BADGE_HEIGHT,
+    PUBLISHER_BADGE_WIDTH,
+    PUBLISHER_BADGE_X1,
+    PUBLISHER_BADGE_Y1,
+)
 
 
 def _load_yaml(path: str) -> dict:
@@ -46,12 +63,12 @@ def _load_yaml(path: str) -> dict:
 
 
 def calculate_kdp_cover_dimensions(
-    page_count: int,
-    trim_w_in: float = 8.500,
-    trim_h_in: float = 11.000,
+    page_count: int = DEFAULT_PAGE_COUNT,
+    trim_w_in: float = DEFAULT_TRIM_WIDTH_IN,
+    trim_h_in: float = DEFAULT_TRIM_HEIGHT_IN,
     paper_type: str = "white",
-    bleed_in: float = 0.125,
-    dpi: int = 300,
+    bleed_in: float = DEFAULT_BLEED_IN,
+    dpi: int = CANVAS_DPI,
 ) -> dict:
     """Calculate exact Amazon KDP paperback cover dimensions dynamically.
 
@@ -82,10 +99,10 @@ class CoverCompositorResult(BaseModel):
     success: bool
     output_png_path: str
     output_cmyk_pdf_path: str | None = None
-    overall_width_in: float = 17.498
-    overall_height_in: float = 11.250
+    overall_width_in: float = DEFAULT_COVER_WIDTH_IN
+    overall_height_in: float = DEFAULT_COVER_HEIGHT_IN
     canvas_dimensions_px: tuple[int, int]
-    spine_width_in: float = 0.248
+    spine_width_in: float = DEFAULT_SPINE_WIDTH_IN
     spine_width_px: int
     spine_center_x_px: int
     barcode_box_px: tuple[int, int, int, int]
@@ -176,7 +193,7 @@ def _draw_mini_crayon(
 def _draw_3d_multicolor_title(
     canvas: Image.Image,
     text: str,
-    font: ImageFont.FreeTypeFont,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     center_x: int,
     y: int,
     palette: list[str],
@@ -191,10 +208,11 @@ def _draw_3d_multicolor_title(
     char_widths = []
     for ch in text:
         if ch == " ":
-            char_widths.append((ch, font.size // 3))
+            f_size = getattr(font, "size", 38)
+            char_widths.append((ch, int(f_size) // 3))
         else:
             bbox = dummy.textbbox((0, 0), ch, font=font)
-            char_widths.append((ch, (bbox[2] - bbox[0]) + letter_spacing))
+            char_widths.append((ch, int(bbox[2] - bbox[0]) + letter_spacing))
 
     total_w = sum(w for _, w in char_widths) - letter_spacing
     start_x = center_x - (total_w // 2)
@@ -465,16 +483,16 @@ def _draw_preview_card_icon(draw: ImageDraw.ImageDraw, obj: str, cx: int, cy: in
 def composite_kdp_cover(
     front_hero_art_path: str | Path | None = None,
     back_art_path: str | Path | None = None,
-    output_png_path: str | Path = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png",
-    output_pdf_path: str | Path | None = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf",
-    manifest_path: str | Path = "manifest/pages.json",
-    book_config_path: str | Path = "config/book_config.yaml",
-    curriculum_config_path: str | Path = "config/curriculum.yaml",
-    dpi: int = 300,
-    page_count: int = 110,
-    overall_w_in: float = 17.498,
-    overall_h_in: float = 11.250,
-    spine_w_in: float = 0.248,
+    output_png_path: str | Path = DEFAULT_COVER_OUTPUT_PNG,
+    output_pdf_path: str | Path | None = DEFAULT_COVER_OUTPUT_PDF,
+    manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+    book_config_path: str | Path = DEFAULT_BOOK_CONFIG,
+    curriculum_config_path: str | Path = DEFAULT_CURRICULUM_CONFIG,
+    dpi: int = CANVAS_DPI,
+    page_count: int = DEFAULT_PAGE_COUNT,
+    overall_w_in: float = DEFAULT_COVER_WIDTH_IN,
+    overall_h_in: float = DEFAULT_COVER_HEIGHT_IN,
+    spine_w_in: float = DEFAULT_SPINE_WIDTH_IN,
     title: str | None = None,
     subtitle: str | None = None,
     brand_name: str | None = None,
@@ -498,6 +516,16 @@ def composite_kdp_cover(
     overall_w_in = dim_dict["overall_width_in"]  # 17.498 in
     overall_h_in = dim_dict["overall_height_in"]  # 11.250 in
     spine_w_in = dim_dict["spine_width_in"]  # 0.248 in
+
+    # Barcode & Publisher Badge Geometry (Locked Multi-Volume Standard)
+    barcode_x1 = BARCODE_BOX_X1
+    barcode_x2 = BARCODE_BOX_X2
+    barcode_y1 = BARCODE_BOX_Y1
+    barcode_y2 = BARCODE_BOX_Y2
+    badge_x = PUBLISHER_BADGE_X1
+    badge_y = PUBLISHER_BADGE_Y1
+    badge_w = PUBLISHER_BADGE_WIDTH
+    badge_h = PUBLISHER_BADGE_HEIGHT
 
     # Resolve Spine Display Configuration (Priority: book_config.yaml -> curriculum.yaml -> "clean_background")
     spine_cfg = b_cfg.get("cover", {}).get("spine", {})
@@ -597,7 +625,7 @@ def composite_kdp_cover(
     cover = Image.new("RGBA", (total_w_px, total_h_px), (255, 255, 255, 255))
     draw = ImageDraw.Draw(cover)
 
-    if use_full_artwork:
+    if use_full_artwork and front_art_path is not None and back_art_path is not None:
         # =====================================================================
         # PRODUCTION MODE: Precision Compositing of Full Front & Back Artwork
         # =====================================================================
@@ -678,12 +706,6 @@ def composite_kdp_cover(
         cover.paste(spine_img, (spine_left_x, 0), spine_img)
 
         # Draw Clean White Publisher Badge Container with Bottom/Right Box Shadow & Authentic Logo (Option H5)
-        badge_w = 640
-        badge_h = 420
-        badge_x = 180
-        badge_y = (
-            2860  # Perfectly balanced vertically with bottom safe margin (barcode base at 3280 px)
-        )
         badge_patch, pad_px = create_publisher_badge(
             card_w=badge_w,
             card_h=badge_h,
@@ -697,10 +719,6 @@ def composite_kdp_cover(
 
         # Solid Pure White Barcode Box (Exact Frozen KDP Specification: 700 x 430 px @ 300 DPI)
         # Amazon imprints barcode automatically at print time. Zero placeholder text or fake lines.
-        barcode_x1 = 1845
-        barcode_x2 = 2545
-        barcode_y1 = 2850
-        barcode_y2 = 3280
         draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255))
 
     else:
@@ -754,18 +772,18 @@ def composite_kdp_cover(
 
         # Publisher Badge Container (Locked Multi-Volume Standard: 640 x 420 px @ 300 DPI)
         badge_patch, pad_px = create_publisher_badge(
-            card_w=640,
-            card_h=420,
+            card_w=badge_w,
+            card_h=badge_h,
             radius=28,
             offset_x=16,
             offset_y=20,
             blur_radius=20,
             shadow_alpha=95,
         )
-        cover.paste(badge_patch, (180 - pad_px, 2860 - pad_px), badge_patch)
+        cover.paste(badge_patch, (badge_x - pad_px, badge_y - pad_px), badge_patch)
 
         # Barcode Box (Locked Multi-Volume Standard: 700 x 430 px @ 300 DPI)
-        draw.rectangle([1845, 2850, 2545, 3280], fill=(255, 255, 255, 255))
+        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255))
 
     # =========================================================================
     # Final Export (Lossless RGB PNG & Press-Quality CMYK PDF)

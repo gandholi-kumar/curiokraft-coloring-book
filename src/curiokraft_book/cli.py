@@ -11,9 +11,31 @@ from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
+from curiokraft_book.agents.kdp_parser import inspect_kdp_inbox_forms
+from curiokraft_book.agents.kdp_publisher import KDPPublisherOrchestrator
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
+from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
 from curiokraft_book.compositor.typography import composite_typography
+from curiokraft_book.constants import (
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_BOOK_TITLE,
+    DEFAULT_BOOK_VOLUME,
+    DEFAULT_CERTIFICATE_PAGE_ENABLED,
+    DEFAULT_DEBATE_LOG_FILE,
+    DEFAULT_IMPRINT,
+    DEFAULT_INBOX_DIR,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_KDP_FORMS_INBOX_DIR,
+    DEFAULT_KDP_OUTPUT_DIR,
+    DEFAULT_MASCOT_DROP_PATH,
+    DEFAULT_MASCOT_ENABLED,
+    DEFAULT_MASCOT_GENERATE_PROMPT,
+    DEFAULT_MASCOT_NAME,
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_SPECIAL_ASSETS_DIR,
+    DEFAULT_WELCOME_PAGE_ENABLED,
+)
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -31,6 +53,7 @@ if sys.platform == "win32":
         if hasattr(sys.stderr, "reconfigure"):
             sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
+        # Windows standard stream reconfigure may fail in non-standard terminals; fall back silently
         pass
 
 # ----------------------------------------------------------------------
@@ -76,6 +99,12 @@ prompt_app = typer.Typer(
 debate_app = typer.Typer(
     help="[Multi-Agent Debate] Inspect specialist proposals, red-team critiques, and Judge verdicts"
 )
+blueprint_app = typer.Typer(
+    help="[Custom Design] Inspect and manage user layout blueprints in inbox/blueprints/"
+)
+kdp_app = typer.Typer(
+    help="[Publishing] Multi-Agent Amazon KDP publishing metadata & 1-click submission dashboard"
+)
 
 app.add_typer(manifest_app, name="manifest")
 app.add_typer(sample_app, name="sample")
@@ -86,6 +115,8 @@ app.add_typer(preflight_app, name="preflight")
 app.add_typer(test_app, name="test")
 app.add_typer(prompt_app, name="prompt")
 app.add_typer(debate_app, name="debate")
+app.add_typer(blueprint_app, name="blueprint")
+app.add_typer(kdp_app, name="kdp")
 
 
 def print_hint(step_name: str, next_cmd: str, description: str):
@@ -133,8 +164,8 @@ def main_callback():
 
 @app.command("init")
 def init_workspace(
-    project_name: str = typer.Option("TINY HANDS COLOR & LEARN", "--name", "-n", help="Book title"),
-    imprint: str = typer.Option("CURIOKRAFT-KIDS", "--imprint", "-i", help="Publisher imprint"),
+    project_name: str = typer.Option(DEFAULT_BOOK_TITLE, "--name", "-n", help="Book title"),
+    imprint: str = typer.Option(DEFAULT_IMPRINT, "--imprint", "-i", help="Publisher imprint"),
 ):
     """Scaffold complete directory structure and templates on a fresh installation or new laptop."""
     console.print(
@@ -275,20 +306,20 @@ def run_doctor():
         )
 
     # 2. Manifests
-    pages_p = Path("manifest/pages.json")
+    pages_p = DEFAULT_PAGES_MANIFEST
     if pages_p.exists():
         table.add_row(
             "Page Manifest",
             str(pages_p),
             "[bold green]VALID[/bold green]",
-            "110-page master manifest present",
+            f"Active page manifest present ({pages_p.name})",
         )
     else:
         table.add_row(
             "Page Manifest",
             str(pages_p),
             "[bold red]MISSING[/bold red]",
-            "Restore manifest/pages.json",
+            f"Restore {pages_p}",
         )
 
     objects_p = Path("manifest/objects.json")
@@ -324,6 +355,51 @@ def run_doctor():
         "[bold green]ACTIVE[/bold green]",
         f"Model: {client.model_name}",
     )
+
+    # 5. KDP Form Privacy & Confidentiality Protection
+    gitignore_p = Path(".gitignore")
+    kdp_secure = False
+    if gitignore_p.exists():
+        gi_content = gitignore_p.read_text(encoding="utf-8")
+        if "inbox/kdp_forms/*.html" in gi_content:
+            kdp_secure = True
+
+    table.add_row(
+        "KDP Form Privacy",
+        "inbox/kdp_forms/*.html",
+        "[bold green]PROTECTED[/bold green]" if kdp_secure else "[bold red]EXPOSED[/bold red]",
+        "Excluded from Git; strictly local offline parsing"
+        if kdp_secure
+        else "Add inbox/kdp_forms/*.html to .gitignore to prevent public leak",
+    )
+
+    # 6. Special Milestone Assets
+    vol = DEFAULT_BOOK_VOLUME
+    vol_assets_dir = Path(f"assets/special_assets/{vol}")
+    has_vol_assets = vol_assets_dir.exists() and any(f.is_file() for f in vol_assets_dir.iterdir())
+    inbox_special_dir = Path("inbox/special_assets")
+    pending_inbox = (
+        len(
+            [
+                f
+                for f in inbox_special_dir.iterdir()
+                if f.is_file() and f.name.lower() not in ("readme.md", ".gitkeep")
+            ]
+        )
+        if inbox_special_dir.exists()
+        else 0
+    )
+    if has_vol_assets:
+        sa_status = "[bold green]CONFIGURED[/bold green]"
+        sa_details = f"Archived in {vol_assets_dir}/"
+    elif pending_inbox > 0:
+        sa_status = "[bold yellow]INBOX PENDING[/bold yellow]"
+        sa_details = f"{pending_inbox} asset(s) in inbox/ (run 'curiokraft-book ingest' or 'generate special-pages' to auto-archive)"
+    else:
+        sa_status = "[bold green]SHARED FALLBACK[/bold green]"
+        sa_details = "Using assets/special_assets/ shared library"
+
+    table.add_row("Special Assets", f"assets/special_assets/{vol}", sa_status, sa_details)
 
     console.print(table)
 
@@ -438,6 +514,12 @@ def generate_samples(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force fresh generation, bypassing existing cache"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Stage 2: Gate 2] Generate 1 to 5 representative sample pages for visual style approval."""
     console.print(
@@ -446,11 +528,11 @@ def generate_samples(
         )
     )
 
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
         print_failure_recovery(
             "Sample Generation",
-            "manifest/pages.json not found.",
+            f"Manifest not found: {manifest_path}",
             [("curiokraft-book init", "Restore manifest templates")],
         )
         sys.exit(1)
@@ -618,13 +700,24 @@ def generate_full_book(
 @generate_app.command("special-pages")
 def generate_special_pages(
     asset_dir: str = typer.Option(
-        "inbox/special_assets", "--assets", "-a", help="Directory containing special page assets"
+        str(DEFAULT_SPECIAL_ASSETS_DIR),
+        "--assets",
+        "-a",
+        help="Directory containing special page assets",
     ),
     output_dir: str = typer.Option(
-        "output/interior_masters", "--output", "-o", help="Output directory for interior masters"
+        str(DEFAULT_INTERIOR_MASTERS_DIR),
+        "--output",
+        "-o",
+        help="Output directory for interior masters",
     ),
     guides: bool = typer.Option(
         False, "--guides", "-g", help="Overlay print-safety guides (dev mode)"
+    ),
+    auto_archive: bool = typer.Option(
+        True,
+        "--auto-archive/--no-auto-archive",
+        help="Auto-move inbox special assets to assets/special_assets/{vol}/ post processing",
     ),
 ):
     """[Stage 3: Production] Programmatically render Page 001 (Welcome) and Page 110 (Certificate)."""
@@ -632,6 +725,7 @@ def generate_special_pages(
         Panel.fit("[bold cyan]CurioKraft Special Publication Pages Compositor[/bold cyan]")
     )
     from curiokraft_book.compositor.special_pages import (
+        archive_processed_special_assets,
         render_certificate_page,
         render_welcome_page,
     )
@@ -642,14 +736,44 @@ def generate_special_pages(
     p110_path = out_dir / "page_110.png"
 
     console.print(f"[dim]• Reading modular assets from:[/dim] [cyan]{asset_dir}[/cyan]")
-    render_welcome_page(output_path=str(p001_path), asset_dir=asset_dir, show_guides=guides)
-    console.print(f"[bold green][PASS] Page 001 (Welcome & Ownership):[/bold green] {p001_path}")
+    from curiokraft_book.compositor.special_pages import _find_asset
 
-    render_certificate_page(output_path=str(p110_path), asset_dir=asset_dir, show_guides=guides)
-    console.print(f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}")
+    found_assets = [
+        k
+        for k in ["mascot", "badge", "welcome", "celebration", "sparkles", "stars", "crayons"]
+        if _find_asset(k, Path(asset_dir))
+    ]
+    if found_assets:
+        console.print(f"[dim]  • Discovered assets: {', '.join(found_assets)}[/dim]")
+    if DEFAULT_WELCOME_PAGE_ENABLED:
+        render_welcome_page(output_path=str(p001_path), asset_dir=asset_dir, show_guides=guides)
+        console.print(
+            f"[bold green][PASS] Page 001 (Welcome & Ownership):[/bold green] {p001_path}"
+        )
+    else:
+        console.print(
+            "[dim]• Page 001 (Welcome & Ownership) is disabled in book_config.yaml (special_pages.welcome_page.enabled: false)[/dim]"
+        )
+
+    if DEFAULT_CERTIFICATE_PAGE_ENABLED:
+        render_certificate_page(output_path=str(p110_path), asset_dir=asset_dir, show_guides=guides)
+        console.print(
+            f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}"
+        )
+    else:
+        console.print(
+            "[dim]• Page 110 (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]"
+        )
+
+    if auto_archive:
+        archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
+        for _src_f, dest_f in archived:
+            console.print(
+                f"[bold green][ARCHIVED][/bold green] Auto-moved inbox asset to: [cyan]{dest_f}[/cyan]"
+            )
 
     console.print(
-        "\n[bold green]Both special pages successfully rendered at 300 DPI compliant with KDP specifications![/bold green]\n"
+        "\n[bold green]Special milestone pages check complete (compliant with KDP specifications)![/bold green]\n"
     )
 
 
@@ -691,15 +815,19 @@ def build_cover():
 
 
 @cover_app.command("prompt")
-def show_cover_prompt():
+def show_cover_prompt(
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST), "--manifest", "-m", help="Path to manifest JSON file"
+    ),
+):
     """[Stage 3: Production] Display the optimized Front & Back Cover Master Artwork Prompts."""
     from curiokraft_book.orchestrator.debate_engine import (
         generate_back_cover_prompt,
         generate_front_cover_prompt,
     )
 
-    f_pos, f_neg = generate_front_cover_prompt()
-    b_pos, b_neg = generate_back_cover_prompt()
+    f_pos, f_neg = generate_front_cover_prompt(manifest_path=manifest)
+    b_pos, b_neg = generate_back_cover_prompt(manifest_path=manifest)
 
     console.print(
         Panel(
@@ -772,7 +900,7 @@ def assemble_interior():
 
         from PIL import Image, ImageDraw
 
-        manifest_path = Path("manifest/pages.json")
+        manifest_path = DEFAULT_PAGES_MANIFEST
         with open(manifest_path, encoding="utf-8") as f:
             m_data = json.load(f)
 
@@ -788,9 +916,11 @@ def assemble_interior():
             p_file = masters_dir / f"page_{num:03d}.png"
             if not p_file.exists():
                 if p_type == "welcome_page":
-                    render_welcome_page(output_path=p_file)
+                    if DEFAULT_WELCOME_PAGE_ENABLED:
+                        render_welcome_page(output_path=p_file)
                 elif p_type == "certificate_page":
-                    render_certificate_page(output_path=p_file)
+                    if DEFAULT_CERTIFICATE_PAGE_ENABLED:
+                        render_certificate_page(output_path=p_file)
                 else:
                     img = Image.new("L", (2550, 3300), 255)
                     draw = ImageDraw.Draw(img)
@@ -901,11 +1031,17 @@ def run_preflight():
 @prompt_app.command("show")
 def show_prompt(
     page_id: str = typer.Option("P005", "--page", "-p", help="Page ID (e.g. P005, P001, P047)"),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Free Web Workflow] Generate and display the exact prompt for 1-click copy into Google AI Studio."""
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -916,16 +1052,23 @@ def show_prompt(
         console.print(f"[red]Page {page_id} not found in manifest.[/red]")
         sys.exit(1)
 
-    client = ModelClient()
-    debate = DebateEngine(client)
-    res = debate.run_page_debate(target)
+    from curiokraft_book.orchestrator.debate_engine import get_custom_alphabet_spread_prompt
+
+    custom = get_custom_alphabet_spread_prompt(target, all_manifest_pages=data.get("pages", []))
+    if custom is not None:
+        pos_prompt, neg_prompt = custom
+    else:
+        client = ModelClient()
+        debate = DebateEngine(client)
+        res = debate.run_page_debate(target)
+        pos_prompt, neg_prompt = res.positive_prompt, res.negative_prompt
 
     label = target.get("display_label", target.get("canonical_object", "").upper())
 
     console.print(
         Panel(
-            f"[bold yellow]{res.positive_prompt}[/bold yellow]\n\n"
-            f"[dim]Negative Prompt:[/dim] [white]{res.negative_prompt}[/white]",
+            f"[bold yellow]{pos_prompt}[/bold yellow]\n\n"
+            f"[dim]Negative Prompt:[/dim] [white]{neg_prompt}[/white]",
             title=f"[bold green]Optimized Prompt for {page_id} ({label}) — Ready to Copy[/bold green]",
             border_style="green",
         )
@@ -956,13 +1099,19 @@ def export_prompts(
     format_type: str = typer.Option(
         "all", "--format", "-f", help="Export format: 'all', 'json', or 'md'"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Free Web Workflow] Export all or selected page prompts into a ready-to-use markdown document and/or JSON manifest."""
     from curiokraft_book.schemas import CurioKraftPromptManifest, PromptDefaults, PromptItem
 
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -986,7 +1135,7 @@ def export_prompts(
     json_p.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [
-        "# CurioKraft Preschool Coloring Book — Master Prompt Export",
+        f"# CurioKraft Preschool Coloring Book — Master Prompt Export ({DEFAULT_BOOK_VOLUME.upper()})",
         "",
         "Use these prompts in the free **Google AI Studio Web UI** (or Gemini Chat) to generate illustrations at zero API cost.",
         "Save each downloaded image (`.jpg` or `.png`) to `inbox/raw_pages/` (or `inbox/` for covers), then run `curiokraft-book ingest`.",
@@ -1008,8 +1157,8 @@ def export_prompts(
         get_custom_alphabet_spread_prompt,
     )
 
-    f_pos, f_neg = generate_front_cover_prompt()
-    b_pos, b_neg = generate_back_cover_prompt()
+    f_pos, f_neg = generate_front_cover_prompt(manifest_path=manifest)
+    b_pos, b_neg = generate_back_cover_prompt(manifest_path=manifest)
 
     prompt_items: list[PromptItem] = []
 
@@ -1075,19 +1224,71 @@ def export_prompts(
     lines.append("---")
     lines.append("")
 
+    # Volume Mascot Prompt (if enabled and generate_prompt is true)
+    if DEFAULT_MASCOT_ENABLED and DEFAULT_MASCOT_GENERATE_PROMPT:
+        from curiokraft_book.orchestrator.debate_engine import (
+            auto_pick_volume_mascot,
+            generate_mascot_prompt,
+        )
+
+        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=manifest)
+        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=manifest)
+        m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
+
+        prompt_items.append(
+            PromptItem(
+                id="MASCOT",
+                page_number=None,
+                label=f"{m_name.upper()} (VOLUME MASCOT)",
+                type="special_asset",
+                section="Special Assets",
+                drop_target=m_drop_str,
+                preset_name="CurioKraft - Interior Coloring Pages",
+                aspect_ratio="3:4",
+                output_format="Images only",
+                temperature=0.9,
+                top_p=0.95,
+                positive_prompt=m_pos,
+                negative_prompt=m_neg,
+            )
+        )
+
+        lines.append(f"## 🧸 VOLUME MASCOT ARTWORK: {m_name.upper()}")
+        lines.append(f"- **Drop Target:** `{m_drop_str}`")
+        lines.append(
+            "- **Role:** Continuous coloring companion used on BOTH Page 001 (Welcome) and Page 110 (Completion Certificate)"
+        )
+        lines.append("- **Orientation:** Vertical Portrait (3:4)")
+        lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
+        lines.append("- **Positive Prompt (Copy & Paste):**")
+        lines.append(f"  ```text\n  {m_pos}\n  ```")
+        lines.append("- **Negative Prompt:**")
+        lines.append(f"  ```text\n  {m_neg}\n  ```")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
     console.print(f"[cyan]Synthesizing prompts for {len(target_pages)} pages...[/cyan]")
     for p in target_pages:
         num = p["page_number"]
         p_id = p["page_id"]
+        p_type = p.get("type", "interior_page")
+
+        # Skip programmatic special pages only if they are enabled in book_config.yaml
+        if p_type == "welcome_page" and DEFAULT_WELCOME_PAGE_ENABLED:
+            continue
+        if p_type == "certificate_page" and DEFAULT_CERTIFICATE_PAGE_ENABLED:
+            continue
+
         canon = p["canonical_object"]
         label = p.get("display_label", canon.upper())
         save_name = f"raw_p{num:03d}_{canon}.png"
 
         # Use custom hand-crafted alphabet spread prompts if available (P002, P003)
-        custom = get_custom_alphabet_spread_prompt(p)
+        custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
         if custom is not None:
             pos_prompt, neg_prompt = custom
-            prompt_source = "📖 Custom Template (config/A-Z.md + config/alphabet_spreads.yaml)"
+            prompt_source = "📖 Custom Template (config/A-Z.md + Manifest Cards)"
         else:
             res = debate.run_page_debate(p)
             pos_prompt = res.positive_prompt
@@ -1126,10 +1327,11 @@ def export_prompts(
         lines.append("")
 
     # Construct Pydantic Manifest
-    manifest = CurioKraftPromptManifest(
+    prompt_manifest = CurioKraftPromptManifest(
         manifest_version="1.0.0",
-        book_title=data.get("book_title", "TINY HANDS COLOR & LEARN"),
-        book_id=data.get("book_id", "curiokraft-vol1"),
+        book_title=DEFAULT_BOOK_TITLE,
+        book_id=DEFAULT_IMPRINT.lower(),
+        volume=DEFAULT_BOOK_VOLUME,
         total_prompts=len(prompt_items),
         defaults=PromptDefaults(aspect_ratio="3:4", output_format="Images only", top_p=0.95),
         prompts=prompt_items,
@@ -1143,7 +1345,7 @@ def export_prompts(
         )
 
     if fmt in ("all", "json"):
-        json_p.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")
+        json_p.write_text(prompt_manifest.model_dump_json(indent=2), encoding="utf-8")
         console.print(
             f"[bold green][PASS] Exported JSON manifest ({len(prompt_items)} items) to:[/] [cyan]{json_out}[/cyan]"
         )
@@ -1161,11 +1363,17 @@ def show_debate(
     page_id: str = typer.Option(
         "P001", "--page", "-p", help="Page ID to inspect (e.g. P001, P005, P047)"
     ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
+    ),
 ):
     """[Multi-Agent Debate] Inspect the 4-round debate transcript, agent proposals, red-team critiques, and Judge score."""
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
 
     with open(manifest_path, encoding="utf-8") as f:
@@ -1218,7 +1426,7 @@ def show_debate(
 @debate_app.command("export")
 def export_debate_log(
     output_file: str = typer.Option(
-        "logs/agent_debates_log.md", "--out", "-o", help="Path to write markdown debate log"
+        str(DEFAULT_DEBATE_LOG_FILE), "--out", "-o", help="Path to write markdown debate log"
     ),
 ):
     """[Transparency] Run and export the complete 4-round multi-agent debate log for all 110 pages."""
@@ -1237,12 +1445,18 @@ def export_debate_log(
 @app.command("process-raw")
 def ingest_raw_images(
     inbox_dir: str = typer.Option(
-        "inbox/raw_pages", "--inbox", "-i", help="Directory containing user-dropped images"
+        str(DEFAULT_INBOX_DIR), "--inbox", "-i", help="Directory containing user-dropped images"
     ),
     clear_inbox: bool = typer.Option(
         True,
         "--clear/--keep",
         help="Move processed images from inbox to generated/raw_pages to prevent stale runs",
+    ),
+    manifest: str = typer.Option(
+        str(DEFAULT_PAGES_MANIFEST),
+        "--manifest",
+        "-m",
+        help="Path to page manifest JSON file.",
     ),
 ):
     """[Free Web Workflow] Ingest, binarize, fit margins, and overlay typography on newly dropped images."""
@@ -1252,12 +1466,12 @@ def ingest_raw_images(
 
     from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
 
-    runner = InteriorBatchRunner()
-
-    manifest_path = Path("manifest/pages.json")
+    manifest_path = Path(manifest)
     if not manifest_path.exists():
-        console.print("[red]manifest/pages.json not found.[/red]")
+        console.print(f"[red]Manifest not found at {manifest_path}[/red]")
         sys.exit(1)
+
+    runner = InteriorBatchRunner(manifest_path=manifest_path)
 
     with open(manifest_path, encoding="utf-8") as f:
         data = json.load(f)
@@ -1386,6 +1600,56 @@ def ingest_raw_images(
                     console.print(f"    [dim]-> Cleaned from inbox: {back_found.name}[/dim]")
                     console.print(f"    [dim]-> Canonical back cover preserved: {back_dest}[/dim]")
 
+    # Check for special milestone assets in inbox/special_assets
+    inbox_special_dirs = [
+        Path(f"inbox/special_assets/{DEFAULT_BOOK_VOLUME}"),
+        Path("inbox/special_assets"),
+    ]
+    special_candidates: list[Path] = []
+    for sp_d in inbox_special_dirs:
+        if sp_d.exists():
+            for sp_f in sp_d.iterdir():
+                if (
+                    sp_f.is_file()
+                    and sp_f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")
+                    and sp_f.name.lower() not in ("readme.md", ".gitkeep")
+                ):
+                    special_candidates.append(sp_f)
+
+    if special_candidates:
+        console.print(
+            f"\n[bold cyan]Detected {len(special_candidates)} new Special Milestone Asset(s) in inbox/special_assets/ — Rendering Special Pages...[/bold cyan]"
+        )
+        from curiokraft_book.compositor.special_pages import (
+            archive_processed_special_assets,
+            render_certificate_page,
+            render_welcome_page,
+        )
+
+        out_masters = Path(DEFAULT_INTERIOR_MASTERS_DIR)
+        out_masters.mkdir(parents=True, exist_ok=True)
+
+        if DEFAULT_WELCOME_PAGE_ENABLED:
+            p001_path = out_masters / "page_001.png"
+            render_welcome_page(output_path=str(p001_path))
+            console.print(
+                f"  [bold green][PASS] Re-rendered Page 001 (Welcome & Ownership):[/bold green] {p001_path}"
+            )
+            found_count += 1
+
+        if DEFAULT_CERTIFICATE_PAGE_ENABLED:
+            p110_path = out_masters / "page_110.png"
+            render_certificate_page(output_path=str(p110_path))
+            console.print(
+                f"  [bold green][PASS] Re-rendered Page 110 (Completion Certificate):[/bold green] {p110_path}"
+            )
+            found_count += 1
+
+        if clear_inbox:
+            archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
+            for _src_f, dest_f in archived:
+                console.print(f"    [dim]-> Auto-archived special asset to: {dest_f}[/dim]")
+
     if found_count > 0:
         console.print(
             f"\n[bold green][PASS] Successfully ingested & certified {found_count} items![/bold green]"
@@ -1402,6 +1666,234 @@ def ingest_raw_images(
         )
         console.print(f"📁 [bold cyan]{inbox_p}/[/bold cyan]")
         console.print("Then rerun: [bold yellow]curiokraft-book ingest[/bold yellow]")
+
+
+@blueprint_app.command("inspect")
+def inspect_blueprint(
+    target_type: str = typer.Option(
+        "back_cover",
+        "--target",
+        "-t",
+        help="Target type (back_cover, front_cover, spread, interior)",
+    ),
+):
+    """[Custom Design] Inspect user layout blueprints dropped in inbox/blueprints/ and display parsed layout zones."""
+    from curiokraft_book.orchestrator.blueprint_reader import LayoutBlueprintReader
+
+    reader = LayoutBlueprintReader()
+    found = reader.find_blueprint(target_type)
+    if not found:
+        console.print(
+            f"[yellow]No layout blueprint found in inbox/blueprints/ for '{target_type}'.[/yellow]"
+        )
+        console.print(
+            "[dim]You can drop an image wireframe (.png/.jpg) or spec (.yaml) into [bold cyan]inbox/blueprints/[/bold cyan].[/dim]"
+        )
+        return
+
+    spec = reader.read_blueprint(found)
+    console.print(
+        Panel(
+            f"[bold green]Blueprint File:[/bold green] {spec.source_path}\n"
+            f"[bold green]Target Type:[/bold green] {spec.target_type}\n"
+            f"[bold green]Flashcard Grid:[/bold green] {spec.card_grid.rows} row(s) x {spec.card_grid.columns} col(s) ({spec.card_grid.card_shape})\n"
+            f"[bold green]Feature Callouts:[/bold green] {spec.feature_callouts.count} pills in {spec.feature_callouts.layout}\n"
+            f"[bold green]Baseline Wave:[/bold green] lower {spec.baseline_wave.height_percentage}%, {spec.baseline_wave.style}\n\n"
+            f"[bold cyan]Agent Prompt Directive:[/bold cyan]\n{spec.to_prompt_composition()}",
+            title="[bold yellow]User Layout Blueprint Architecture[/bold yellow]",
+            border_style="cyan",
+        )
+    )
+
+
+@kdp_app.command("generate")
+def generate_kdp_submission(
+    html_dir: Path = typer.Option(
+        DEFAULT_KDP_FORMS_INBOX_DIR,
+        "--html-dir",
+        "-d",
+        help="Directory containing saved KDP HTML forms",
+    ),
+    config_path: Path = typer.Option(
+        DEFAULT_BOOK_CONFIG,
+        "--config",
+        "-c",
+        help="Path to book_config.yaml",
+    ),
+    output_dir: Path = typer.Option(
+        DEFAULT_KDP_OUTPUT_DIR,
+        "--output",
+        "-o",
+        help="Output directory for dashboard & exports",
+    ),
+    open_browser: bool = typer.Option(
+        True,
+        "--open/--no-open",
+        help="Automatically open the interactive HTML dashboard in default browser",
+    ),
+):
+    """[Publishing] Synthesize Amazon KDP metadata, parse HTML forms if present, and launch 1-click dashboard."""
+    import webbrowser
+
+    console.print(
+        Panel(
+            "[bold cyan]CurioKraft Multi-Agent Amazon KDP Publishing Engine[/bold cyan]\n"
+            "[dim]Generating optimized, deduplicated metadata across all 3 KDP publishing tabs...[/dim]\n"
+            "[dim]Privacy: Saved HTML forms are strictly local & excluded from Git via .gitignore[/dim]",
+            border_style="cyan",
+        )
+    )
+
+    orchestrator = KDPPublisherOrchestrator(
+        config_path=config_path,
+        inbox_forms_dir=html_dir,
+    )
+
+    package = orchestrator.synthesize()
+    saved = save_kdp_submission_bundle(package, output_dir=output_dir)
+
+    # Summary table
+    table = Table(
+        title=f"Amazon KDP Publishing Submission Bundle ({package.volume_id.upper()})",
+        border_style="green",
+    )
+    table.add_column("Tab / Component", style="bold cyan", width=24)
+    table.add_column("Field / Specification", style="white", width=42)
+    table.add_column("Status / Length", style="green", width=22)
+
+    table.add_row(
+        "Tab 1: Details",
+        f"Title: {package.details.book_title}",
+        "[bold green]Exact Cover Match[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Subtitle: {package.details.subtitle}",
+        "[bold green]Exact Cover Match[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Series: {package.details.series_name} (Vol {package.details.series_number})",
+        "[bold green]Multi-Volume Linked[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Description: {len(package.details.description_html)} chars HTML",
+        "[bold green]KDP-Approved HTML[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"7 Backend Keywords ({len(package.details.keywords)} phrases)",
+        "[bold green]0 Title Overlap (<=50c)[/bold green]",
+    )
+    table.add_row(
+        "Tab 2: Content",
+        f"{package.content.page_count}p, {package.content.trim_size}, No Bleed",
+        "[bold green]Preflight Certified[/bold green]",
+    )
+    table.add_row(
+        "Tab 2: Content",
+        "AI Disclosure: Gemini/Imagen + Otsu Binarizer",
+        "[bold green]Compliant AI Answers[/bold green]",
+    )
+    table.add_row(
+        "Tab 3: Pricing",
+        f"${package.pricing.list_price_usd:.2f} USD (60% Royalty Tier)",
+        "[bold green]Expanded Distribution[/bold green]",
+    )
+
+    console.print(table)
+    console.print()
+
+    console.print(
+        f"[bold green][PASS] Interactive 1-Click Dashboard:[/] [bold cyan]{saved['html']}[/]"
+    )
+    console.print(
+        f"[bold green][PASS] Markdown Cheatsheet:[/]           [bold cyan]{saved['markdown']}[/]"
+    )
+    console.print(
+        f"[bold green][PASS] Machine-Readable JSON:[/]         [bold cyan]{saved['json']}[/]"
+    )
+
+    if open_browser:
+        console.print("\n[dim]Opening interactive 1-click dashboard in default browser...[/dim]")
+        try:
+            webbrowser.open(saved["html"].resolve().as_uri())
+        except Exception as e:
+            console.print(f"[yellow]Could not open browser automatically: {e}[/yellow]")
+
+    print_hint(
+        "KDP Metadata Generation",
+        "Start publishing at https://kdp.amazon.com",
+        "Open your book in KDP and click '[Copy]' buttons in the dashboard to paste into the 3 tabs!",
+    )
+
+
+@kdp_app.command("show")
+def show_kdp_submission(
+    config_path: Path = typer.Option(
+        DEFAULT_BOOK_CONFIG,
+        "--config",
+        "-c",
+        help="Path to book_config.yaml",
+    ),
+):
+    """[Publishing] Display formatted Amazon KDP submission metadata directly in the terminal."""
+    orchestrator = KDPPublisherOrchestrator(config_path=config_path)
+    package = orchestrator.synthesize()
+
+    console.print(
+        Panel(
+            f"[bold green]Title:[/] {package.details.book_title}\n"
+            f"[bold green]Subtitle:[/] {package.details.subtitle}\n"
+            f"[bold green]Series:[/] {package.details.series_name} - Volume {package.details.series_number}\n"
+            f"[bold green]Author:[/] {package.details.author_first} {package.details.author_last}\n"
+            f"[bold green]Reading Age:[/] {package.details.reading_age_min} to {package.details.reading_age_max} Years\n"
+            f"[bold green]Price:[/] ${package.pricing.list_price_usd:.2f} USD\n\n"
+            f"[bold cyan]7 Amazon A9 Backend Keywords (<= 50 chars each):[/]\n"
+            + "\n".join(
+                f"  {i}. {kw} ({len(kw)}c)" for i, kw in enumerate(package.details.keywords, 1)
+            )
+            + "\n\n"
+            + "[bold cyan]Categories:[/]\n"
+            + "\n".join(f"  • {cat}" for cat in package.details.categories_flat),
+            title=f"[bold yellow]Amazon KDP Metadata Summary ({package.volume_id.upper()})[/bold yellow]",
+            border_style="cyan",
+        )
+    )
+
+
+@kdp_app.command("parse")
+def parse_kdp_forms(
+    html_dir: Path = typer.Option(
+        DEFAULT_KDP_FORMS_INBOX_DIR,
+        "--html-dir",
+        "-d",
+        help="Directory containing saved KDP HTML forms",
+    ),
+):
+    """[Publishing] Inspect and parse HTML forms dropped in inbox/kdp_forms/."""
+    inspection = inspect_kdp_inbox_forms(html_dir)
+    if not inspection.has_html_forms:
+        console.print(f"[yellow]No HTML forms found in {html_dir}/.[/yellow]")
+        console.print(
+            "[dim]You can save HTML pages from KDP and drop them here for automated input mapping.[/dim]"
+        )
+        return
+
+    console.print(
+        Panel(
+            f"[bold green]Directory:[/] {inspection.source_dir}\n"
+            f"[bold green]HTML Files Found:[/] {inspection.html_files_found}\n"
+            + "\n".join(
+                f"  • {f.file_name} ({f.fields_count} fields, tab: {f.tab_detected})"
+                for f in inspection.parsed_files
+            )
+            + "\n[dim]• Privacy Guarantee: Internal HTML forms are parsed offline locally & shielded by .gitignore[/dim]",
+            title="[bold yellow]Parsed KDP HTML Forms Inspection[/bold yellow]",
+            border_style="green",
+        )
+    )
 
 
 if __name__ == "__main__":

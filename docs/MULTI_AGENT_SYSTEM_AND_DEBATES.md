@@ -476,3 +476,40 @@ All multi-agent decisions and generation events are recorded across dedicated lo
 | **`logs/pipeline.log`** | **Execution Log:** Timestamped lifecycle events, provider selections, status transitions, and batch statistics. |
 | **`logs/failures.log`** | **Troubleshooting:** Warning and error stack traces with recovery actions. |
 | **`logs/debug.log`** | **Debug Payloads:** Raw LLM JSON payloads, bounding box measurements, and Otsu thresholds. |
+
+---
+
+## 7. Amazon KDP Publishing & Submission Multi-Agent Team
+
+In addition to the 10-agent interior creative debate engine (AGT-001 through AGT-010), the system deploys a dedicated 4-agent team specifically for Amazon Kindle Direct Publishing (KDP) metadata generation and compliance (`curiokraft-book kdp generate`):
+
+```mermaid
+flowchart TD
+    Config["config/book_config.yaml"] --> KDP_Engine["KDP Publishing Engine"]
+    Inbox["inbox/kdp_forms/*.html"] --> Parser["AGT-KDP-004: Form Parser & Ingestion Agent"]
+    
+    subgraph KDP_Agents ["KDP Multi-Agent Council"]
+        Parser -->|82 Field Schema & Limits| Comp["AGT-KDP-003: Compliance Agent"]
+        KDP_Engine --> SEO["AGT-KDP-001: SEO & Keyword Agent"]
+        KDP_Engine --> Copy["AGT-KDP-002: Sales Copywriter Agent"]
+        KDP_Engine --> Comp
+    end
+    
+    SEO --> Audit["Agent Deliberation Audit Log (Tab 4)"]
+    Copy --> Audit
+    Comp --> Audit
+    Parser --> Audit
+    
+    Audit --> Dashboard["output/kdp/kdp_submission_helper.html"]
+```
+
+| Agent ID | Role | Core Responsibility & Contractual Guarantee |
+| :--- | :--- | :--- |
+| **`AGT-KDP-001`** | **KDP SEO & Keyword Specialist** | • Enforces negative deduplication against Book Title/Subtitle.<br>• Generates 7 high-intent keyword phrases strictly $\le 50$ characters.<br>• Synthesizes Category Modal hierarchical navigation trees matching Amazon UI. |
+| **`AGT-KDP-002`** | **Amazon Sales Copywriter** | • Enforces Amazon's **Zero Emojis & Standard Characters** rule.<br>• Formats descriptions using only permitted KDP HTML tags (`<h2>`, `<h3>`, `<p>`, `<b>`, `<i>`, `<ul>`, `<li>`).<br>• Structures persuasive parent-focused conversion copy. |
+| **`AGT-KDP-003`** | **Technical Preflight & Compliance** | • Locks print geometry ($8.5 \times 11\text{ in}$, No Bleed, 110p, Glossy, B&W interior).<br>• Formulates compliant 2024/2026 Amazon AI content disclosures.<br>• Evaluates $6.99 list price against 60% royalty threshold and Expanded Distribution. |
+| **`AGT-KDP-004`** | **Form Ingestion & Reverse Engineering** | • Parses live saved Amazon HTML forms dropped in `inbox/kdp_forms/`.<br>• Maps all 82 form elements, input names, IDs, selects, and character limits.<br>• Feeds live field schema back to the agent team for 100% field alignment. |
+
+> [!NOTE]
+> All 4 agent deliberations, rationale, and search strategies are rendered transparently in Tab 4 of `output/kdp/kdp_submission_helper.html` and documented in [docs/KDP_PUBLISHING_METADATA_GUIDE.md](KDP_PUBLISHING_METADATA_GUIDE.md).
+

@@ -1,7 +1,30 @@
 book:
   title: "TINY HANDS COLOR & LEARN"
-  subtitle: "FUN & EASY FIRST WORDS"
+  subtitle: "FUN & EASY FIRST WORDS - Vol 2"
+  volume: "vol2"
   brand: "CURIOKRAFT-KIDS"
+  manifest: "manifest/pages_vol2.json"  # Active pages manifest path (e.g. manifest/pages_vol2.json for Vol 2)
+  
+  # ============================================================================
+  # Milestone Bookend Pages Configuration (Include / Exclude)
+  # ============================================================================
+  special_pages:
+    welcome_page:
+      enabled: true          # true = include Page 001 Welcome; false = standard coloring page
+      page_number: 1
+    certificate_page:
+      enabled: true          # true = include Page 110 Certificate; false = standard coloring page
+      page_number: 110
+
+  # ============================================================================
+  # Volume Mascot Configuration (Theme-Aligned)
+  # ============================================================================
+  mascot:
+    enabled: true            # true = volume uses a mascot; false = exclude mascot completely
+    name: "panda"            # Specific mascot (e.g. panda, dolphin, tugboat). If omitted/null, auto-picks from active theme
+    generate_prompt: true    # Boolean: true = synthesize prompt for AI Studio; false = exclude prompt
+    drop_path: "inbox/special_assets/tiny_mascot.png" # Destination drop path
+  
   target_audience:
     age_min: 1
     age_max: 4

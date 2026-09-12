@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field
 
 from curiokraft_book.compositor.special_pages import render_certificate_page, render_welcome_page
 from curiokraft_book.compositor.typography import composite_typography
+from curiokraft_book.constants import (
+    DEFAULT_INBOX_DIR,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_RAW_GENERATED_DIR,
+)
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -24,7 +31,7 @@ logger = logging.getLogger("curiokraft.batch_runner")
 class BatchProductionReport(BaseModel):
     """Execution summary of 110-page interior batch production."""
 
-    total_pages: int = 110
+    total_pages: int = DEFAULT_PAGE_COUNT
     successful_pages: int
     failed_pages: int
     rescued_pages_count: int
@@ -38,10 +45,10 @@ class InteriorBatchRunner:
 
     def __init__(
         self,
-        manifest_path: str | Path = "manifest/pages.json",
-        output_masters_dir: str | Path = "output/interior_masters",
-        raw_generated_dir: str | Path = "generated/raw_pages",
-        inbox_dir: str | Path = "inbox/raw_pages",
+        manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+        output_masters_dir: str | Path = DEFAULT_INTERIOR_MASTERS_DIR,
+        raw_generated_dir: str | Path = DEFAULT_RAW_GENERATED_DIR,
+        inbox_dir: str | Path = DEFAULT_INBOX_DIR,
         model_client: ModelClient | None = None,
     ):
         self.manifest_path = Path(manifest_path)

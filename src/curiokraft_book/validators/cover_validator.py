@@ -7,9 +7,17 @@ import numpy as np
 from PIL import Image
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    CANVAS_DPI,
+    DEFAULT_COVER_COMPLIANCE_REPORT,
+    DEFAULT_COVER_HEIGHT_IN,
+    DEFAULT_COVER_WIDTH_IN,
+    DEFAULT_SPINE_WIDTH_IN,
+)
+
 
 class CoverValidationResult(BaseModel):
-    """Result of KDP cover geometry and barcode clearance validation."""
+    """Result of KDP full-wrap cover validation."""
 
     passed: bool
     cover_image_path: str
@@ -18,9 +26,9 @@ class CoverValidationResult(BaseModel):
     width_px: int
     height_px: int
     dpi: tuple[int, int]
-    expected_width_in: float = 17.498
-    expected_height_in: float = 11.250
-    spine_width_in: float = 0.248
+    expected_width_in: float = DEFAULT_COVER_WIDTH_IN
+    expected_height_in: float = DEFAULT_COVER_HEIGHT_IN
+    spine_width_in: float = DEFAULT_SPINE_WIDTH_IN
     spine_center_x_px: int
     barcode_box_clear: bool
     kdp_compliant: bool
@@ -29,11 +37,11 @@ class CoverValidationResult(BaseModel):
 
 def validate_kdp_cover(
     cover_path: str | Path,
-    expected_width_in: float = 17.498,
-    expected_height_in: float = 11.250,
-    spine_width_in: float = 0.248,
-    dpi: int = 300,
-    report_output_path: str | Path | None = "output/reports/cover_kdp_compliance_report.json",
+    expected_width_in: float = DEFAULT_COVER_WIDTH_IN,
+    expected_height_in: float = DEFAULT_COVER_HEIGHT_IN,
+    spine_width_in: float = DEFAULT_SPINE_WIDTH_IN,
+    dpi: int = CANVAS_DPI,
+    report_output_path: str | Path | None = DEFAULT_COVER_COMPLIANCE_REPORT,
 ) -> CoverValidationResult:
     """Validate that the assembled cover complies strictly with Amazon KDP full wrap specifications.
 

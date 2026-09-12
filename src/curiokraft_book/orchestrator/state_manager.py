@@ -6,22 +6,40 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    DEFAULT_PAGES_MANIFEST,
+    DEFAULT_PIPELINE_STATE_FILE,
+    MAX_RETRY_ATTEMPTS,
+    STATE_APPROVED,
+    STATE_COMPOSITED,
+    STATE_DEBATED,
+    STATE_ESCALATED,
+    STATE_FAILED,
+    STATE_GENERATED,
+    STATE_GENERATING,
+    STATE_PLANNED,
+    STATE_PROMPT_LOCKED,
+    STATE_RESCUED,
+    STATE_TECHNICAL_QA_PASSED,
+    STATE_VISION_QA_PASSED,
+)
+
 
 class PageStatus(str, Enum):
     """Lifecycle states of an individual page in the production pipeline."""
 
-    PLANNED = "PLANNED"
-    DEBATED = "DEBATED"
-    PROMPT_LOCKED = "PROMPT_LOCKED"
-    GENERATING = "GENERATING"
-    GENERATED = "GENERATED"
-    VISION_QA_PASSED = "VISION_QA_PASSED"
-    TECHNICAL_QA_PASSED = "TECHNICAL_QA_PASSED"
-    RESCUED = "RESCUED"
-    COMPOSITED = "COMPOSITED"
-    APPROVED = "APPROVED"
-    FAILED = "FAILED"
-    ESCALATED = "ESCALATED"
+    PLANNED = STATE_PLANNED
+    DEBATED = STATE_DEBATED
+    PROMPT_LOCKED = STATE_PROMPT_LOCKED
+    GENERATING = STATE_GENERATING
+    GENERATED = STATE_GENERATED
+    VISION_QA_PASSED = STATE_VISION_QA_PASSED
+    TECHNICAL_QA_PASSED = STATE_TECHNICAL_QA_PASSED
+    RESCUED = STATE_RESCUED
+    COMPOSITED = STATE_COMPOSITED
+    APPROVED = STATE_APPROVED
+    FAILED = STATE_FAILED
+    ESCALATED = STATE_ESCALATED
 
 
 class PageStateRecord(BaseModel):
@@ -34,7 +52,7 @@ class PageStateRecord(BaseModel):
     section: str
     status: PageStatus = PageStatus.PLANNED
     attempts: int = 0
-    max_attempts: int = 3
+    max_attempts: int = MAX_RETRY_ATTEMPTS
     positive_prompt: str | None = None
     negative_prompt: str | None = None
     raw_image_path: str | None = None
@@ -51,8 +69,8 @@ class PipelineStateManager:
 
     def __init__(
         self,
-        state_file_path: str | Path = "output/pipeline_state.json",
-        manifest_path: str | Path = "manifest/pages.json",
+        state_file_path: str | Path = DEFAULT_PIPELINE_STATE_FILE,
+        manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
     ):
         self.state_file = Path(state_file_path)
         self.manifest_path = Path(manifest_path)

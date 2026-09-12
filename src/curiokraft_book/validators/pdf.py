@@ -5,6 +5,12 @@ from pathlib import Path
 import pymupdf as fitz
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import (
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_TRIM_HEIGHT_IN,
+    DEFAULT_TRIM_WIDTH_IN,
+)
+
 
 class PageDimensionInfo(BaseModel):
     """Geometry metrics for an individual PDF page."""
@@ -34,9 +40,9 @@ class PDFValidationResult(BaseModel):
 
 def validate_interior_pdf(
     pdf_path: str | Path,
-    expected_page_count: int = 110,
-    expected_width_in: float = 8.5,
-    expected_height_in: float = 11.0,
+    expected_page_count: int = DEFAULT_PAGE_COUNT,
+    expected_width_in: float = DEFAULT_TRIM_WIDTH_IN,
+    expected_height_in: float = DEFAULT_TRIM_HEIGHT_IN,
     pt_tolerance: float = 2.0,
 ) -> PDFValidationResult:
     """Validate that an assembled interior PDF complies with KDP 8.5x11 110-page requirements.

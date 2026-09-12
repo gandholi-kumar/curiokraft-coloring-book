@@ -5,6 +5,8 @@ from pathlib import Path
 from PIL import Image
 from pydantic import BaseModel, Field
 
+from curiokraft_book.constants import CANVAS_DPI, CANVAS_HEIGHT_PX, CANVAS_WIDTH_PX
+
 
 class DimensionValidationResult(BaseModel):
     """Result of image dimension and DPI validation."""
@@ -23,9 +25,9 @@ class DimensionValidationResult(BaseModel):
 
 def validate_dimensions(
     image_path: str | Path,
-    expected_width: int = 2550,
-    expected_height: int = 3300,
-    expected_dpi: int = 300,
+    expected_width: int = CANVAS_WIDTH_PX,
+    expected_height: int = CANVAS_HEIGHT_PX,
+    expected_dpi: int = CANVAS_DPI,
     allowed_dpi_tolerance: int = 0,
 ) -> DimensionValidationResult:
     """Validate that an image strictly conforms to the required pixel dimensions and 300 DPI target.

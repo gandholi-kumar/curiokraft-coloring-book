@@ -23,6 +23,26 @@ inanimate_exceptions:
   - stuffed_animal
   - rubber_duck
   - wind_up_toy
+  - hot_dog
+  - hotdog
+  - corn_dog
+  - corndog
+  - butterfly_pasta
+  - dragonfruit
+  - catfish
+
+# Sections that strictly contain inanimate objects.
+# Any object in these sections is inanimate by default unless explicitly overridden.
+inanimate_sections:
+  - "Food & Drinks"
+  - "Fruits & Vegetables"
+  - "Household & Daily Living"
+  - "Clothing & Accessories"
+  - "Vehicles & Transport"
+  - "Musical Instruments"
+  - "Shapes & Geometry"
+  - "Numbers & Counting"
+  - "Alphabet & Letters"
 
 # Any token in canonical_object or section that signals a living being.
 # The engine tokenizes the string and checks for intersection with this list.
@@ -165,6 +185,7 @@ categories:
       - taco
       - sushi
       - hotdog
+      - hot_dog
       - pretzel
       - waffle
       - croissant
@@ -599,6 +620,30 @@ animal_locomotion_matrix:
     default_posture: "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body"
     default_orientation: "three-quarter front view showing the complete body and limbs"
     safeguards: "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture. Do not anthropomorphize the body."
+    keywords:
+      - dog
+      - cat
+      - puppy
+      - kitten
+      - rabbit
+      - bunny
+      - lion
+      - tiger
+      - bear
+      - elephant
+      - giraffe
+      - zebra
+      - cow
+      - horse
+      - sheep
+      - pig
+      - goat
+      - deer
+      - fox
+      - panda
+      - kangaroo
+      - cub
+      - calf
     negative_tokens:
       - "standing on two legs"
       - "upright on hind legs"
@@ -616,6 +661,20 @@ animal_locomotion_matrix:
     default_posture: "natural bird standing posture on two legs, standing balanced on both feet"
     default_orientation: "three-quarter view showing both feet supporting the body"
     safeguards: "Head and neck positioned naturally. Do not use four legs. Do not give human arms or hands. Do not anthropomorphize the bird."
+    keywords:
+      - bird
+      - chicken
+      - duck
+      - chick
+      - hen
+      - rooster
+      - penguin
+      - flamingo
+      - ostrich
+      - owl
+      - parrot
+      - swan
+      - peacock
     negative_tokens:
       - "four legs"
       - "quadrupedal stance"
@@ -631,6 +690,16 @@ animal_locomotion_matrix:
     default_posture: "natural horizontal streamlined swimming posture"
     default_orientation: "side-facing swimming profile"
     safeguards: "Fins and tail positioned naturally. Do not draw legs, feet, or terrestrial ground."
+    keywords:
+      - fish
+      - dolphin
+      - whale
+      - shark
+      - octopus
+      - crab
+      - lobster
+      - seal
+      - walrus
     negative_tokens:
       - "legs"
       - "feet"
@@ -645,6 +714,14 @@ animal_locomotion_matrix:
     default_posture: "natural low-to-ground crouching posture with folded hind legs and front paws grounded"
     default_orientation: "three-quarter front view"
     safeguards: "Do not stand upright like a human. Do not give human hands or clothing."
+    keywords:
+      - frog
+      - toad
+      - turtle
+      - lizard
+      - alligator
+      - snake
+      - crocodile
     negative_tokens:
       - "standing upright"
       - "bipedal stance"
@@ -658,6 +735,11 @@ animal_locomotion_matrix:
     default_posture: "natural low-to-ground crawling posture with shell balanced naturally"
     default_orientation: "side profile view"
     safeguards: "Do not draw legs, arms, or human features."
+    keywords:
+      - snail
+      - slug
+      - worm
+      - caterpillar
     negative_tokens:
       - "legs"
       - "feet"
@@ -671,6 +753,13 @@ animal_locomotion_matrix:
     default_posture: "natural resting or flying posture with symmetrical wings"
     default_orientation: "balanced view showing complete wing silhouette"
     safeguards: "Do not draw human arms, hands, shoes, or cartoon mascot clothes."
+    keywords:
+      - butterfly
+      - bee
+      - bug
+      - ant
+      - ladybug
+      - dragonfly
     negative_tokens:
       - "human arms"
       - "human hands"
@@ -683,6 +772,13 @@ animal_locomotion_matrix:
     default_posture: "natural species-appropriate four-limbed posture or seated natural posture on all fours"
     default_orientation: "three-quarter front view"
     safeguards: "Do not stand upright like a human child. Do not give human feet or clothing."
+    keywords:
+      - monkey
+      - chimpanzee
+      - gorilla
+      - sloth
+      - koala
+      - squirrel
     negative_tokens:
       - "standing upright on two legs"
       - "human standing posture"
@@ -764,6 +860,18 @@ vehicle_domain_matrix:
     default_support: "four chunky round rubber tires supporting a sturdy automotive chassis"
     default_orientation: "three-quarter side-front profile view displaying the complete vehicle body and wheels"
     safeguards: "Keep windows large, clean, and empty. Avoid complex engine details, exhaust smoke, or road lines."
+    keywords:
+      - car
+      - bus
+      - truck
+      - van
+      - jeep
+      - tractor
+      - taxi
+      - ambulance
+      - fire_truck
+      - police_car
+      - automobile
     negative_tokens:
       - "tiny mechanical chains"
       - "complex engine parts"
@@ -780,6 +888,12 @@ vehicle_domain_matrix:
     default_support: "two clearly separated circular wheels connected by a clean tubular frame"
     default_orientation: "side profile view clearly displaying both wheels and frame"
     safeguards: "Show exactly two wheels. Do not draw four wheels or car bodies. Keep frame clean without complex sprockets."
+    keywords:
+      - bicycle
+      - bike
+      - motorcycle
+      - scooter
+      - tricycle
     negative_tokens:
       - "four wheels"
       - "car body"
@@ -796,6 +910,12 @@ vehicle_domain_matrix:
     default_support: "multiple round steel train wheels aligned neatly along the bottom baseline"
     default_orientation: "three-quarter side profile view displaying the locomotive cabin and wheels"
     safeguards: "Keep train wheels cleanly circular and aligned. Avoid heavy smoke, dirty soot, or complex drive rods."
+    keywords:
+      - train
+      - locomotive
+      - subway
+      - tram
+      - trolley
     negative_tokens:
       - "rubber car tires"
       - "steering wheel"
@@ -811,6 +931,10 @@ vehicle_domain_matrix:
     default_support: "two horizontal parallel landing skids (runner rails) attached cleanly beneath the fuselage"
     default_orientation: "three-quarter side profile view displaying the cockpit bubble, top rotor, tail boom, and landing skids"
     safeguards: "Supported strictly by twin landing skids. Strictly DO NOT draw wheels, tires, car wheels, or landing gear wheels. Strictly DO NOT draw airplane wings."
+    keywords:
+      - helicopter
+      - chopper
+      - gyrocopter
     negative_tokens:
       - "wheels"
       - "tires"
@@ -830,6 +954,10 @@ vehicle_domain_matrix:
     default_support: "3 to 4 bold symmetrical stabilizing fins flared at the bottom base with a central rocket exhaust nozzle"
     default_orientation: "upright vertical or dynamic slight upward angle displaying the complete rocket fuselage and base fins"
     safeguards: "Supported strictly by aerodynamic base fins and rocket nozzle. Strictly DO NOT draw wheels, tires, road gear, landing tracks, or airplane wings."
+    keywords:
+      - rocket
+      - spaceship
+      - shuttle
     negative_tokens:
       - "wheels"
       - "tires"
@@ -851,6 +979,15 @@ vehicle_domain_matrix:
     default_support: "a smooth curved buoyant boat hull resting on a clean horizontal waterline"
     default_orientation: "three-quarter side profile view displaying the buoyant hull, deck, and sails or cabin"
     safeguards: "Supported strictly by a floating boat hull. Strictly DO NOT draw wheels, tires, automotive axles, or legs."
+    keywords:
+      - boat
+      - sailboat
+      - ship
+      - yacht
+      - canoe
+      - kayak
+      - tugboat
+      - ferry
     negative_tokens:
       - "wheels"
       - "tires"
@@ -871,6 +1008,11 @@ vehicle_domain_matrix:
     default_support: "aerodynamic flight stance with two wide symmetrical horizontal wings and clean minimal landing gear"
     default_orientation: "three-quarter front-side view displaying the full wingspan, fuselage, and tail fin"
     safeguards: "Wings must be smoothly attached to the cylindrical fuselage. Keep windows clean and colorable."
+    keywords:
+      - plane
+      - airplane
+      - jet
+      - biplane
     negative_tokens:
       - "car wheels"
       - "bicycle wheels"
@@ -888,6 +1030,9 @@ vehicle_domain_matrix:
     default_support: "a streamlined watertight cylindrical submarine hull with diving fins and rear propeller"
     default_orientation: "side profile view displaying the elongated hull, conning tower, and periscope"
     safeguards: "Strictly DO NOT draw wheels, tires, or landing tracks."
+    keywords:
+      - submarine
+      - submersible
     negative_tokens:
       - "wheels"
       - "tires"
@@ -903,6 +1048,11 @@ vehicle_domain_matrix:
     default_support: "a large buoyant fabric balloon envelope with a neat woven passenger basket suspended underneath"
     default_orientation: "upright frontal or three-quarter view"
     safeguards: "Strictly DO NOT draw wheels, wings, or engines."
+    keywords:
+      - balloon
+      - blimp
+      - airship
+      - hot_air_balloon
     negative_tokens:
       - "wheels"
       - "tires"

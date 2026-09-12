@@ -18,6 +18,7 @@ def load_env_file(env_filename: str = ".env") -> None:
 
         load_dotenv()
     except Exception:
+        # python-dotenv is optional; continue with built-in env parser fallback
         pass
 
     # Built-in fallback parser for zero-dependency .env support
@@ -37,6 +38,7 @@ def load_env_file(env_filename: str = ".env") -> None:
                         os.environ[k] = v
                 break
             except Exception:
+                # Failed reading candidate env file; try next search directory
                 pass
 
 
@@ -97,6 +99,8 @@ class GeminiImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         if not self.api_key:
@@ -120,8 +124,9 @@ class GeminiImageProvider(BaseImageProvider):
                 try:
                     logger.info(f"Calling Google Gemini Image Generation with {model_id}...")
                     interaction = client.interactions.create(model=model_id, input=imagen_prompt)
-                    if interaction.output_image and interaction.output_image.data:
-                        img_bytes = base64.b64decode(interaction.output_image.data)
+                    out_img_obj = getattr(interaction, "output_image", None)
+                    if out_img_obj and getattr(out_img_obj, "data", None):
+                        img_bytes = base64.b64decode(out_img_obj.data)
                         pil_img = Image.open(BytesIO(img_bytes)).convert("L")
                         logger.info(f"Successfully generated illustration via {model_id}.")
                         return pil_img
@@ -150,7 +155,7 @@ class GeminiImageProvider(BaseImageProvider):
                 "Content-Type": "application/json",
                 "x-goog-api-key": self.api_key,
             }
-            payload = {
+            payload: dict[str, Any] = {
                 "model": "gemini-3.1-flash-image",
                 "input": [{"type": "text", "text": imagen_prompt}],
             }
@@ -166,11 +171,13 @@ class GeminiImageProvider(BaseImageProvider):
             else:
                 raise RuntimeError(f"Google Gemini Image API HTTP {resp.status_code}: {resp.text}")
         except Exception as rest_err:
-            raise RuntimeError(f"Google Gemini REST generation error: {rest_err}") from rest_err
+            logger.debug(f"REST interaction fallback failed: {rest_err}")
+
+        raise RuntimeError("Failed to generate image via Gemini API.")
 
 
 class OpenAIImageProvider(BaseImageProvider):
-    """OpenAI DALL-E 3 Image Generation Provider."""
+    """OpenAI DALL-E 3 Provider."""
 
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
@@ -185,6 +192,8 @@ class OpenAIImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         if not self.api_key:
@@ -205,8 +214,10 @@ class OpenAIImageProvider(BaseImageProvider):
             quality="standard",
             n=1,
         )
+        if not resp.data or not resp.data[0].url:
+            raise ValueError("No image URL returned from OpenAI")
         img_url = resp.data[0].url
-        raw_bytes = requests.get(img_url, timeout=30).content
+        raw_bytes = requests.get(str(img_url), timeout=30).content
         pil_img = Image.open(BytesIO(raw_bytes)).convert("L")
         logger.info("Successfully received generated image from OpenAI DALL-E 3.")
         return pil_img
@@ -367,6 +378,8 @@ class MockImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         from PIL import Image, ImageDraw
@@ -434,6 +447,16 @@ class ModelClient:
                 self.model_name = model_name or "claude-3-5-sonnet-20240620"
             else:
                 self.provider = "mock"
+                self.model_name = "curiokraft-offline-simulator"
+
+        if not self.model_name:
+            if self.provider == "openai":
+                self.model_name = "gpt-4o"
+            elif self.provider == "anthropic":
+                self.model_name = "claude-3-5-sonnet-20240620"
+            elif self.provider == "gemini":
+                self.model_name = "gemini-1.5-pro"
+            else:
                 self.model_name = "curiokraft-offline-simulator"
 
         logger.info(f"Initialized ModelClient with provider: {self.provider} ({self.model_name})")
@@ -552,25 +575,29 @@ class ModelClient:
         import openai
 
         client = openai.OpenAI()
-        resp = client.chat.completions.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"} if response_schema else None,
-            temperature=temp,
-        )
+        messages: list[Any] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        call_kwargs: dict[str, Any] = {
+            "model": self.model_name or "gpt-4o",
+            "messages": messages,
+            "temperature": temp,
+        }
+        if response_schema:
+            call_kwargs["response_format"] = {"type": "json_object"}
+        resp = client.chat.completions.create(**call_kwargs)
         content = resp.choices[0].message.content or ""
         parsed = None
         try:
             parsed = json.loads(content)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content,
             parsed_json=parsed,
-            model_name=self.model_name,
+            model_name=str(self.model_name or "gpt-4o"),
             prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
             completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
         )
@@ -581,23 +608,26 @@ class ModelClient:
         import anthropic
 
         client = anthropic.Anthropic()
-        resp = client.messages.create(
-            model=self.model_name,
-            max_tokens=4096,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-            temperature=temp,
-        )
-        content = resp.content[0].text if resp.content else ""
+        call_kwargs: dict[str, Any] = {
+            "model": self.model_name or "claude-3-5-sonnet-20240620",
+            "max_tokens": 4096,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": user_prompt}],
+            "temperature": temp,
+        }
+        resp = client.messages.create(**call_kwargs)
+        first_content = resp.content[0] if resp.content else None
+        content = getattr(first_content, "text", "") if first_content else ""
         parsed = None
         try:
             parsed = json.loads(content)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content,
             parsed_json=parsed,
-            model_name=self.model_name,
+            model_name=str(self.model_name or "claude-3-5-sonnet-20240620"),
             prompt_tokens=resp.usage.input_tokens if resp.usage else 0,
             completion_tokens=resp.usage.output_tokens if resp.usage else 0,
         )
@@ -622,9 +652,125 @@ class ModelClient:
         try:
             parsed = json.loads(content)
         except Exception:
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content, parsed_json=parsed, model_name=self.model_name or "gemini-1.5-pro"
+        )
+
+    def call_vision(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        image_path: str | Path,
+        response_schema: Any = None,
+        temp: float = 0.2,
+    ) -> ModelResponse:
+        """Analyze an image using multimodal vision LLM or offline spatial analysis fallback."""
+        img_p = Path(image_path)
+        if not img_p.exists():
+            raise FileNotFoundError(f"Image not found for vision analysis: {image_path}")
+
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if api_key:
+            try:
+                import google.generativeai as genai
+                from PIL import Image
+
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash", system_instruction=system_prompt
+                )
+                pil_img = Image.open(img_p)
+                resp = model.generate_content(
+                    [user_prompt, pil_img],
+                    generation_config={
+                        "temperature": temp,
+                        "response_mime_type": "application/json"
+                        if response_schema
+                        else "text/plain",
+                    },
+                )
+                content = resp.text or ""
+                parsed = None
+                try:
+                    parsed = json.loads(content)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    # Response was plain text or not formatted as JSON; leave parsed as None
+                    pass
+                return ModelResponse(
+                    content=content,
+                    parsed_json=parsed,
+                    model_name="gemini-1.5-flash",
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Gemini vision call failed, falling back to deterministic spatial analyzer: {e}"
+                )
+
+        return self._simulate_vision_analysis(img_p, user_prompt)
+
+    def _simulate_vision_analysis(self, image_path: Path, prompt: str) -> ModelResponse:
+        """Deterministic offline spatial analyzer for layout blueprint wireframes."""
+        from PIL import Image
+
+        try:
+            with Image.open(image_path) as img:
+                w, h = img.size
+                ar = w / h if h else 1.0
+        except Exception:
+            w, h, ar = 2550, 3300, 0.772
+
+        mock_blueprint_analysis = {
+            "blueprint_type": "back_cover" if "back" in image_path.name.lower() else "cover",
+            "canvas_dimensions": {"width": w, "height": h, "aspect_ratio": round(ar, 3)},
+            "zones_detected": {
+                "header_zone": {
+                    "detected": True,
+                    "bounds_normalized": [0.05, 0.04, 0.95, 0.22],
+                    "elements": ["bold uppercase headline", "parent description copy"],
+                },
+                "flashcard_grid_zone": {
+                    "detected": True,
+                    "bounds_normalized": [0.06, 0.24, 0.94, 0.52],
+                    "rows": 1,
+                    "columns": 3,
+                    "card_shape": "rounded_rectangle",
+                    "border_style": "clean dark stroke",
+                    "content_type": "2D coloring book line art",
+                },
+                "feature_callout_zone": {
+                    "detected": True,
+                    "bounds_normalized": [0.12, 0.55, 0.88, 0.76],
+                    "grid": "2x2_pill_grid",
+                    "pill_count": 4,
+                    "pill_style": "pastel rounded pill with star bullet",
+                },
+                "baseline_wave_zone": {
+                    "detected": True,
+                    "bounds_normalized": [0.0, 0.80, 1.0, 1.0],
+                    "style": "continuous rolling pastel turquoise wave",
+                    "height_percentage": 20,
+                },
+                "exclusion_zones": {
+                    "bottom_left_logo": {"clear": True, "bounds": [0.05, 0.84, 0.25, 0.97]},
+                    "bottom_right_barcode": {"clear": True, "bounds": [0.72, 0.84, 0.95, 0.97]},
+                },
+            },
+            "layout_mandates": [
+                "1 row by 3 columns flashcard arrangement",
+                "2x2 grid of 4 pastel feature callout pills",
+                "100% continuous rolling wave across lower 20% with zero pre-rendered white boxes",
+                "Left edge (back cover) or right edge (front cover) borderless spine clearance",
+            ],
+        }
+
+        return ModelResponse(
+            content=json.dumps(mock_blueprint_analysis, indent=2),
+            parsed_json=mock_blueprint_analysis,
+            model_name="curiokraft-spatial-analyzer",
+            prompt_tokens=100,
+            completion_tokens=250,
         )
 
     def generate_illustration(

@@ -7,6 +7,12 @@ from PIL import Image, ImageDraw
 from pydantic import BaseModel
 
 from curiokraft_book.compositor.fonts import get_typography_font
+from curiokraft_book.constants import (
+    TYPOGRAPHY_BASE_FONT_SIZE_PT,
+    TYPOGRAPHY_LETTER_SPACING_PX,
+    TYPOGRAPHY_STROKE_WIDTH_PX,
+    TYPOGRAPHY_TOP_OFFSET_PX,
+)
 
 
 class TypographyCompositorResult(BaseModel):
@@ -35,8 +41,8 @@ def measure_spaced_text(
             total_w += int(letter_spacing_px * 2.5)
             continue
         c_bbox = draw.textbbox((0, 0), char, font=font, stroke_width=stroke_width)
-        c_w = c_bbox[2] - c_bbox[0]
-        c_h = c_bbox[3] - c_bbox[1]
+        c_w = int(c_bbox[2] - c_bbox[0])
+        c_h = int(c_bbox[3] - c_bbox[1])
         max_h = max(max_h, c_h)
         total_w += c_w
         if i < len(chars) - 1:
@@ -48,11 +54,11 @@ def composite_typography(
     image_input: str | Path | Image.Image,
     display_label: str,
     output_path: str | Path | None = None,
-    base_font_size_pt: int = 245,
-    top_offset_px: int = 240,
+    base_font_size_pt: int = TYPOGRAPHY_BASE_FONT_SIZE_PT,
+    top_offset_px: int = TYPOGRAPHY_TOP_OFFSET_PX,
     hollow_bubble_style: bool = True,
-    stroke_width_px: int = 15,
-    letter_spacing_px: int = 40,
+    stroke_width_px: int = TYPOGRAPHY_STROKE_WIDTH_PX,
+    letter_spacing_px: int = TYPOGRAPHY_LETTER_SPACING_PX,
     custom_font_path: str | Path | None = None,
 ) -> TypographyCompositorResult:
     """Render uppercase bubbly vector typography onto the top of the master canvas.
@@ -135,7 +141,7 @@ def composite_typography(
             continue
 
         c_bbox = draw.textbbox((0, 0), char, font=font, stroke_width=stroke)
-        c_w = c_bbox[2] - c_bbox[0]
+        c_w = int(c_bbox[2] - c_bbox[0])
 
         if hollow_bubble_style:
             # Draw individual hollow bubble letter

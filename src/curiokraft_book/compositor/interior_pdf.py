@@ -5,6 +5,12 @@ from pathlib import Path
 import pymupdf as fitz
 from pydantic import BaseModel
 
+from curiokraft_book.constants import (
+    DEFAULT_INTERIOR_PDF,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGE_HEIGHT_PT,
+    DEFAULT_PAGE_WIDTH_PT,
+)
 from curiokraft_book.validators.pdf import PDFValidationResult, validate_interior_pdf
 
 
@@ -20,10 +26,10 @@ class InteriorPDFResult(BaseModel):
 
 def compile_interior_pdf(
     image_paths: list[str | Path],
-    output_pdf_path: str | Path = "output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf",
-    expected_page_count: int = 110,
-    page_width_pt: float = 612.0,  # 8.5 in * 72 pt/in
-    page_height_pt: float = 792.0,  # 11.0 in * 72 pt/in
+    output_pdf_path: str | Path = DEFAULT_INTERIOR_PDF,
+    expected_page_count: int = DEFAULT_PAGE_COUNT,
+    page_width_pt: float = DEFAULT_PAGE_WIDTH_PT,  # 8.5 in * 72 pt/in
+    page_height_pt: float = DEFAULT_PAGE_HEIGHT_PT,  # 11.0 in * 72 pt/in
 ) -> InteriorPDFResult:
     """Compile a list of 110 page images into a single lossless 8.5x11 inch print PDF.
 

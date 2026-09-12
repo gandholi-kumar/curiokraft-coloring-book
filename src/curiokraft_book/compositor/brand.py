@@ -6,9 +6,19 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from curiokraft_book.compositor.fonts import get_typography_font
+from curiokraft_book.constants import (
+    BACKGROUND_TRANSPARENCY_THRESHOLD,
+    DEFAULT_EMBLEM_PATH,
+    DEFAULT_IMPRINT,
+    DEFAULT_LOGO_PATH,
+    PUBLISHER_BADGE_HEIGHT,
+    PUBLISHER_BADGE_WIDTH,
+)
 
 
-def make_background_transparent(img: Image.Image, threshold: int = 245) -> Image.Image:
+def make_background_transparent(
+    img: Image.Image, threshold: int = BACKGROUND_TRANSPARENCY_THRESHOLD
+) -> Image.Image:
     """Intelligently converts solid white/off-white background pixels to transparent alpha.
 
     Ensures that logos and emblems blend seamlessly over colored cover backgrounds.
@@ -34,10 +44,10 @@ def make_background_transparent(img: Image.Image, threshold: int = 245) -> Image
 
 
 def get_brand_logo(
-    logo_path: str | Path = "assets/logo/curiokraft_logo.png",
+    logo_path: str | Path = DEFAULT_LOGO_PATH,
     target_width_px: int = 600,
     auto_remove_white_bg: bool = True,
-    brand_text_fallback: str = "CURIOKRAFT-KIDS",
+    brand_text_fallback: str = DEFAULT_IMPRINT,
 ) -> Image.Image:
     """Load the protected CurioKraft company logo or generate an exact vector fallback.
 
@@ -67,8 +77,8 @@ def get_brand_logo(
 
     if path is not None:
         try:
-            with Image.open(path) as img:
-                img = img.convert("RGBA")
+            with Image.open(path) as raw_img:
+                img = raw_img.convert("RGBA")
                 # Crop to visible ink to eliminate empty padding
                 bbox = img.getbbox()
                 if bbox:
@@ -84,6 +94,7 @@ def get_brand_logo(
 
                 return resized
         except Exception:
+            # Fall back to typographic badge if image cannot be loaded or processed
             pass
 
     # Clean typographic fallback badge
@@ -97,8 +108,8 @@ def get_brand_logo(
     draw.rounded_rectangle([0, 0, badge_w, badge_h], radius=15, fill=(30, 30, 30, 255))
 
     # Draw centered text
-    bbox = draw.textbbox((0, 0), brand_text_fallback, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    t_bbox = draw.textbbox((0, 0), brand_text_fallback, font=font)
+    tw, th = int(t_bbox[2] - t_bbox[0]), int(t_bbox[3] - t_bbox[1])
     draw.text(
         ((badge_w - tw) // 2, (badge_h - th) // 2),
         brand_text_fallback,
@@ -110,8 +121,8 @@ def get_brand_logo(
 
 
 def create_publisher_badge(
-    card_w: int = 640,
-    card_h: int = 420,
+    card_w: int = PUBLISHER_BADGE_WIDTH,
+    card_h: int = PUBLISHER_BADGE_HEIGHT,
     radius: int = 28,
     offset_x: int = 16,
     offset_y: int = 20,
@@ -188,8 +199,8 @@ def create_publisher_badge(
 
     if logo_file is not None:
         try:
-            with Image.open(logo_file) as l_img:
-                l_img = l_img.convert("RGBA")
+            with Image.open(logo_file) as raw_logo:
+                l_img = raw_logo.convert("RGBA")
                 bbox = l_img.getbbox()
                 if bbox:
                     l_img = l_img.crop(bbox)
@@ -204,7 +215,8 @@ def create_publisher_badge(
                 brand_text = l_img.crop((0, 546, cw, 625))
                 line = l_img.crop((0, 643, cw, 649))
                 subtitle = l_img.crop((0, 665, cw, 692))
-                sub_ink = subtitle.crop(subtitle.getbbox())
+                sub_bbox = subtitle.getbbox()
+                sub_ink = subtitle.crop(sub_bbox) if sub_bbox else subtitle
 
                 b_img = bird.resize((310, int(round(310 * 514 / cw))), Image.Resampling.LANCZOS)
                 brand_img = brand_text.resize(
@@ -228,6 +240,7 @@ def create_publisher_badge(
                 cur_y += line_img.height + 8
                 card_layer.paste(sub_img, (pad + (card_w - sub_img.width) // 2, cur_y), sub_img)
         except Exception:
+            # Fall back to typographic badge if image cannot be processed
             pass
     else:
         fallback = get_brand_logo(target_width_px=max_logo_w)
@@ -240,7 +253,7 @@ def create_publisher_badge(
 
 
 def get_brand_emblem(
-    emblem_path: str | Path = "assets/emblem/curiokraft_emblem.png",
+    emblem_path: str | Path = DEFAULT_EMBLEM_PATH,
     target_size_px: int = 200,
     auto_remove_white_bg: bool = True,
 ) -> Image.Image:

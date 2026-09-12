@@ -6,10 +6,21 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from curiokraft_book.compositor.cover import calculate_kdp_cover_dimensions
+from curiokraft_book.constants import (
+    DEFAULT_BOOK_TITLE,
+    DEFAULT_COVER_OUTPUT_PDF,
+    DEFAULT_COVER_OUTPUT_PNG,
+    DEFAULT_IMPRINT,
+    DEFAULT_INTERIOR_MASTERS_DIR,
+    DEFAULT_INTERIOR_PDF,
+    DEFAULT_OBJECTS_REGISTRY,
+    DEFAULT_PAGE_COUNT,
+    DEFAULT_PAGES_MANIFEST,
+)
 
 
 class PreflightCheckItem(BaseModel):
-    """Individual preflight check metric."""
+    """Single diagnostic check result."""
 
     check_number: int
     name: str
@@ -17,14 +28,18 @@ class PreflightCheckItem(BaseModel):
     actual_value: str
     passed: bool
     details: str
+    category: str = "Print Compliance"
+    item_id: str = ""
+    description: str = ""
+    status: str = "PASS"
 
 
 class MasterPreflightReport(BaseModel):
     """Comprehensive 18-point preflight certification report."""
 
     certified: bool
-    book_title: str = "TINY HANDS COLOR & LEARN"
-    publisher: str = "CURIOKRAFT-KIDS"
+    book_title: str = DEFAULT_BOOK_TITLE
+    publisher: str = DEFAULT_IMPRINT
     total_checks_run: int = 18
     checks_passed: int
     checks_failed: int
@@ -33,27 +48,29 @@ class MasterPreflightReport(BaseModel):
 
 
 def run_full_preflight(
-    interior_pdf_path: str
-    | Path
-    | None = "output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf",
-    cover_pdf_path: str | Path | None = "output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf",
-    manifest_objects_path: str | Path = "manifest/objects.json",
-    manifest_pages_path: str | Path = "manifest/pages.json",
+    interior_pdf_path: str | Path | None = DEFAULT_INTERIOR_PDF,
+    cover_pdf_path: str | Path | None = DEFAULT_COVER_OUTPUT_PDF,
+    cover_png_path: str | Path | None = DEFAULT_COVER_OUTPUT_PNG,
+    manifest_pages_path: str | Path = DEFAULT_PAGES_MANIFEST,
+    objects_registry_path: str | Path = DEFAULT_OBJECTS_REGISTRY,
+    interior_masters_dir: str | Path = DEFAULT_INTERIOR_MASTERS_DIR,
 ) -> MasterPreflightReport:
     """Execute the full 18-point KDP Preflight diagnostic suite dynamically from manifest metadata."""
     m_path = Path(manifest_pages_path)
-    total_pages = 110
-    book_title = "TINY HANDS COLOR & LEARN"
-    publisher = "CURIOKRAFT-KIDS"
+    total_pages = DEFAULT_PAGE_COUNT
+    book_title = DEFAULT_BOOK_TITLE
+    publisher = DEFAULT_IMPRINT
 
+    manifest_pages_count = total_pages
     if m_path.exists():
         try:
             with open(m_path, encoding="utf-8") as f:
                 manifest_data = json.load(f)
             pages = manifest_data.get("pages", [])
-            total_pages = manifest_data.get("total_pages", len(pages))
-            book_title = manifest_data.get("book_title", book_title)
-            publisher = manifest_data.get("publisher_brand", publisher)
+            if pages:
+                manifest_pages_count = len(pages)
+            elif "total_pages" in manifest_data:
+                manifest_pages_count = int(manifest_data["total_pages"])
         except Exception:
             pass
 
@@ -61,14 +78,17 @@ def run_full_preflight(
     items = []
 
     # 1. Total Page Count
+    pages_match = manifest_pages_count == total_pages
     items.append(
         PreflightCheckItem(
             check_number=1,
             name="Total Interior Page Count",
             target_spec=f"Exactly {total_pages} Pages",
-            actual_value=f"{total_pages} Pages",
-            passed=True,
-            details="Strict match with manifest specification.",
+            actual_value=f"{manifest_pages_count} Pages",
+            passed=pages_match,
+            details="Strict match with book_config specification."
+            if pages_match
+            else f"Mismatch: manifest has {manifest_pages_count} pages, expected {total_pages}.",
         )
     )
 
