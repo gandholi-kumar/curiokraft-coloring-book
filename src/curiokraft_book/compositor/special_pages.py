@@ -68,12 +68,93 @@ ASSET_NAMES = {
 }
 
 
-def _find_asset(key: str, asset_dir: Path | str = SPECIAL_ASSET_DIR) -> Path | None:
-    # Direct check for configured mascot drop path if key is mascot
-    if key == "mascot" and DEFAULT_MASCOT_DROP_PATH and Path(DEFAULT_MASCOT_DROP_PATH).exists():
-        return Path(DEFAULT_MASCOT_DROP_PATH)
+def archive_processed_special_assets(
+    volume: str | None = None,
+    dest_dir: Path | str | None = None,
+    inbox_dir: Path | str | None = None,
+) -> list[tuple[Path, Path]]:
+    """Auto-move processed special assets from inbox drop locations into the
+    corresponding volume folder in assets/special_assets/{volume}/.
 
+    Returns a list of (source_path, destination_path) tuples for all moved assets.
+    """
+    import shutil
+
+    vol = (volume or DEFAULT_BOOK_VOLUME).lower()
+
+    if dest_dir:
+        target_dir = Path(dest_dir)
+    else:
+        target_dir = Path("assets/special_assets") / vol
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    search_dirs: list[Path] = []
+    if inbox_dir:
+        search_dirs.append(Path(inbox_dir))
+    else:
+        search_dirs.extend(
+            [
+                Path(f"inbox/special_assets/{vol}"),
+                Path("inbox/special_assets"),
+            ]
+        )
+
+    if DEFAULT_MASCOT_DROP_PATH:
+        drop_p = Path(DEFAULT_MASCOT_DROP_PATH)
+        if drop_p.exists() and "inbox" in drop_p.parts and drop_p.parent not in search_dirs:
+            search_dirs.append(drop_p.parent)
+
+    valid_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+    moved_assets: list[tuple[Path, Path]] = []
+    seen_sources: set[Path] = set()
+
+    for s_dir in search_dirs:
+        if not s_dir.exists():
+            continue
+        for item in s_dir.iterdir():
+            if not item.is_file():
+                continue
+            if item.name.startswith(".") or item.name.lower() in ("readme.md", ".gitkeep"):
+                continue
+            if item.suffix.lower() not in valid_extensions:
+                continue
+            if item.resolve() in seen_sources:
+                continue
+
+            dest_file = target_dir / item.name
+            try:
+                if dest_file.exists():
+                    dest_file.unlink()
+                shutil.move(str(item), str(dest_file))
+                seen_sources.add(item.resolve())
+                moved_assets.append((item, dest_file))
+            except Exception:
+                pass
+
+        # Clean up empty volume subdirectory in inbox if empty
+        if s_dir.name == vol and s_dir.exists():
+            try:
+                remaining = [f for f in s_dir.iterdir() if f.name not in (".gitkeep", "README.md")]
+                if not remaining:
+                    shutil.rmtree(str(s_dir), ignore_errors=True)
+            except Exception:
+                pass
+
+    return moved_assets
+
+
+def _find_asset(key: str, asset_dir: Path | str = SPECIAL_ASSET_DIR) -> Path | None:
     vol = DEFAULT_BOOK_VOLUME
+
+    # Check for mascot: first check archived volume folder, then inbox drop path
+    if key == "mascot" and DEFAULT_MASCOT_DROP_PATH:
+        vol_mascot = Path(f"assets/special_assets/{vol}") / Path(DEFAULT_MASCOT_DROP_PATH).name
+        if vol_mascot.exists():
+            return vol_mascot
+        if Path(DEFAULT_MASCOT_DROP_PATH).exists():
+            return Path(DEFAULT_MASCOT_DROP_PATH)
+
     dirs_to_check = [
         Path(asset_dir),
         Path(f"assets/special_assets/{vol}"),
@@ -111,6 +192,7 @@ def _find_asset(key: str, asset_dir: Path | str = SPECIAL_ASSET_DIR) -> Path | N
             if p.exists():
                 return p
     return None
+
 
 
 def _load_asset_grayscale(
@@ -329,6 +411,7 @@ def render_welcome_page(
     show_guides: bool = False,
     mascot_image_path: str | Path | None = None,
     award_image_path: str | Path | None = None,
+    auto_archive: bool = False,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
@@ -448,6 +531,8 @@ def render_welcome_page(
     assert dpi >= 300, f"DPI {dpi} < 300 -- KDP minimum not met"
 
     img.save(out_p, dpi=(dpi, dpi))
+    if auto_archive:
+        archive_processed_special_assets()
     return out_p
 
 
@@ -461,6 +546,7 @@ def render_certificate_page(
     dpi: int = CANVAS_DPI,
     show_guides: bool = False,
     award_image_path: str | Path | None = None,
+    auto_archive: bool = False,
 ) -> Path:
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
@@ -622,4 +708,6 @@ def render_certificate_page(
     assert dpi >= 300, f"DPI {dpi} < 300 -- KDP minimum not met"
 
     img.save(out_p, dpi=(dpi, dpi))
+    if auto_archive:
+        archive_processed_special_assets()
     return out_p

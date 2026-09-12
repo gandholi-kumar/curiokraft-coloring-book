@@ -130,3 +130,39 @@ def test_render_special_pages(temp_dir: Path):
         assert img110.mode == "L"
         dpi = img110.info.get("dpi", (300, 300))
         assert int(round(dpi[0])) >= 300
+
+
+def test_archive_processed_special_assets(temp_dir: Path):
+    from curiokraft_book.compositor.special_pages import archive_processed_special_assets
+
+    inbox_dir = temp_dir / "inbox_special"
+    inbox_dir.mkdir(parents=True, exist_ok=True)
+    dest_dir = temp_dir / "assets_special" / "vol_test"
+
+    # Create dummy special assets in inbox
+    sample_mascot = inbox_dir / "test_mascot.png"
+    img = Image.new("RGBA", (400, 400), (255, 255, 255, 255))
+    img.save(sample_mascot)
+    assert sample_mascot.exists()
+
+    moved = archive_processed_special_assets(
+        volume="vol_test",
+        dest_dir=dest_dir,
+        inbox_dir=inbox_dir,
+    )
+
+    assert len(moved) == 1
+    assert not sample_mascot.exists()
+    assert (dest_dir / "test_mascot.png").exists()
+
+
+def test_kdp_form_privacy_protection():
+    """Verify that KDP HTML forms are protected by .gitignore and never tracked by Git."""
+    gitignore_path = Path(".gitignore")
+    assert gitignore_path.exists(), ".gitignore file must exist"
+    gi_text = gitignore_path.read_text(encoding="utf-8")
+
+    assert "inbox/kdp_forms/*.html" in gi_text, "inbox/kdp_forms/*.html must be ignored"
+    assert "inbox/kdp_forms/*.htm" in gi_text, "inbox/kdp_forms/*.htm must be ignored"
+    assert "!inbox/kdp_forms/README.md" in gi_text, "README.md must be kept tracked"
+

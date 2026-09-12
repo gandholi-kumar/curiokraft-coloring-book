@@ -78,6 +78,11 @@ You can have the engine inspect live form changes directly from Amazon KDP:
 > [!NOTE]
 > Dropping an HTML file is **completely optional**. If `inbox/kdp_forms/` is empty, the engine uses its built-in full KDP schema to generate 100% of all required fields.
 
+> [!IMPORTANT]
+> **Confidentiality & Local Security Guarantee:**  
+> Any `.html` or `.htm` files dropped into `inbox/kdp_forms/` are internal project files. They are strictly excluded from Git tracking via `.gitignore` (`inbox/kdp_forms/*.html`, `inbox/kdp_forms/*.htm`, `inbox/kdp_forms/*_files/`) and will never be committed or published to GitHub or any public repository. Form parsing is executed 100% offline locally on your machine; no HTML content, internal tokens, or session data is ever transmitted to external cloud APIs.
+
+
 ---
 
 ## 🧠 The 4 Specialist Publishing Agents

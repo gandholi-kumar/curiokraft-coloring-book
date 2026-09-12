@@ -355,6 +355,43 @@ def run_doctor():
         f"Model: {client.model_name}",
     )
 
+    # 5. KDP Form Privacy & Confidentiality Protection
+    gitignore_p = Path(".gitignore")
+    kdp_secure = False
+    if gitignore_p.exists():
+        gi_content = gitignore_p.read_text(encoding="utf-8")
+        if "inbox/kdp_forms/*.html" in gi_content:
+            kdp_secure = True
+
+    table.add_row(
+        "KDP Form Privacy",
+        "inbox/kdp_forms/*.html",
+        "[bold green]PROTECTED[/bold green]" if kdp_secure else "[bold red]EXPOSED[/bold red]",
+        "Excluded from Git; strictly local offline parsing" if kdp_secure else "Add inbox/kdp_forms/*.html to .gitignore to prevent public leak",
+    )
+
+    # 6. Special Milestone Assets
+    vol = DEFAULT_BOOK_VOLUME
+    vol_assets_dir = Path(f"assets/special_assets/{vol}")
+    has_vol_assets = vol_assets_dir.exists() and any(f.is_file() for f in vol_assets_dir.iterdir())
+    inbox_special_dir = Path("inbox/special_assets")
+    pending_inbox = (
+        len([f for f in inbox_special_dir.iterdir() if f.is_file() and f.name.lower() not in ("readme.md", ".gitkeep")])
+        if inbox_special_dir.exists()
+        else 0
+    )
+    if has_vol_assets:
+        sa_status = "[bold green]CONFIGURED[/bold green]"
+        sa_details = f"Archived in {vol_assets_dir}/"
+    elif pending_inbox > 0:
+        sa_status = "[bold yellow]INBOX PENDING[/bold yellow]"
+        sa_details = f"{pending_inbox} asset(s) in inbox/ (run 'curiokraft-book ingest' or 'generate special-pages' to auto-archive)"
+    else:
+        sa_status = "[bold green]SHARED FALLBACK[/bold green]"
+        sa_details = "Using assets/special_assets/ shared library"
+
+    table.add_row("Special Assets", f"assets/special_assets/{vol}", sa_status, sa_details)
+
     console.print(table)
 
     print_hint(
@@ -668,12 +705,18 @@ def generate_special_pages(
     guides: bool = typer.Option(
         False, "--guides", "-g", help="Overlay print-safety guides (dev mode)"
     ),
+    auto_archive: bool = typer.Option(
+        True,
+        "--auto-archive/--no-auto-archive",
+        help="Auto-move inbox special assets to assets/special_assets/{vol}/ post processing",
+    ),
 ):
     """[Stage 3: Production] Programmatically render Page 001 (Welcome) and Page 110 (Certificate)."""
     console.print(
         Panel.fit("[bold cyan]CurioKraft Special Publication Pages Compositor[/bold cyan]")
     )
     from curiokraft_book.compositor.special_pages import (
+        archive_processed_special_assets,
         render_certificate_page,
         render_welcome_page,
     )
@@ -699,6 +742,13 @@ def generate_special_pages(
         console.print(f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}")
     else:
         console.print("[dim]• Page 110 (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]")
+
+    if auto_archive:
+        archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
+        for src_f, dest_f in archived:
+            console.print(
+                f"[bold green][ARCHIVED][/bold green] Auto-moved inbox asset to: [cyan]{dest_f}[/cyan]"
+            )
 
     console.print(
         "\n[bold green]Special milestone pages check complete (compliant with KDP specifications)![/bold green]\n"
@@ -1532,6 +1582,49 @@ def ingest_raw_images(
                     console.print(f"    [dim]-> Cleaned from inbox: {back_found.name}[/dim]")
                     console.print(f"    [dim]-> Canonical back cover preserved: {back_dest}[/dim]")
 
+    # Check for special milestone assets in inbox/special_assets
+    inbox_special_dirs = [Path(f"inbox/special_assets/{DEFAULT_BOOK_VOLUME}"), Path("inbox/special_assets")]
+    special_candidates: list[Path] = []
+    for sp_d in inbox_special_dirs:
+        if sp_d.exists():
+            for sp_f in sp_d.iterdir():
+                if (
+                    sp_f.is_file()
+                    and sp_f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")
+                    and sp_f.name.lower() not in ("readme.md", ".gitkeep")
+                ):
+                    special_candidates.append(sp_f)
+
+    if special_candidates:
+        console.print(
+            f"\n[bold cyan]Detected {len(special_candidates)} new Special Milestone Asset(s) in inbox/special_assets/ — Rendering Special Pages...[/bold cyan]"
+        )
+        from curiokraft_book.compositor.special_pages import (
+            archive_processed_special_assets,
+            render_certificate_page,
+            render_welcome_page,
+        )
+
+        out_masters = Path(DEFAULT_INTERIOR_MASTERS_DIR)
+        out_masters.mkdir(parents=True, exist_ok=True)
+
+        if DEFAULT_WELCOME_PAGE_ENABLED:
+            p001_path = out_masters / "page_001.png"
+            render_welcome_page(output_path=str(p001_path))
+            console.print(f"  [bold green][PASS] Re-rendered Page 001 (Welcome & Ownership):[/bold green] {p001_path}")
+            found_count += 1
+
+        if DEFAULT_CERTIFICATE_PAGE_ENABLED:
+            p110_path = out_masters / "page_110.png"
+            render_certificate_page(output_path=str(p110_path))
+            console.print(f"  [bold green][PASS] Re-rendered Page 110 (Completion Certificate):[/bold green] {p110_path}")
+            found_count += 1
+
+        if clear_inbox:
+            archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
+            for src_f, dest_f in archived:
+                console.print(f"    [dim]-> Auto-archived special asset to: {dest_f}[/dim]")
+
     if found_count > 0:
         console.print(
             f"\n[bold green][PASS] Successfully ingested & certified {found_count} items![/bold green]"
@@ -1617,7 +1710,8 @@ def generate_kdp_submission(
     console.print(
         Panel(
             "[bold cyan]CurioKraft Multi-Agent Amazon KDP Publishing Engine[/bold cyan]\n"
-            "[dim]Generating optimized, deduplicated metadata across all 3 KDP publishing tabs...[/dim]",
+            "[dim]Generating optimized, deduplicated metadata across all 3 KDP publishing tabs...[/dim]\n"
+            "[dim]Privacy: Saved HTML forms are strictly local & excluded from Git via .gitignore[/dim]",
             border_style="cyan",
         )
     )
@@ -1718,7 +1812,8 @@ def parse_kdp_forms(
         Panel(
             f"[bold green]Directory:[/] {inspection.source_dir}\n"
             f"[bold green]HTML Files Found:[/] {inspection.html_files_found}\n"
-            + "\n".join(f"  • {f.file_name} ({f.fields_count} fields, tab: {f.tab_detected})" for f in inspection.parsed_files),
+            + "\n".join(f"  • {f.file_name} ({f.fields_count} fields, tab: {f.tab_detected})" for f in inspection.parsed_files)
+            + "\n[dim]• Privacy Guarantee: Internal HTML forms are parsed offline locally & shielded by .gitignore[/dim]",
             title="[bold yellow]Parsed KDP HTML Forms Inspection[/bold yellow]",
             border_style="green",
         )

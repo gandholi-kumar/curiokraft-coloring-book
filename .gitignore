@@ -43,6 +43,34 @@ scratch/
 # Proprietary Business & Commercial Documentation
 private_docs/
 
+# Proprietary Amazon KDP Form Ingestion (Internal HTML dumps & session artifacts - keep strictly confidential)
+inbox/kdp_forms/*.html
+inbox/kdp_forms/*.htm
+inbox/kdp_forms/*_files/
+inbox/kdp_forms/**/*.html
+inbox/kdp_forms/**/*.htm
+!inbox/kdp_forms/README.md
+!inbox/kdp_forms/.gitkeep
+
+# Inbox Transient Drop Zones (Transient raw images & unmigrated special drops)
+inbox/raw_pages/*.png
+inbox/raw_pages/*.jpg
+inbox/raw_pages/*.jpeg
+inbox/raw_pages/*.webp
+inbox/special_assets/*.png
+inbox/special_assets/*.jpg
+inbox/special_assets/*.jpeg
+inbox/special_assets/*.webp
+!inbox/special_assets/.gitkeep
+!inbox/special_assets/README.md
+inbox/*.png
+inbox/*.jpg
+inbox/*.jpeg
+inbox/*.html
+inbox/*.htm
+inbox/*.webp
+
+
 # Testing, Coverage & Static Analysis
 .coverage
 htmlcov/

@@ -206,7 +206,8 @@ When `curiokraft-book prompt export` is executed with `mascot.generate_prompt: t
    - **Zero text, zero shading, zero color fills**.
 3. The prompt is exported as item `MASCOT` in `generated/prompts_export.json` and `prompts_export.md` with drop target pointing to `mascot.drop_path` (default: `inbox/special_assets/tiny_mascot.png`).
 4. Playwright generates and downloads the mascot directly into `inbox/special_assets/tiny_mascot.png`.
-5. Once approved, the asset is moved to `assets/special_assets/{volume}/tiny_mascot.jpg` for permanent preservation.
+5. **Automated Post-Processing Archival:** When `curiokraft-book generate special-pages` or `curiokraft-book ingest` runs, it composites the milestone pages (Page 001 and Page 110) and then **automatically moves** all newly dropped assets from `inbox/special_assets/` into `assets/special_assets/{volume}/` (e.g. `assets/special_assets/vol2/`), keeping the inbox clean and preserving the assets permanently in the volume folder.
+
 
 ---
 
