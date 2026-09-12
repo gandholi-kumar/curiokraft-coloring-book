@@ -15,13 +15,8 @@ import json
 import logging
 from pathlib import Path
 
-from curiokraft_book.constants import (
-    DEFAULT_KDP_FIELDS_MD,
-    DEFAULT_KDP_METADATA_JSON,
-    DEFAULT_KDP_OUTPUT_DIR,
-    DEFAULT_KDP_SUBMISSION_HTML,
-)
 from curiokraft_book.agents.kdp_publisher import KDPSubmissionPackage
+from curiokraft_book.constants import DEFAULT_KDP_OUTPUT_DIR
 
 logger = logging.getLogger("curiokraft.kdp_dashboard")
 
@@ -511,7 +506,7 @@ def render_kdp_html_dashboard(package: KDPSubmissionPackage) -> str:
               <span class="field-badge badge-info">1st Edition</span>
             </div>
             <div class="field-body">
-              <input type="text" class="field-input" id="f_edition" value="{d.edition_number or '(Leave blank)'}" readonly />
+              <input type="text" class="field-input" id="f_edition" value="{d.edition_number or "(Leave blank)"}" readonly />
               <button class="copy-btn" onclick="copyField('f_edition')">Copy</button>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
@@ -971,7 +966,7 @@ def render_kdp_markdown_cheatsheet(package: KDPSubmissionPackage) -> str:
 
     return f"""# Amazon KDP Publishing Cheatsheet - {package.title} ({package.volume_id.upper()})
 
-Generated: {package.generated_at[:19]} UTC  
+Generated: {package.generated_at[:19]} UTC
 Status: Certified & Compliant (Zero Emojis, Standard ASCII Only)
 
 ---
@@ -983,7 +978,7 @@ Status: Certified & Compliant (Zero Emojis, Standard ASCII Only)
 * **Subtitle:** `{d.subtitle}` ({d.subtitle_length} chars)
 * **Combined Title Length:** `{d.combined_title_length} / 200 chars (Compliant)`
 * **Series Name:** `{d.series_name}` (Book #{d.series_number}, Relationship: {d.series_relationship})
-* **Edition Number:** `{d.edition_number or '(Leave blank for 1st edition)'}`
+* **Edition Number:** `{d.edition_number or "(Leave blank for 1st edition)"}`
 * **Primary Author:** `{d.author_first}` `{d.author_last}`
 * **Primary Audience / Adult Content:** `{d.adult_content}` (Sexually explicit: No)
 * **Reading Age:** Minimum: `{d.reading_age_min}` years, Maximum: `{d.reading_age_max}` years

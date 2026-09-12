@@ -308,7 +308,9 @@ def test_vehicle_design_profile_resolution():
 
 def test_vehicle_prompts_export_compliance():
     import json
+
     from typer.testing import CliRunner
+
     from curiokraft_book.cli import app
 
     export_path = Path("generated/prompts_export.json")
@@ -319,7 +321,6 @@ def test_vehicle_prompts_export_compliance():
     assert export_path.exists()
     data = json.loads(export_path.read_text(encoding="utf-8"))
     prompts_list = data.get("prompts", data)
-    items_by_id = {item["id"]: item for item in prompts_list}
 
     # Check if Vol 1 or Vol 2 manifest is active in export
     items_by_label = {item.get("label", "").upper(): item for item in prompts_list}

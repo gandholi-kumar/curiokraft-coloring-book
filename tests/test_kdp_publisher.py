@@ -3,17 +3,16 @@
 import json
 import re
 from pathlib import Path
-import pytest
 
 from curiokraft_book.agents.kdp_parser import (
-    parse_kdp_html_file,
     inspect_kdp_inbox_forms,
+    parse_kdp_html_file,
 )
 from curiokraft_book.agents.kdp_publisher import (
-    KDPSEOAgent,
-    KDPCopywriterAgent,
     KDPComplianceAgent,
+    KDPCopywriterAgent,
     KDPPublisherOrchestrator,
+    KDPSEOAgent,
 )
 from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
 
@@ -67,7 +66,11 @@ def test_kdp_parser_with_sample_html(tmp_path: Path):
     inspection = inspect_kdp_inbox_forms(tmp_path)
     assert inspection.has_html_forms
     assert inspection.html_files_found == 1
-    assert "title" in inspection.detected_limits or "data[title]" in inspection.detected_limits or "book-title" in inspection.detected_limits
+    assert (
+        "title" in inspection.detected_limits
+        or "data[title]" in inspection.detected_limits
+        or "book-title" in inspection.detected_limits
+    )
 
 
 def test_kdp_seo_keywords_length_and_deduplication():
@@ -113,7 +116,9 @@ def test_kdp_copywriter_html_tags():
     # Verify strictly ZERO emojis and ZERO stars in description
     assert "★" not in desc, "Forbidden star symbol '★' found in description (Amazon will reject)"
     for char in desc:
-        assert ord(char) < 128 or char in "–—’‘“”", f"Non-standard character '{char}' (U+{ord(char):04X}) found in description"
+        assert ord(char) < 128 or char in "–—’‘“”", (
+            f"Non-standard character '{char}' (U+{ord(char):04X}) found in description"
+        )
 
 
 def test_kdp_compliance_specs():

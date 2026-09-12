@@ -655,14 +655,17 @@ class ModelClient:
                     [user_prompt, pil_img],
                     generation_config={
                         "temperature": temp,
-                        "response_mime_type": "application/json" if response_schema else "text/plain",
+                        "response_mime_type": "application/json"
+                        if response_schema
+                        else "text/plain",
                     },
                 )
                 content = resp.text or ""
                 parsed = None
                 try:
                     parsed = json.loads(content)
-                except Exception:
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    # Response was plain text or not formatted as JSON; leave parsed as None
                     pass
                 return ModelResponse(
                     content=content,

@@ -11,6 +11,7 @@ To create a new volume: provide a new manifest with different "cards" arrays —
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -464,7 +465,11 @@ def resolve_animal_anatomy_profile(canonical: str) -> dict:
     for key, prof in profiles.items():
         key_lower = key.lower().strip()
         key_tokens = set(key_lower.replace("_", " ").split())
-        if key_lower == canon_lower or key_lower in canon_tokens or (key_tokens and key_tokens.issubset(canon_tokens)):
+        if (
+            key_lower == canon_lower
+            or key_lower in canon_tokens
+            or (key_tokens and key_tokens.issubset(canon_tokens))
+        ):
             matched_profile = prof
             break
 
@@ -787,7 +792,9 @@ def _detect_spread_layout_key(canonical: str, label: str) -> str:
     return "numbers_6_10"
 
 
-def calculate_optimal_counting_grid(count: int, is_full_width: bool = False) -> tuple[int, int, list[int]]:
+def calculate_optimal_counting_grid(
+    count: int, is_full_width: bool = False
+) -> tuple[int, int, list[int]]:
     """Generic mathematical calculation of counting grid (rows, cols, row_counts).
 
     Enforces the Horizontal Column Limit Law:
@@ -846,7 +853,9 @@ def audit_spread_card_miscount_risks(
     plural_obj = f"{clean_obj}s" if not clean_obj.endswith("s") else clean_obj
 
     if count <= 0:
-        findings.append(f"Card {numeral}: Zero objects represented. Ensure AI renders single hollow outline without items inside.")
+        findings.append(
+            f"Card {numeral}: Zero objects represented. Ensure AI renders single hollow outline without items inside."
+        )
         hardening.extend([f"items on card {numeral}", f"objects on card {numeral}"])
         return findings, hardening
 
@@ -1090,7 +1099,9 @@ class DebateEngine:
                     obj = c_item.get("object", "item")
                     is_hero = (idx == total_cards - 1) and (total_cards % 2 == 1)
 
-                    rows, cols, row_counts = calculate_optimal_counting_grid(cnt, is_full_width=is_hero)
+                    rows, cols, row_counts = calculate_optimal_counting_grid(
+                        cnt, is_full_width=is_hero
+                    )
                     spread_design_notes.append(
                         f"Card {num}: {rows}x{cols} {'hero ' if is_hero else ''}grid ({cnt} {obj}s, row distribution {row_counts})"
                     )
@@ -1572,8 +1583,7 @@ class DebateEngine:
         volume_name = ""
         if manifest_path:
             mp_str = str(manifest_path).lower()
-            import re
-            m_vol = re.search(r'vol(?:ume)?[_-]?(\d+)', mp_str)
+            m_vol = re.search(r"vol(?:ume)?[_-]?(\d+)", mp_str)
             if m_vol:
                 volume_name = f"Volume {m_vol.group(1)}"
             elif "pages.json" in mp_str:
@@ -1581,9 +1591,8 @@ class DebateEngine:
         if not volume_name:
             cfg_vol = str(b_cfg.get("volume", "")).strip()
             if cfg_vol:
-                m_vol = re.search(r'vol(?:ume)?[_-]?(\d+)', cfg_vol.lower())
+                m_vol = re.search(r"vol(?:ume)?[_-]?(\d+)", cfg_vol.lower())
                 volume_name = f"Volume {m_vol.group(1)}" if m_vol else cfg_vol.title()
-
 
         # Check for user layout blueprint in inbox/blueprints/
         bp_reader = LayoutBlueprintReader()
@@ -1625,10 +1634,11 @@ class DebateEngine:
                             m_p = c
                             break
                 if m_p.exists():
-                    with open(m_p, "r", encoding="utf-8") as mf:
+                    with open(m_p, encoding="utf-8") as mf:
                         m_data = json.load(mf)
                         page_count = len(m_data.get("pages", [])) or 110
-            except Exception:
+            except (OSError, json.JSONDecodeError):
+                # Manifest file missing or unreadable; default to baseline page_count
                 pass
 
             vol_label = f" {volume_name}" if volume_name else ""
@@ -1640,13 +1650,11 @@ class DebateEngine:
 
             # Layout slots: from user blueprint if present, else standard responsive
             if blueprint_spec:
-                card_rows = blueprint_spec.card_grid.rows
                 card_cols = blueprint_spec.card_grid.columns
                 pill_count = blueprint_spec.feature_callouts.count
                 pill_layout = blueprint_spec.feature_callouts.layout.replace("_", " ")
                 wave_pct = blueprint_spec.baseline_wave.height_percentage
             else:
-                card_rows = 1
                 card_cols = 3
                 pill_count = 4
                 pill_layout = "2x2 grid"
@@ -2316,9 +2324,9 @@ def extract_front_cover_ensemble(
         canon = str(p.get("canonical_object", "")).lower()
         sec = str(p.get("section", "")).lower()
         lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
-        if (
-            "fruit" in sec or canon in ["apple", "cherry", "banana", "strawberry"]
-        ) and len(dynamic_companions) < 1:
+        if ("fruit" in sec or canon in ["apple", "cherry", "banana", "strawberry"]) and len(
+            dynamic_companions
+        ) < 1:
             dynamic_companions.append(
                 f"a shiny cute smiling cartoon {lbl} with big sweet round eyes, rosy cheeks, and leafy stem"
             )
@@ -2459,4 +2467,3 @@ def generate_mascot_prompt(
     engine = DebateEngine()
     res = engine.run_mascot_debate(mascot_name=name, book_config_path=book_config_path)
     return res.positive_prompt, res.negative_prompt
-

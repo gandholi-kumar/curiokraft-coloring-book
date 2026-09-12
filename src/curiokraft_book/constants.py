@@ -10,6 +10,7 @@ This module serves as the single source of truth for:
 
 from __future__ import annotations
 
+import functools
 import logging
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ def _read_initial_book_config() -> dict[str, Any]:
                 if isinstance(d, dict):
                     return d
         except Exception:
+            # Fall back to empty dictionary if configuration file is missing or unreadable
             pass
     return {}
 
@@ -75,17 +77,21 @@ DEFAULT_LOGO_PATH = Path("assets/logo/curiokraft_logo.png")
 DEFAULT_EMBLEM_PATH = Path("assets/emblem/curiokraft_emblem.png")
 
 # Milestone Bookend Pages & Mascot Defaults
-DEFAULT_WELCOME_PAGE_ENABLED = bool(
-    _sp_cfg.get("welcome_page", {}).get("enabled", True)
-) if isinstance(_sp_cfg, dict) else True
-DEFAULT_CERTIFICATE_PAGE_ENABLED = bool(
-    _sp_cfg.get("certificate_page", {}).get("enabled", True)
-) if isinstance(_sp_cfg, dict) else True
+DEFAULT_WELCOME_PAGE_ENABLED = (
+    bool(_sp_cfg.get("welcome_page", {}).get("enabled", True))
+    if isinstance(_sp_cfg, dict)
+    else True
+)
+DEFAULT_CERTIFICATE_PAGE_ENABLED = (
+    bool(_sp_cfg.get("certificate_page", {}).get("enabled", True))
+    if isinstance(_sp_cfg, dict)
+    else True
+)
 DEFAULT_MASCOT_ENABLED = bool(_m_cfg.get("enabled", True)) if isinstance(_m_cfg, dict) else False
 DEFAULT_MASCOT_NAME = _m_cfg.get("name") if isinstance(_m_cfg, dict) else None
-DEFAULT_MASCOT_GENERATE_PROMPT = bool(
-    _m_cfg.get("generate_prompt", False)
-) if isinstance(_m_cfg, dict) else False
+DEFAULT_MASCOT_GENERATE_PROMPT = (
+    bool(_m_cfg.get("generate_prompt", False)) if isinstance(_m_cfg, dict) else False
+)
 DEFAULT_MASCOT_DROP_PATH = (
     Path(str(_m_cfg.get("drop_path", "inbox/special_assets/tiny_mascot.png")))
     if isinstance(_m_cfg, dict)
@@ -222,20 +228,16 @@ ALL_PIPELINE_STATES = (
 # ==============================================================================
 # 6. Dynamic Configuration Loader
 # ==============================================================================
-_CONFIG_CACHE: dict[str, Any] | None = None
 
 
+@functools.lru_cache(maxsize=8)
 def load_book_config(config_path: Path | str = DEFAULT_BOOK_CONFIG) -> dict[str, Any]:
     """Load book configuration with caching and graceful fallbacks.
 
     Returns the loaded YAML dictionary, or a minimal structured fallback
     matching the standard constants if the file cannot be loaded.
     """
-    global _CONFIG_CACHE
     path = Path(config_path)
-
-    if _CONFIG_CACHE is not None and path == DEFAULT_BOOK_CONFIG:
-        return _CONFIG_CACHE
 
     if not path.exists():
         logger.debug(f"Book configuration not found at {path}, using standard defaults.")
@@ -245,8 +247,6 @@ def load_book_config(config_path: Path | str = DEFAULT_BOOK_CONFIG) -> dict[str,
         with open(path, encoding="utf-8") as fh:
             data = yaml.safe_load(fh)
         if isinstance(data, dict):
-            if path == DEFAULT_BOOK_CONFIG:
-                _CONFIG_CACHE = data
             return data
         return _build_fallback_config()
     except Exception as exc:

@@ -165,4 +165,3 @@ def test_kdp_form_privacy_protection():
     assert "inbox/kdp_forms/*.html" in gi_text, "inbox/kdp_forms/*.html must be ignored"
     assert "inbox/kdp_forms/*.htm" in gi_text, "inbox/kdp_forms/*.htm must be ignored"
     assert "!inbox/kdp_forms/README.md" in gi_text, "README.md must be kept tracked"
-

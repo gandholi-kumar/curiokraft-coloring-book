@@ -9,7 +9,6 @@ and baseline waves to match the user's design.
 import json
 import logging
 from pathlib import Path
-from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field

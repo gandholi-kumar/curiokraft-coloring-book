@@ -82,11 +82,7 @@ def archive_processed_special_assets(
 
     vol = (volume or DEFAULT_BOOK_VOLUME).lower()
 
-    if dest_dir:
-        target_dir = Path(dest_dir)
-    else:
-        target_dir = Path("assets/special_assets") / vol
-
+    target_dir = Path(dest_dir) if dest_dir else Path("assets/special_assets") / vol
     target_dir.mkdir(parents=True, exist_ok=True)
 
     search_dirs: list[Path] = []
@@ -129,7 +125,8 @@ def archive_processed_special_assets(
                 shutil.move(str(item), str(dest_file))
                 seen_sources.add(item.resolve())
                 moved_assets.append((item, dest_file))
-            except Exception:
+            except OSError:
+                # File may be locked or permission denied; leave in place
                 pass
 
         # Clean up empty volume subdirectory in inbox if empty
@@ -138,7 +135,8 @@ def archive_processed_special_assets(
                 remaining = [f for f in s_dir.iterdir() if f.name not in (".gitkeep", "README.md")]
                 if not remaining:
                     shutil.rmtree(str(s_dir), ignore_errors=True)
-            except Exception:
+            except OSError:
+                # Subdirectory cleanup is non-critical; leave intact if removal fails
                 pass
 
     return moved_assets
@@ -192,7 +190,6 @@ def _find_asset(key: str, asset_dir: Path | str = SPECIAL_ASSET_DIR) -> Path | N
             if p.exists():
                 return p
     return None
-
 
 
 def _load_asset_grayscale(

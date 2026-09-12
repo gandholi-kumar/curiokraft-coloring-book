@@ -11,8 +11,11 @@ from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 
+from curiokraft_book.agents.kdp_parser import inspect_kdp_inbox_forms
+from curiokraft_book.agents.kdp_publisher import KDPPublisherOrchestrator
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
+from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
 from curiokraft_book.compositor.typography import composite_typography
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
@@ -39,9 +42,6 @@ from curiokraft_book.orchestrator.retry_manager import RetryManager
 from curiokraft_book.orchestrator.state_manager import PipelineStateManager
 from curiokraft_book.validators.duplicates import ObjectRegistryValidator
 from curiokraft_book.validators.kdp_preflight import run_full_preflight
-from curiokraft_book.agents.kdp_parser import inspect_kdp_inbox_forms, parse_kdp_html_file
-from curiokraft_book.agents.kdp_publisher import KDPPublisherOrchestrator
-from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
 
 # ----------------------------------------------------------------------
 # Windows UTF-8 Terminal Encoding Configuration
@@ -53,6 +53,7 @@ if sys.platform == "win32":
         if hasattr(sys.stderr, "reconfigure"):
             sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
+        # Windows standard stream reconfigure may fail in non-standard terminals; fall back silently
         pass
 
 # ----------------------------------------------------------------------
@@ -367,7 +368,9 @@ def run_doctor():
         "KDP Form Privacy",
         "inbox/kdp_forms/*.html",
         "[bold green]PROTECTED[/bold green]" if kdp_secure else "[bold red]EXPOSED[/bold red]",
-        "Excluded from Git; strictly local offline parsing" if kdp_secure else "Add inbox/kdp_forms/*.html to .gitignore to prevent public leak",
+        "Excluded from Git; strictly local offline parsing"
+        if kdp_secure
+        else "Add inbox/kdp_forms/*.html to .gitignore to prevent public leak",
     )
 
     # 6. Special Milestone Assets
@@ -376,7 +379,13 @@ def run_doctor():
     has_vol_assets = vol_assets_dir.exists() and any(f.is_file() for f in vol_assets_dir.iterdir())
     inbox_special_dir = Path("inbox/special_assets")
     pending_inbox = (
-        len([f for f in inbox_special_dir.iterdir() if f.is_file() and f.name.lower() not in ("readme.md", ".gitkeep")])
+        len(
+            [
+                f
+                for f in inbox_special_dir.iterdir()
+                if f.is_file() and f.name.lower() not in ("readme.md", ".gitkeep")
+            ]
+        )
         if inbox_special_dir.exists()
         else 0
     )
@@ -728,24 +737,37 @@ def generate_special_pages(
 
     console.print(f"[dim]• Reading modular assets from:[/dim] [cyan]{asset_dir}[/cyan]")
     from curiokraft_book.compositor.special_pages import _find_asset
-    found_assets = [k for k in ["mascot", "badge", "welcome", "celebration", "sparkles", "stars", "crayons"] if _find_asset(k, Path(asset_dir))]
+
+    found_assets = [
+        k
+        for k in ["mascot", "badge", "welcome", "celebration", "sparkles", "stars", "crayons"]
+        if _find_asset(k, Path(asset_dir))
+    ]
     if found_assets:
         console.print(f"[dim]  • Discovered assets: {', '.join(found_assets)}[/dim]")
     if DEFAULT_WELCOME_PAGE_ENABLED:
         render_welcome_page(output_path=str(p001_path), asset_dir=asset_dir, show_guides=guides)
-        console.print(f"[bold green][PASS] Page 001 (Welcome & Ownership):[/bold green] {p001_path}")
+        console.print(
+            f"[bold green][PASS] Page 001 (Welcome & Ownership):[/bold green] {p001_path}"
+        )
     else:
-        console.print("[dim]• Page 001 (Welcome & Ownership) is disabled in book_config.yaml (special_pages.welcome_page.enabled: false)[/dim]")
+        console.print(
+            "[dim]• Page 001 (Welcome & Ownership) is disabled in book_config.yaml (special_pages.welcome_page.enabled: false)[/dim]"
+        )
 
     if DEFAULT_CERTIFICATE_PAGE_ENABLED:
         render_certificate_page(output_path=str(p110_path), asset_dir=asset_dir, show_guides=guides)
-        console.print(f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}")
+        console.print(
+            f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}"
+        )
     else:
-        console.print("[dim]• Page 110 (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]")
+        console.print(
+            "[dim]• Page 110 (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]"
+        )
 
     if auto_archive:
         archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
-        for src_f, dest_f in archived:
+        for _src_f, dest_f in archived:
             console.print(
                 f"[bold green][ARCHIVED][/bold green] Auto-moved inbox asset to: [cyan]{dest_f}[/cyan]"
             )
@@ -1209,12 +1231,8 @@ def export_prompts(
             generate_mascot_prompt,
         )
 
-        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(
-            manifest_path=manifest
-        )
-        m_pos, m_neg = generate_mascot_prompt(
-            mascot_name=m_name, manifest_path=manifest
-        )
+        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=manifest)
+        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=manifest)
         m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
 
         prompt_items.append(
@@ -1583,7 +1601,10 @@ def ingest_raw_images(
                     console.print(f"    [dim]-> Canonical back cover preserved: {back_dest}[/dim]")
 
     # Check for special milestone assets in inbox/special_assets
-    inbox_special_dirs = [Path(f"inbox/special_assets/{DEFAULT_BOOK_VOLUME}"), Path("inbox/special_assets")]
+    inbox_special_dirs = [
+        Path(f"inbox/special_assets/{DEFAULT_BOOK_VOLUME}"),
+        Path("inbox/special_assets"),
+    ]
     special_candidates: list[Path] = []
     for sp_d in inbox_special_dirs:
         if sp_d.exists():
@@ -1611,18 +1632,22 @@ def ingest_raw_images(
         if DEFAULT_WELCOME_PAGE_ENABLED:
             p001_path = out_masters / "page_001.png"
             render_welcome_page(output_path=str(p001_path))
-            console.print(f"  [bold green][PASS] Re-rendered Page 001 (Welcome & Ownership):[/bold green] {p001_path}")
+            console.print(
+                f"  [bold green][PASS] Re-rendered Page 001 (Welcome & Ownership):[/bold green] {p001_path}"
+            )
             found_count += 1
 
         if DEFAULT_CERTIFICATE_PAGE_ENABLED:
             p110_path = out_masters / "page_110.png"
             render_certificate_page(output_path=str(p110_path))
-            console.print(f"  [bold green][PASS] Re-rendered Page 110 (Completion Certificate):[/bold green] {p110_path}")
+            console.print(
+                f"  [bold green][PASS] Re-rendered Page 110 (Completion Certificate):[/bold green] {p110_path}"
+            )
             found_count += 1
 
         if clear_inbox:
             archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
-            for src_f, dest_f in archived:
+            for _src_f, dest_f in archived:
                 console.print(f"    [dim]-> Auto-archived special asset to: {dest_f}[/dim]")
 
     if found_count > 0:
@@ -1646,7 +1671,10 @@ def ingest_raw_images(
 @blueprint_app.command("inspect")
 def inspect_blueprint(
     target_type: str = typer.Option(
-        "back_cover", "--target", "-t", help="Target type (back_cover, front_cover, spread, interior)"
+        "back_cover",
+        "--target",
+        "-t",
+        help="Target type (back_cover, front_cover, spread, interior)",
     ),
 ):
     """[Custom Design] Inspect user layout blueprints dropped in inbox/blueprints/ and display parsed layout zones."""
@@ -1725,26 +1753,67 @@ def generate_kdp_submission(
     saved = save_kdp_submission_bundle(package, output_dir=output_dir)
 
     # Summary table
-    table = Table(title=f"Amazon KDP Publishing Submission Bundle ({package.volume_id.upper()})", border_style="green")
+    table = Table(
+        title=f"Amazon KDP Publishing Submission Bundle ({package.volume_id.upper()})",
+        border_style="green",
+    )
     table.add_column("Tab / Component", style="bold cyan", width=24)
     table.add_column("Field / Specification", style="white", width=42)
     table.add_column("Status / Length", style="green", width=22)
 
-    table.add_row("Tab 1: Details", f"Title: {package.details.book_title}", "[bold green]Exact Cover Match[/bold green]")
-    table.add_row("Tab 1: Details", f"Subtitle: {package.details.subtitle}", "[bold green]Exact Cover Match[/bold green]")
-    table.add_row("Tab 1: Details", f"Series: {package.details.series_name} (Vol {package.details.series_number})", "[bold green]Multi-Volume Linked[/bold green]")
-    table.add_row("Tab 1: Details", f"Description: {len(package.details.description_html)} chars HTML", "[bold green]KDP-Approved HTML[/bold green]")
-    table.add_row("Tab 1: Details", f"7 Backend Keywords ({len(package.details.keywords)} phrases)", "[bold green]0 Title Overlap (<=50c)[/bold green]")
-    table.add_row("Tab 2: Content", f"{package.content.page_count}p, {package.content.trim_size}, No Bleed", "[bold green]Preflight Certified[/bold green]")
-    table.add_row("Tab 2: Content", "AI Disclosure: Gemini/Imagen + Otsu Binarizer", "[bold green]Compliant AI Answers[/bold green]")
-    table.add_row("Tab 3: Pricing", f"${package.pricing.list_price_usd:.2f} USD (60% Royalty Tier)", "[bold green]Expanded Distribution[/bold green]")
+    table.add_row(
+        "Tab 1: Details",
+        f"Title: {package.details.book_title}",
+        "[bold green]Exact Cover Match[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Subtitle: {package.details.subtitle}",
+        "[bold green]Exact Cover Match[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Series: {package.details.series_name} (Vol {package.details.series_number})",
+        "[bold green]Multi-Volume Linked[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"Description: {len(package.details.description_html)} chars HTML",
+        "[bold green]KDP-Approved HTML[/bold green]",
+    )
+    table.add_row(
+        "Tab 1: Details",
+        f"7 Backend Keywords ({len(package.details.keywords)} phrases)",
+        "[bold green]0 Title Overlap (<=50c)[/bold green]",
+    )
+    table.add_row(
+        "Tab 2: Content",
+        f"{package.content.page_count}p, {package.content.trim_size}, No Bleed",
+        "[bold green]Preflight Certified[/bold green]",
+    )
+    table.add_row(
+        "Tab 2: Content",
+        "AI Disclosure: Gemini/Imagen + Otsu Binarizer",
+        "[bold green]Compliant AI Answers[/bold green]",
+    )
+    table.add_row(
+        "Tab 3: Pricing",
+        f"${package.pricing.list_price_usd:.2f} USD (60% Royalty Tier)",
+        "[bold green]Expanded Distribution[/bold green]",
+    )
 
     console.print(table)
     console.print()
 
-    console.print(f"[bold green][PASS] Interactive 1-Click Dashboard:[/] [bold cyan]{saved['html']}[/]")
-    console.print(f"[bold green][PASS] Markdown Cheatsheet:[/]           [bold cyan]{saved['markdown']}[/]")
-    console.print(f"[bold green][PASS] Machine-Readable JSON:[/]         [bold cyan]{saved['json']}[/]")
+    console.print(
+        f"[bold green][PASS] Interactive 1-Click Dashboard:[/] [bold cyan]{saved['html']}[/]"
+    )
+    console.print(
+        f"[bold green][PASS] Markdown Cheatsheet:[/]           [bold cyan]{saved['markdown']}[/]"
+    )
+    console.print(
+        f"[bold green][PASS] Machine-Readable JSON:[/]         [bold cyan]{saved['json']}[/]"
+    )
 
     if open_browser:
         console.print("\n[dim]Opening interactive 1-click dashboard in default browser...[/dim]")
@@ -1755,7 +1824,7 @@ def generate_kdp_submission(
 
     print_hint(
         "KDP Metadata Generation",
-        f"Start publishing at https://kdp.amazon.com",
+        "Start publishing at https://kdp.amazon.com",
         "Open your book in KDP and click '[Copy]' buttons in the dashboard to paste into the 3 tabs!",
     )
 
@@ -1782,9 +1851,11 @@ def show_kdp_submission(
             f"[bold green]Reading Age:[/] {package.details.reading_age_min} to {package.details.reading_age_max} Years\n"
             f"[bold green]Price:[/] ${package.pricing.list_price_usd:.2f} USD\n\n"
             f"[bold cyan]7 Amazon A9 Backend Keywords (<= 50 chars each):[/]\n"
-            + "\n".join(f"  {i}. {kw} ({len(kw)}c)" for i, kw in enumerate(package.details.keywords, 1))
+            + "\n".join(
+                f"  {i}. {kw} ({len(kw)}c)" for i, kw in enumerate(package.details.keywords, 1)
+            )
             + "\n\n"
-            + f"[bold cyan]Categories:[/]\n"
+            + "[bold cyan]Categories:[/]\n"
             + "\n".join(f"  • {cat}" for cat in package.details.categories),
             title=f"[bold yellow]Amazon KDP Metadata Summary ({package.volume_id.upper()})[/bold yellow]",
             border_style="cyan",
@@ -1805,14 +1876,19 @@ def parse_kdp_forms(
     inspection = inspect_kdp_inbox_forms(html_dir)
     if not inspection.has_html_forms:
         console.print(f"[yellow]No HTML forms found in {html_dir}/.[/yellow]")
-        console.print("[dim]You can save HTML pages from KDP and drop them here for automated input mapping.[/dim]")
+        console.print(
+            "[dim]You can save HTML pages from KDP and drop them here for automated input mapping.[/dim]"
+        )
         return
 
     console.print(
         Panel(
             f"[bold green]Directory:[/] {inspection.source_dir}\n"
             f"[bold green]HTML Files Found:[/] {inspection.html_files_found}\n"
-            + "\n".join(f"  • {f.file_name} ({f.fields_count} fields, tab: {f.tab_detected})" for f in inspection.parsed_files)
+            + "\n".join(
+                f"  • {f.file_name} ({f.fields_count} fields, tab: {f.tab_detected})"
+                for f in inspection.parsed_files
+            )
             + "\n[dim]• Privacy Guarantee: Internal HTML forms are parsed offline locally & shielded by .gitignore[/dim]",
             title="[bold yellow]Parsed KDP HTML Forms Inspection[/bold yellow]",
             border_style="green",

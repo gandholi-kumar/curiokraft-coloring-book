@@ -10,16 +10,15 @@ Coordinates specialized publishing agents:
 from __future__ import annotations
 
 import datetime
-import json
 import logging
-import os
 import re
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
 import yaml
+from pydantic import BaseModel, Field
 
+from curiokraft_book.agents.kdp_parser import KDPFormInspection, inspect_kdp_inbox_forms
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
     DEFAULT_COVER_OUTPUT_PDF,
@@ -29,10 +28,8 @@ from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_TRIM_HEIGHT_IN,
     DEFAULT_TRIM_WIDTH_IN,
-    KDP_DESCRIPTION_MAX_CHARS,
     KDP_KEYWORD_MAX_CHARS,
 )
-from curiokraft_book.agents.kdp_parser import KDPFormInspection, inspect_kdp_inbox_forms
 
 logger = logging.getLogger("curiokraft.kdp_publisher")
 
@@ -41,13 +38,16 @@ logger = logging.getLogger("curiokraft.kdp_publisher")
 # Pydantic Schemas for the 3 KDP Publishing Tabs & Agent Audits
 # ==============================================================================
 
+
 class KDPCategoryItem(BaseModel):
     """Detailed category placement matching Amazon's modern modal selector."""
 
     root: str = "Books"
     category: str
     subcategories: list[str] = Field(default_factory=list)
-    placements: list[str] = Field(default_factory=list)  # e.g. ["Nonfiction"] or ["Fiction", "Nonfiction"]
+    placements: list[str] = Field(
+        default_factory=list
+    )  # e.g. ["Nonfiction"] or ["Fiction", "Nonfiction"]
     display_path: str
 
 
@@ -76,7 +76,9 @@ class KDPDetailsTab(BaseModel):
     series_display_order: str = "Yes"
 
     edition_number: str = ""
-    edition_guidance: str = "Leave blank for original 1st edition, or enter 2+ for major revised editions."
+    edition_guidance: str = (
+        "Leave blank for original 1st edition, or enter 2+ for major revised editions."
+    )
 
     author_prefix: str = ""
     author_first: str = "CurioKraft"
@@ -104,14 +106,10 @@ class KDPDetailsTab(BaseModel):
     categories_flat: list[str] = Field(default_factory=list)
 
     is_low_content_book: bool = False
-    low_content_guidance: str = (
-        "Unchecked / No. Coloring books with illustrated educational drawings are standard books, NOT low-content."
-    )
+    low_content_guidance: str = "Unchecked / No. Coloring books with illustrated educational drawings are standard books, NOT low-content."
 
     is_large_print_book: bool = True
-    large_print_guidance: str = (
-        "Checked / Yes. Toddler bubble letter word headers are 200pt+ (>16pt), qualifying for the Amazon Large Print badge."
-    )
+    large_print_guidance: str = "Checked / Yes. Toddler bubble letter word headers are 200pt+ (>16pt), qualifying for the Amazon Large Print badge."
 
     keywords: list[str] = Field(default_factory=list)
 
@@ -185,6 +183,7 @@ class KDPSubmissionPackage(BaseModel):
 # Agent 1: KDP SEO & Keyword Specialist Agent (AGT-KDP-001)
 # ==============================================================================
 
+
 class KDPSEOAgent:
     """Specialist Agent optimizing Amazon A9 search keywords and categories."""
 
@@ -229,7 +228,7 @@ class KDPSEOAgent:
                     break
 
         while len(verified) < 7:
-            verified.append(f"early preschool activity {len(verified)+1}")
+            verified.append(f"early preschool activity {len(verified) + 1}")
 
         return verified[:7]
 
@@ -263,6 +262,7 @@ class KDPSEOAgent:
 # ==============================================================================
 # Agent 2: Amazon Sales Copywriter Agent (AGT-KDP-002)
 # ==============================================================================
+
 
 class KDPCopywriterAgent:
     """Specialist Agent generating high-converting, KDP-compliant HTML product descriptions (ZERO EMOJIS)."""
@@ -311,6 +311,7 @@ class KDPCopywriterAgent:
 # Agent 3: KDP Compliance & Technical Preflight Agent (AGT-KDP-003)
 # ==============================================================================
 
+
 class KDPComplianceAgent:
     """Specialist Agent mapping deterministic preflight specifications and AI disclosures."""
 
@@ -348,6 +349,7 @@ class KDPComplianceAgent:
 # Orchestrator: Multi-Agent KDP Publisher
 # ==============================================================================
 
+
 class KDPPublisherOrchestrator:
     """Master orchestrator generating the complete Amazon KDP submission package."""
 
@@ -367,8 +369,9 @@ class KDPPublisherOrchestrator:
                     d = yaml.safe_load(fh)
                     if isinstance(d, dict):
                         return d
-            except Exception:
-                pass
+            except (OSError, yaml.YAMLError) as exc:
+                # Configuration missing or invalid YAML; fall back to empty dictionary
+                logger.debug("Failed to load book config from %s: %s", self.config_path, exc)
         return {}
 
     def synthesize(self) -> KDPSubmissionPackage:
@@ -515,8 +518,8 @@ class KDPPublisherOrchestrator:
             f"[PASS] Subtitle matches cover: '{subtitle}' ({len(subtitle)} chars)",
             f"[PASS] Combined Title + Subtitle length: {combined_len} / 200 characters (Compliant)",
             f"[PASS] 7 Backend Keywords generated ({len(keywords)} items, each <= 50 chars, 0 title overlap)",
-            f"[PASS] Description strictly uses standard characters (0 emojis, 0 stars, KDP-allowed HTML)",
-            f"[PASS] Category modal hierarchy defined (3 browse placements matching KDP dropdowns)",
+            "[PASS] Description strictly uses standard characters (0 emojis, 0 stars, KDP-allowed HTML)",
+            "[PASS] Category modal hierarchy defined (3 browse placements matching KDP dropdowns)",
             f"[PASS] Print geometry aligned: {specs['page_count']}p, {specs['trim_size']}, No Bleed, Glossy",
             "[PASS] 2024/2026 Amazon AI Content Disclosure prepared",
             f"[PASS] HTML Form Inspection: {'Loaded from inbox/kdp_forms/' if form_inspection.has_html_forms else 'Using Full Built-in KDP Schema'}",

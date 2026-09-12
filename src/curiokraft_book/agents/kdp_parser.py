@@ -95,6 +95,7 @@ class _KDPRawHTMLParser(HTMLParser):
                     try:
                         max_l = int(attr_dict["maxlength"])
                     except ValueError:
+                        # Non-integer maxlength attribute; leave as None
                         pass
                 self.fields.append(
                     {
@@ -114,6 +115,7 @@ class _KDPRawHTMLParser(HTMLParser):
                 try:
                     max_l = int(attr_dict["maxlength"])
                 except ValueError:
+                    # Non-integer maxlength attribute; leave as None
                     pass
             self.current_textarea = {
                 "tag": "textarea",
@@ -218,7 +220,16 @@ def _canonicalize_field_key(name: str, field_id: str, label: str) -> tuple[str, 
         return "details", "description"
 
     # Publishing Rights (Public domain vs copyright)
-    if any(k in text for k in ("public_domain", "public-domain", "is_public_domain", "publishing rights", "copyright")):
+    if any(
+        k in text
+        for k in (
+            "public_domain",
+            "public-domain",
+            "is_public_domain",
+            "publishing rights",
+            "copyright",
+        )
+    ):
         return "details", "publishing_rights"
 
     # Adult content
@@ -226,7 +237,10 @@ def _canonicalize_field_key(name: str, field_id: str, label: str) -> tuple[str, 
         return "details", "adult_content"
 
     # Reading age ranges
-    if any(k in text for k in ("reading_interest_age", "reading-interest-age", "reading age", "reading_age")):
+    if any(
+        k in text
+        for k in ("reading_interest_age", "reading-interest-age", "reading age", "reading_age")
+    ):
         if any(k in text for k in ("min", "start")):
             return "details", "reading_age_min"
         if any(k in text for k in ("max", "end")):
@@ -334,7 +348,9 @@ def parse_kdp_html_file(file_path: str | Path) -> KDPParsedFile:
     headings_joined = " ".join(parser.headings).lower()
     lowered_all = f"{title_text} {headings_joined} {p.name}".lower()
 
-    if any(k in headings_joined for k in ("rights & pricing", "royalties", "territories")) or any(k in lowered_all for k in ("pricing", "rights", "tab3")):
+    if any(k in headings_joined for k in ("rights & pricing", "royalties", "territories")) or any(
+        k in lowered_all for k in ("pricing", "rights", "tab3")
+    ):
         tab_detected = "pricing"
     elif any(k in lowered_all for k in ("detail", "details", "tab1", "step1")):
         tab_detected = "details"
@@ -380,7 +396,9 @@ def inspect_kdp_inbox_forms(
         for field in pf.fields:
             fields_by_tab.setdefault(field.tab_guess, []).append(field)
             if field.maxlength:
-                detected_limits[field.canonical_key or field.name or field.field_id] = field.maxlength
+                detected_limits[field.canonical_key or field.name or field.field_id] = (
+                    field.maxlength
+                )
 
     return KDPFormInspection(
         source_dir=str(target_p),

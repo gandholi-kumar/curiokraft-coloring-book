@@ -705,12 +705,6 @@ def composite_kdp_cover(
         cover.paste(spine_img, (spine_left_x, 0), spine_img)
 
         # Draw Clean White Publisher Badge Container with Bottom/Right Box Shadow & Authentic Logo (Option H5)
-        badge_w = 640
-        badge_h = 420
-        badge_x = 180
-        badge_y = (
-            2860  # Perfectly balanced vertically with bottom safe margin (barcode base at 3280 px)
-        )
         badge_patch, pad_px = create_publisher_badge(
             card_w=badge_w,
             card_h=badge_h,
@@ -724,10 +718,6 @@ def composite_kdp_cover(
 
         # Solid Pure White Barcode Box (Exact Frozen KDP Specification: 700 x 430 px @ 300 DPI)
         # Amazon imprints barcode automatically at print time. Zero placeholder text or fake lines.
-        barcode_x1 = 1845
-        barcode_x2 = 2545
-        barcode_y1 = 2850
-        barcode_y2 = 3280
         draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255))
 
     else:
@@ -781,18 +771,18 @@ def composite_kdp_cover(
 
         # Publisher Badge Container (Locked Multi-Volume Standard: 640 x 420 px @ 300 DPI)
         badge_patch, pad_px = create_publisher_badge(
-            card_w=640,
-            card_h=420,
+            card_w=badge_w,
+            card_h=badge_h,
             radius=28,
             offset_x=16,
             offset_y=20,
             blur_radius=20,
             shadow_alpha=95,
         )
-        cover.paste(badge_patch, (180 - pad_px, 2860 - pad_px), badge_patch)
+        cover.paste(badge_patch, (badge_x - pad_px, badge_y - pad_px), badge_patch)
 
         # Barcode Box (Locked Multi-Volume Standard: 700 x 430 px @ 300 DPI)
-        draw.rectangle([1845, 2850, 2545, 3280], fill=(255, 255, 255, 255))
+        draw.rectangle([barcode_x1, barcode_y1, barcode_x2, barcode_y2], fill=(255, 255, 255, 255))
 
     # =========================================================================
     # Final Export (Lossless RGB PNG & Press-Quality CMYK PDF)
