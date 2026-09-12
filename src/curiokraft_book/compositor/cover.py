@@ -193,7 +193,7 @@ def _draw_mini_crayon(
 def _draw_3d_multicolor_title(
     canvas: Image.Image,
     text: str,
-    font: ImageFont.FreeTypeFont,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     center_x: int,
     y: int,
     palette: list[str],
@@ -208,10 +208,11 @@ def _draw_3d_multicolor_title(
     char_widths = []
     for ch in text:
         if ch == " ":
-            char_widths.append((ch, font.size // 3))
+            f_size = getattr(font, "size", 38)
+            char_widths.append((ch, int(f_size) // 3))
         else:
             bbox = dummy.textbbox((0, 0), ch, font=font)
-            char_widths.append((ch, (bbox[2] - bbox[0]) + letter_spacing))
+            char_widths.append((ch, int(bbox[2] - bbox[0]) + letter_spacing))
 
     total_w = sum(w for _, w in char_widths) - letter_spacing
     start_x = center_x - (total_w // 2)
@@ -624,7 +625,7 @@ def composite_kdp_cover(
     cover = Image.new("RGBA", (total_w_px, total_h_px), (255, 255, 255, 255))
     draw = ImageDraw.Draw(cover)
 
-    if use_full_artwork:
+    if use_full_artwork and front_art_path is not None and back_art_path is not None:
         # =====================================================================
         # PRODUCTION MODE: Precision Compositing of Full Front & Back Artwork
         # =====================================================================

@@ -77,8 +77,8 @@ def get_brand_logo(
 
     if path is not None:
         try:
-            with Image.open(path) as img:
-                img = img.convert("RGBA")
+            with Image.open(path) as raw_img:
+                img = raw_img.convert("RGBA")
                 # Crop to visible ink to eliminate empty padding
                 bbox = img.getbbox()
                 if bbox:
@@ -94,6 +94,7 @@ def get_brand_logo(
 
                 return resized
         except Exception:
+            # Fall back to typographic badge if image cannot be loaded or processed
             pass
 
     # Clean typographic fallback badge
@@ -107,8 +108,8 @@ def get_brand_logo(
     draw.rounded_rectangle([0, 0, badge_w, badge_h], radius=15, fill=(30, 30, 30, 255))
 
     # Draw centered text
-    bbox = draw.textbbox((0, 0), brand_text_fallback, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    t_bbox = draw.textbbox((0, 0), brand_text_fallback, font=font)
+    tw, th = int(t_bbox[2] - t_bbox[0]), int(t_bbox[3] - t_bbox[1])
     draw.text(
         ((badge_w - tw) // 2, (badge_h - th) // 2),
         brand_text_fallback,
@@ -198,8 +199,8 @@ def create_publisher_badge(
 
     if logo_file is not None:
         try:
-            with Image.open(logo_file) as l_img:
-                l_img = l_img.convert("RGBA")
+            with Image.open(logo_file) as raw_logo:
+                l_img = raw_logo.convert("RGBA")
                 bbox = l_img.getbbox()
                 if bbox:
                     l_img = l_img.crop(bbox)
@@ -214,7 +215,8 @@ def create_publisher_badge(
                 brand_text = l_img.crop((0, 546, cw, 625))
                 line = l_img.crop((0, 643, cw, 649))
                 subtitle = l_img.crop((0, 665, cw, 692))
-                sub_ink = subtitle.crop(subtitle.getbbox())
+                sub_bbox = subtitle.getbbox()
+                sub_ink = subtitle.crop(sub_bbox) if sub_bbox else subtitle
 
                 b_img = bird.resize((310, int(round(310 * 514 / cw))), Image.Resampling.LANCZOS)
                 brand_img = brand_text.resize(
@@ -238,6 +240,7 @@ def create_publisher_badge(
                 cur_y += line_img.height + 8
                 card_layer.paste(sub_img, (pad + (card_w - sub_img.width) // 2, cur_y), sub_img)
         except Exception:
+            # Fall back to typographic badge if image cannot be processed
             pass
     else:
         fallback = get_brand_logo(target_width_px=max_logo_w)

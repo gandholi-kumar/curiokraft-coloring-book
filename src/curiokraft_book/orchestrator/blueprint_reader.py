@@ -103,15 +103,14 @@ class LayoutBlueprintReader:
         search_dirs = [self.blueprints_dir, self.inbox_dir]
 
         # Prioritize matching file stems
-        stem_candidates = [
+        stem_candidates: list[str] = [
             f"{clean_target}_blueprint",
             f"blueprint_{clean_target}",
             f"{clean_target}_wireframe",
             f"{clean_target}_layout",
-            "cover_blueprint" if "cover" in clean_target else None,
+            *(["cover_blueprint"] if "cover" in clean_target else []),
             "blueprint",
         ]
-        stem_candidates = [s for s in stem_candidates if s]
 
         valid_extensions = [".png", ".jpg", ".jpeg", ".webp", ".yaml", ".yml", ".json"]
 

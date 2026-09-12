@@ -41,8 +41,8 @@ def measure_spaced_text(
             total_w += int(letter_spacing_px * 2.5)
             continue
         c_bbox = draw.textbbox((0, 0), char, font=font, stroke_width=stroke_width)
-        c_w = c_bbox[2] - c_bbox[0]
-        c_h = c_bbox[3] - c_bbox[1]
+        c_w = int(c_bbox[2] - c_bbox[0])
+        c_h = int(c_bbox[3] - c_bbox[1])
         max_h = max(max_h, c_h)
         total_w += c_w
         if i < len(chars) - 1:
@@ -141,7 +141,7 @@ def composite_typography(
             continue
 
         c_bbox = draw.textbbox((0, 0), char, font=font, stroke_width=stroke)
-        c_w = c_bbox[2] - c_bbox[0]
+        c_w = int(c_bbox[2] - c_bbox[0])
 
         if hollow_bubble_style:
             # Draw individual hollow bubble letter

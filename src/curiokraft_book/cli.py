@@ -1856,7 +1856,7 @@ def show_kdp_submission(
             )
             + "\n\n"
             + "[bold cyan]Categories:[/]\n"
-            + "\n".join(f"  • {cat}" for cat in package.details.categories),
+            + "\n".join(f"  • {cat}" for cat in package.details.categories_flat),
             title=f"[bold yellow]Amazon KDP Metadata Summary ({package.volume_id.upper()})[/bold yellow]",
             border_style="cyan",
         )

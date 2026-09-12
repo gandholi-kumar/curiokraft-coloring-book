@@ -97,6 +97,8 @@ class GeminiImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         if not self.api_key:
@@ -120,8 +122,9 @@ class GeminiImageProvider(BaseImageProvider):
                 try:
                     logger.info(f"Calling Google Gemini Image Generation with {model_id}...")
                     interaction = client.interactions.create(model=model_id, input=imagen_prompt)
-                    if interaction.output_image and interaction.output_image.data:
-                        img_bytes = base64.b64decode(interaction.output_image.data)
+                    out_img_obj = getattr(interaction, "output_image", None)
+                    if out_img_obj and getattr(out_img_obj, "data", None):
+                        img_bytes = base64.b64decode(out_img_obj.data)
                         pil_img = Image.open(BytesIO(img_bytes)).convert("L")
                         logger.info(f"Successfully generated illustration via {model_id}.")
                         return pil_img
@@ -150,7 +153,7 @@ class GeminiImageProvider(BaseImageProvider):
                 "Content-Type": "application/json",
                 "x-goog-api-key": self.api_key,
             }
-            payload = {
+            payload: dict[str, Any] = {
                 "model": "gemini-3.1-flash-image",
                 "input": [{"type": "text", "text": imagen_prompt}],
             }
@@ -166,11 +169,13 @@ class GeminiImageProvider(BaseImageProvider):
             else:
                 raise RuntimeError(f"Google Gemini Image API HTTP {resp.status_code}: {resp.text}")
         except Exception as rest_err:
-            raise RuntimeError(f"Google Gemini REST generation error: {rest_err}") from rest_err
+            logger.debug(f"REST interaction fallback failed: {rest_err}")
+
+        raise RuntimeError("Failed to generate image via Gemini API.")
 
 
 class OpenAIImageProvider(BaseImageProvider):
-    """OpenAI DALL-E 3 Image Generation Provider."""
+    """OpenAI DALL-E 3 Provider."""
 
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
@@ -185,6 +190,8 @@ class OpenAIImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         if not self.api_key:
@@ -205,8 +212,10 @@ class OpenAIImageProvider(BaseImageProvider):
             quality="standard",
             n=1,
         )
+        if not resp.data or not resp.data[0].url:
+            raise ValueError("No image URL returned from OpenAI")
         img_url = resp.data[0].url
-        raw_bytes = requests.get(img_url, timeout=30).content
+        raw_bytes = requests.get(str(img_url), timeout=30).content
         pil_img = Image.open(BytesIO(raw_bytes)).convert("L")
         logger.info("Successfully received generated image from OpenAI DALL-E 3.")
         return pil_img
@@ -367,6 +376,8 @@ class MockImageProvider(BaseImageProvider):
         negative_prompt: str = "",
         canonical_label: str = "",
         section: str = "General",
+        page_id: str | None = None,
+        page_number: int | None = None,
         **kwargs,
     ) -> Any:
         from PIL import Image, ImageDraw
@@ -434,6 +445,16 @@ class ModelClient:
                 self.model_name = model_name or "claude-3-5-sonnet-20240620"
             else:
                 self.provider = "mock"
+                self.model_name = "curiokraft-offline-simulator"
+
+        if not self.model_name:
+            if self.provider == "openai":
+                self.model_name = "gpt-4o"
+            elif self.provider == "anthropic":
+                self.model_name = "claude-3-5-sonnet-20240620"
+            elif self.provider == "gemini":
+                self.model_name = "gemini-1.5-pro"
+            else:
                 self.model_name = "curiokraft-offline-simulator"
 
         logger.info(f"Initialized ModelClient with provider: {self.provider} ({self.model_name})")
@@ -552,25 +573,28 @@ class ModelClient:
         import openai
 
         client = openai.OpenAI()
-        resp = client.chat.completions.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"} if response_schema else None,
-            temperature=temp,
-        )
+        messages: list[Any] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        call_kwargs: dict[str, Any] = {
+            "model": self.model_name or "gpt-4o",
+            "messages": messages,
+            "temperature": temp,
+        }
+        if response_schema:
+            call_kwargs["response_format"] = {"type": "json_object"}
+        resp = client.chat.completions.create(**call_kwargs)
         content = resp.choices[0].message.content or ""
         parsed = None
         try:
             parsed = json.loads(content)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             pass
         return ModelResponse(
             content=content,
             parsed_json=parsed,
-            model_name=self.model_name,
+            model_name=str(self.model_name or "gpt-4o"),
             prompt_tokens=resp.usage.prompt_tokens if resp.usage else 0,
             completion_tokens=resp.usage.completion_tokens if resp.usage else 0,
         )
@@ -581,23 +605,25 @@ class ModelClient:
         import anthropic
 
         client = anthropic.Anthropic()
-        resp = client.messages.create(
-            model=self.model_name,
-            max_tokens=4096,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-            temperature=temp,
-        )
-        content = resp.content[0].text if resp.content else ""
+        call_kwargs: dict[str, Any] = {
+            "model": self.model_name or "claude-3-5-sonnet-20240620",
+            "max_tokens": 4096,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": user_prompt}],
+            "temperature": temp,
+        }
+        resp = client.messages.create(**call_kwargs)
+        first_content = resp.content[0] if resp.content else None
+        content = getattr(first_content, "text", "") if first_content else ""
         parsed = None
         try:
             parsed = json.loads(content)
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             pass
         return ModelResponse(
             content=content,
             parsed_json=parsed,
-            model_name=self.model_name,
+            model_name=str(self.model_name or "claude-3-5-sonnet-20240620"),
             prompt_tokens=resp.usage.input_tokens if resp.usage else 0,
             completion_tokens=resp.usage.output_tokens if resp.usage else 0,
         )
