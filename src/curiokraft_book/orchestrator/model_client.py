@@ -18,6 +18,7 @@ def load_env_file(env_filename: str = ".env") -> None:
 
         load_dotenv()
     except Exception:
+        # python-dotenv is optional; continue with built-in env parser fallback
         pass
 
     # Built-in fallback parser for zero-dependency .env support
@@ -37,6 +38,7 @@ def load_env_file(env_filename: str = ".env") -> None:
                         os.environ[k] = v
                 break
             except Exception:
+                # Failed reading candidate env file; try next search directory
                 pass
 
 
@@ -590,6 +592,7 @@ class ModelClient:
         try:
             parsed = json.loads(content)
         except (json.JSONDecodeError, TypeError):
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content,
@@ -619,6 +622,7 @@ class ModelClient:
         try:
             parsed = json.loads(content)
         except (json.JSONDecodeError, TypeError):
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content,
@@ -648,6 +652,7 @@ class ModelClient:
         try:
             parsed = json.loads(content)
         except Exception:
+            # Response is plain text or invalid JSON; keep parsed as None
             pass
         return ModelResponse(
             content=content, parsed_json=parsed, model_name=self.model_name or "gemini-1.5-pro"
