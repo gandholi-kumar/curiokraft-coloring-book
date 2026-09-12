@@ -4,6 +4,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 from curiokraft_book.agents.kdp_parser import (
     inspect_kdp_inbox_forms,
     parse_kdp_html_file,
@@ -171,3 +173,79 @@ def test_kdp_dashboard_generation(tmp_path: Path):
     assert "3. Rights &amp; Pricing" in html_content
     assert "Agent Deliberations &amp; Audit" in html_content
     assert "📋" not in html_content, "Emoji '📋' should not be used in copy buttons"
+
+
+def test_kdp_parser_classify_fields():
+    """Verify field classification across all supported KDP attributes."""
+    from curiokraft_book.agents.kdp_parser import _canonicalize_field_key
+
+    def check(txt: str):
+        return _canonicalize_field_key(txt, "", "")
+
+    assert check("series title") == ("details", "series_title")
+    assert check("series number volume 2") == ("details", "series_number")
+    assert check("edition number") == ("details", "edition_number")
+    assert check("primary-author first_name") == ("details", "author_first")
+    assert check("primary-author middle_name") == ("details", "author_middle")
+    assert check("primary-author last_name") == ("details", "author_last")
+    assert check("primary-author prefix") == ("details", "author_prefix")
+    assert check("primary-author suffix") == ("details", "author_suffix")
+    assert check("primary-author") == ("details", "author_name")
+    assert check("contributor role") == ("details", "contributor_role")
+    assert check("contributor name") == ("details", "contributors")
+    assert check("public_domain rights") == ("details", "publishing_rights")
+    assert check("adult_content flag") == ("details", "adult_content")
+    assert check("reading_age min") == ("details", "reading_age_min")
+    assert check("reading_age max") == ("details", "reading_age_max")
+    assert check("low-content book") == ("details", "low_content_book")
+    assert check("large-print book") == ("details", "large_print_book")
+    assert check("publication_date") == ("details", "publication_date")
+    assert check("release_date") == ("details", "release_date")
+
+    # Content tab
+    assert check("isbn input") == ("content", "isbn")
+    assert check("interior black and white paper") == ("content", "interior_paper")
+    assert check("trim size 8.5") == ("content", "trim_size")
+    assert check("bleed settings") == ("content", "bleed_settings")
+    assert check("matte finish") == ("content", "cover_finish")
+    assert check("left to right direction") == ("content", "page_direction")
+    assert check("manuscript upload") == ("content", "manuscript_file")
+    assert check("cover file upload") == ("content", "cover_file")
+    assert check("ai_disclosure artificial intelligence") == ("content", "ai_disclosure")
+
+    # Pricing tab
+    assert check("worldwide territories") == ("pricing", "territories")
+    assert check("price_usd") == ("pricing", "list_price_usd")
+    assert check("royalty pricing list price") == ("pricing", "list_price")
+    assert check("expanded distribution") == ("pricing", "expanded_distribution")
+    assert check("unrecognized text") == ("unknown", "unmapped")
+
+
+def test_parse_kdp_html_file_not_found(tmp_path: Path):
+    """Verify FileNotFoundError when target HTML does not exist."""
+    with pytest.raises(FileNotFoundError):
+        parse_kdp_html_file(tmp_path / "non_existent_tab.html")
+
+
+def test_inspect_kdp_inbox_forms_multiple_tabs(tmp_path: Path):
+    """Verify inspection discovers multiple tabs and classifies them."""
+    forms_dir = tmp_path / "inbox_forms"
+    forms_dir.mkdir()
+
+    (forms_dir / "tab1_details.html").write_text(
+        '<form><input id="title" name="data[title]" maxlength="200" /></form>',
+        encoding="utf-8",
+    )
+    (forms_dir / "tab2_content.html").write_text(
+        '<form><input id="isbn" name="data[isbn]" /></form>',
+        encoding="utf-8",
+    )
+    (forms_dir / "tab3_pricing.html").write_text(
+        '<form><input id="price" name="data[price_usd]" /></form>',
+        encoding="utf-8",
+    )
+
+    inspection = inspect_kdp_inbox_forms(forms_dir)
+    assert inspection.has_html_forms is True
+    assert inspection.html_files_found == 3
+    assert len(inspection.parsed_files) == 3

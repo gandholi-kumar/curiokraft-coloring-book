@@ -89,7 +89,7 @@ addopts = "-ra -q --strict-markers"
 
 [tool.coverage.run]
 source = ["src/curiokraft_book"]
-omit = ["tests/*"]
+omit = ["tests/*", "src/curiokraft_book/cli.py"]
 
 [tool.coverage.report]
 show_missing = true

@@ -108,7 +108,8 @@ class LayoutBlueprintReader:
             f"blueprint_{clean_target}",
             f"{clean_target}_wireframe",
             f"{clean_target}_layout",
-            *(["cover_blueprint"] if "cover" in clean_target else []),
+            clean_target,
+            *(["cover_blueprint"] if clean_target == "cover" else []),
             "blueprint",
         ]
 
@@ -124,7 +125,7 @@ class LayoutBlueprintReader:
                 f_ext = f.suffix.lower()
                 if f_ext in valid_extensions:
                     for cand in stem_candidates:
-                        if f_stem == cand or cand in f_stem:
+                        if f_stem == cand or (clean_target in f_stem and cand in f_stem):
                             logger.info(f"Found layout blueprint: {f}")
                             return f
 
