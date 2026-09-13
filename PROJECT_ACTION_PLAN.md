@@ -284,7 +284,7 @@ Overall Publication Readiness: [██████████] 100% Completed (
 ## Phase 9: Animal Anatomy & Posture Governance Architecture
 
 - [x] **Task 9.1: Authoritative Standard Documentation**
-  - *Deliverable:* `docs/ANIMAL_ANATOMY_AND_POSTURE_STANDARD.md`
+  - *Deliverable:* `docs/standards/ANIMAL_ANATOMY_AND_POSTURE_STANDARD.md`
   - *Action:* Consolidate 10B Resolution Hierarchy, 10A Posture Decision Table, and 11-block prompt architecture into repository standard.
   - *Status:* **COMPLETED**
 

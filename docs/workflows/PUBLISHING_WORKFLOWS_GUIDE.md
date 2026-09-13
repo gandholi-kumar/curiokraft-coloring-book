@@ -53,7 +53,7 @@ curiokraft-book prompt export
    * **Aspect Ratio:** `3:4` (Vertical Portrait)
    * **Output Format:** `Images only`
    * **Temperature:** `0.5` (Interior) / `0.9` (Covers)
-   * *(See [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) for full preset details)*
+   * *(See [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) for full preset details)*
 3. Copy the **Positive Prompt** and **Negative Prompt** from `generated/prompts_export.md` into the prompt box and click **Run**.
 
 ---
@@ -69,7 +69,7 @@ Download the generated images and save them using standard naming:
   * Front Cover: `inbox/front_cover.png` (or `.jpg`)
   * Back Cover: `inbox/back_cover.png` (or `.jpg`)
 
-*(For complete file naming rules and multi-volume resolution, see [inbox/raw_pages/README.md](../inbox/raw_pages/README.md))*
+*(For complete file naming rules and multi-volume resolution, see [inbox/raw_pages/README.md](../../inbox/raw_pages/README.md))*
 
 ---
 
@@ -91,7 +91,7 @@ To render both pages with automated centering, white-background cleaning, and st
 curiokraft-book generate special-pages
 ```
 * **Output generated:** `output/interior_masters/page_001.png` & `output/interior_masters/page_110.png`
-* **Guide & Multi-Volume Customization:** See [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md)
+* **Guide & Multi-Volume Customization:** See [docs/architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](../architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md)
 
 ---
 
@@ -257,12 +257,10 @@ curiokraft-book kdp generate --no-open
 
 For detailed mathematical specifications, prompt presets, multi-volume scaling, and multi-agent system internals, consult these focused documents:
 
-* **[Amazon KDP Publishing & Metadata Guide](KDP_PUBLISHING_METADATA_GUIDE.md)** — Multi-agent A9 keyword deduplication, HTML description copywriting, 2024/2026 AI disclosure, and 1-click dashboard.
-* **[Google AI Studio Setup & Prompt Presets](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Aspect ratio, temperature, and copy-paste system instruction presets for web generation.
-* **[Amazon KDP Print Specifications & Barcode Rules](KDP_PRINT_SPECIFICATIONS.md)** — Official geometry tables, cover calculation formulas, spine thickness, safe margins, and barcode box positioning.
-* **[Amazon KDP Global Pricing & Royalty Strategy Guide](KDP_PRICING_AND_ROYALTY_GUIDE.md)** — Comprehensive analysis of the 60% vs. 50% royalty tier threshold, 14 regional marketplaces, European Fixed Price laws, and Expanded Distribution.
-* **[Multi-Volume Architecture & Scaling Guide (Vol 2, Vol 3)](MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, edit manifests, custom curriculum templates, and decouple data from code.
-* **[Upcoming Volumes Concept & Series Roadmap](UPCOMING_VOLUMES.md)** — Top 6 evaluated volume concepts (Ocean, Vehicles, Baby Animals, Dinos, Farm, Bedtime), mascot profiles, 110-page structures, and launch blueprint.
-* **[Multi-Agent System & Debate Engine](MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — Details on the 10 specialist agents, 4-round debate protocols, red-teaming, and debate log inspection.
-* **[Pre-Publish Checklist](ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md)** — Step-by-step 15-minute verification checklist before publishing to Amazon.
-* **[Image Inbox Naming Conventions](../inbox/raw_pages/README.md)** — Drop targets and naming fallback rules (`raw_p002_alphabet_a_to_m.png`, `raw_p006.png`, etc.).
+* **[Amazon KDP Publishing & Metadata Guide](../workflows/KDP_PUBLISHING_METADATA_GUIDE.md)** — Multi-agent A9 keyword deduplication, HTML description copywriting, 2024/2026 AI disclosure, and 1-click dashboard.
+* **[Google AI Studio Setup & Prompt Presets](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Aspect ratio, temperature, and copy-paste system instruction presets for web generation.
+* **[Amazon KDP Print Specifications & Barcode Rules](../reference/KDP_PRINT_SPECIFICATIONS.md)** — Official geometry tables, cover calculation formulas, spine thickness, safe margins, and barcode box positioning.
+* **[Multi-Volume Architecture & Scaling Guide (Vol 2, Vol 3)](../architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, edit manifests, custom curriculum templates, and decouple data from code.
+* **[Multi-Agent System & Debate Engine](../architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — Details on the 10 specialist agents, 4-round debate protocols, red-teaming, and debate log inspection.
+* **[Pre-Publish Checklist](../setup/ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md)** — Step-by-step 15-minute verification checklist before publishing to Amazon.
+* **[Image Inbox Naming Conventions](../../inbox/raw_pages/README.md)** — Drop targets and naming fallback rules (`raw_p002_alphabet_a_to_m.png`, `raw_p006.png`, etc.).

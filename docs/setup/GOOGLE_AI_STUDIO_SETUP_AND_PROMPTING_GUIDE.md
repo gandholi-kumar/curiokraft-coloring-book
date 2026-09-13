@@ -76,7 +76,7 @@ Run the CLI export command to generate all prompts into Markdown:
 ```powershell
 curiokraft-book prompt export
 ```
-All prompts are written to [`generated/prompts_export.md`](../generated/prompts_export.md).
+All prompts are written to [`generated/prompts_export.md`](../../generated/prompts_export.md).
 
 > [!TIP]
 > The file `generated/prompts_export.md` also includes the full AI Studio settings and System Instruction presets right at the top, making it easy to reference during prompting sessions.

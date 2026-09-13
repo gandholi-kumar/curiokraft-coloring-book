@@ -3,16 +3,14 @@
 > [!WARNING]
 > **THIS DOCUMENT IS ARCHIVED & OBSOLETE.**
 > Please use the new, streamlined publishing guide and modular documentation:
-> * 🚀 **Main Interactive Guide:** [docs/PUBLISHING_WORKFLOWS_GUIDE.md](PUBLISHING_WORKFLOWS_GUIDE.md) (Clear Track 1 Free Web UI vs. Track 2 Automated API separation)
-> * 📑 **Amazon KDP Publishing & Metadata Guide:** [docs/KDP_PUBLISHING_METADATA_GUIDE.md](KDP_PUBLISHING_METADATA_GUIDE.md) (Zero emojis, A9 keywords, Category trees, 4-agent audit & 1-click helper)
-> * 🎨 **Special Pages & Mascot Guide:** [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md) (Welcome & Certificate bookends)
-> * ⚙️ **Google AI Studio Setup:** [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)
-> * 📐 **KDP Print Geometry & Barcode Rules:** [docs/KDP_PRINT_SPECIFICATIONS.md](KDP_PRINT_SPECIFICATIONS.md)
-> * 💵 **Amazon KDP Global Pricing & Royalty Guide:** [docs/KDP_PRICING_AND_ROYALTY_GUIDE.md](KDP_PRICING_AND_ROYALTY_GUIDE.md)
-> * 🏛️ **Multi-Volume Architecture (Vol 2, Vol 3):** [docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md](MULTI_VOLUME_ARCHITECTURE_GUIDE.md)
-> * 🗺️ **Upcoming Volumes Concept Roadmap:** [docs/UPCOMING_VOLUMES.md](UPCOMING_VOLUMES.md)
-> * 🧠 **Multi-Agent System & Debates:** [docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md](MULTI_AGENT_SYSTEM_AND_DEBATES.md)
-> * 📥 **Image Inbox Naming Conventions:** [inbox/raw_pages/README.md](../inbox/raw_pages/README.md)
+> * 🚀 **Main Interactive Guide:** [docs/workflows/PUBLISHING_WORKFLOWS_GUIDE.md](../workflows/PUBLISHING_WORKFLOWS_GUIDE.md) (Clear Track 1 Free Web UI vs. Track 2 Automated API separation)
+> * 📑 **Amazon KDP Publishing & Metadata Guide:** [docs/workflows/KDP_PUBLISHING_METADATA_GUIDE.md](../workflows/KDP_PUBLISHING_METADATA_GUIDE.md) (Zero emojis, A9 keywords, Category trees, 4-agent audit & 1-click helper)
+> * 🎨 **Special Pages & Mascot Guide:** [docs/architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](../architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md) (Welcome & Certificate bookends)
+> * ⚙️ **Google AI Studio Setup:** [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)
+> * 📐 **KDP Print Geometry & Barcode Rules:** [docs/reference/KDP_PRINT_SPECIFICATIONS.md](../reference/KDP_PRINT_SPECIFICATIONS.md)
+> * 🏛️ **Multi-Volume Architecture (Vol 2, Vol 3):** [docs/architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md](../architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)
+> * 🧠 **Multi-Agent System & Debates:** [docs/architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md](../architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md)
+> * 📥 **Image Inbox Naming Conventions:** [inbox/raw_pages/README.md](../../inbox/raw_pages/README.md)
 
 ---
 
@@ -116,7 +114,7 @@ curiokraft-book manifest status
 
 > [!TIP]
 > 📖 **Google AI Studio Setup & System Instructions Guide:**
-> For the exact browser sidebar settings (Aspect Ratio `3:4`, Output `Images only`, Temperature `0.5`) and the copy-paste **System Instructions Presets** for both Interior Pages and Cover Master Artwork, see [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md).
+> For the exact browser sidebar settings (Aspect Ratio `3:4`, Output `Images only`, Temperature `0.5`) and the copy-paste **System Instructions Presets** for both Interior Pages and Cover Master Artwork, see [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md).
 
 #### 1. `curiokraft-book prompt export` (Recommended for Full Book)
 Synthesizes and exports **all 110 page prompts** (Intro/Welcome Page P001, educational spreads P002-P005, individual coloring pages P006-P109, and Completion Certificate P110) plus the **Front Cover Master Artwork Prompt** and **Back Cover Master Artwork Prompt** into a clean, copy-pasteable Markdown document.

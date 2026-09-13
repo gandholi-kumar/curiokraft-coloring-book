@@ -27,3 +27,12 @@ repos:
           - pydantic
           - types-PyYAML
           - types-requests
+
+  # Local hook: block accidental commit of sensitive KDP forms/credentials
+  - repo: local
+    hooks:
+      - id: sensitive-file-guard
+        name: Block sensitive files (KDP forms, credentials, API keys)
+        entry: bash scripts/check_sensitive_files.sh
+        language: system
+        types: [text]

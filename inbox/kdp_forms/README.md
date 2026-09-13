@@ -27,4 +27,4 @@ This directory is the designated drop-in landing zone for saved Amazon KDP web f
 
 ## 📚 Complete Reference:
 For full publishing details, A9 keyword deduplication rules, Category Modal navigation trees, and classification checkbox guidance, see:
-- [Amazon KDP Publishing & Metadata Guide](../../docs/KDP_PUBLISHING_METADATA_GUIDE.md)
+- [Amazon KDP Publishing & Metadata Guide](../../docs/workflows/KDP_PUBLISHING_METADATA_GUIDE.md)

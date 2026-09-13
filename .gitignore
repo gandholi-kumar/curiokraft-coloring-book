@@ -43,12 +43,18 @@ scratch/
 # Proprietary Business & Commercial Documentation
 private_docs/
 
+# Internal Engineering Bookkeeping (kept locally, never published)
+# These track work-in-progress and session history rather than shipping code.
+docs/internal/
+
 # Proprietary Amazon KDP Form Ingestion (Internal HTML dumps & session artifacts - keep strictly confidential)
 inbox/kdp_forms/*.html
 inbox/kdp_forms/*.htm
+inbox/kdp_forms/*.json
 inbox/kdp_forms/*_files/
 inbox/kdp_forms/**/*.html
 inbox/kdp_forms/**/*.htm
+inbox/kdp_forms/**/*.json
 !inbox/kdp_forms/README.md
 !inbox/kdp_forms/.gitkeep
 

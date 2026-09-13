@@ -74,7 +74,10 @@ def test_batch_runner_single_page(sample_mini_manifest: Path, temp_dir: Path):
         "display_label": "BANANA",
         "section": "Fruits",
     }
-    master_path = runner.generate_single_page(page_data)
+    # source_mode="mock" is required: the default "auto" reaches the live
+    # Gemini provider whenever GEMINI_API_KEY is set in .env, and silently
+    # falls back to the offline mock, so a missing arg burns real quota.
+    master_path = runner.generate_single_page(page_data, source_mode="mock")
 
     assert master_path.exists()
     assert master_path.name == "page_003.png"
@@ -90,7 +93,7 @@ def test_batch_runner_mini_batch(sample_mini_manifest: Path, temp_dir: Path):
         raw_generated_dir=raw_dir,
     )
 
-    report = runner.run_full_book_batch()
+    report = runner.run_full_book_batch(source_mode="mock")
     assert report.total_pages == 4
     assert report.successful_pages == 4
     assert report.failed_pages == 0
@@ -107,7 +110,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
         output_masters_dir=masters_dir,
         raw_generated_dir=raw_dir,
     )
-    runner.run_full_book_batch()
+    runner.run_full_book_batch(source_mode="mock")
 
     # Now audit
     qa_res = run_book_qa_audit(
@@ -124,7 +127,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
 
 
 def test_mock_image_provider():
-    from curiokraft_book.orchestrator.model_client import MockImageProvider
+    from curiokraft_book.orchestrator.providers import MockImageProvider
 
     provider = MockImageProvider()
     img = provider.generate("cute banana", canonical_label="banana", section="Fruits")
@@ -135,7 +138,7 @@ def test_mock_image_provider():
 def test_inbox_image_provider(temp_dir: Path):
     from PIL import Image, ImageDraw
 
-    from curiokraft_book.orchestrator.model_client import DiskInboxProvider
+    from curiokraft_book.orchestrator.providers import DiskInboxProvider
 
     inbox = temp_dir / "test_inbox"
     inbox.mkdir(parents=True, exist_ok=True)
@@ -422,3 +425,53 @@ def test_welcome_page_preserves_raw_and_mascot(temp_dir: Path):
     expected_raw = raw_dir / "raw_p001_welcome_belongs_to.png"
     assert expected_raw.exists()
     assert expected_raw.stat().st_size > 500
+
+
+def test_batch_runner_resizes_non_standard_inbox_artwork(temp_dir: Path):
+    """A small user artwork in inbox must be centred onto the 2550x3300 canvas."""
+    from PIL import Image
+
+    from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
+
+    masters_dir = temp_dir / "masters"
+    raw_dir = temp_dir / "raw"
+    inbox_dir = temp_dir / "inbox"
+    for d in (masters_dir, raw_dir, inbox_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
+    # Non-standard artwork size triggers the resize/centering branch
+    Image.new("L", (800, 600), 255).save(inbox_dir / "raw_p005_banana.png")
+
+    manifest_p = temp_dir / "mini_manifest.json"
+    manifest_p.write_text(
+        json.dumps(
+            {
+                "manifest_version": "1.0",
+                "book_title": "MINI",
+                "total_pages": 1,
+                "pages": [
+                    {
+                        "page_id": "P005",
+                        "page_number": 5,
+                        "section": "Fruits",
+                        "canonical_object": "banana",
+                        "display_label": "BANANA",
+                        "type": "coloring_page",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runner = InteriorBatchRunner(
+        manifest_path=manifest_p, output_masters_dir=masters_dir, raw_generated_dir=raw_dir
+    )
+    runner.inbox_provider.inbox_dir = inbox_dir
+
+    out = runner.generate_single_page(
+        json.loads(manifest_p.read_text(encoding="utf-8"))["pages"][0], source_mode="inbox"
+    )
+    assert out.exists()
+    with Image.open(out) as img:
+        assert img.size == (2550, 3300)

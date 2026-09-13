@@ -160,7 +160,7 @@ def test_read_blueprint_image_vision(tmp_path: Path):
         model_name="mock-vision-model",
     )
 
-    reader = LayoutBlueprintReader(model_client=mock_client)
+    reader = LayoutBlueprintReader(vision_client=mock_client)
     spec = reader.read_blueprint(img_path)
 
     assert spec.target_type == "back_cover"

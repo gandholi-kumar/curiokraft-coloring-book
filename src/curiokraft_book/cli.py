@@ -36,8 +36,11 @@ from curiokraft_book.constants import (
     DEFAULT_SPECIAL_ASSETS_DIR,
     DEFAULT_WELCOME_PAGE_ENABLED,
 )
+from curiokraft_book.logging_config import build_formatter, setup_logging
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
-from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
+from curiokraft_book.orchestrator.image_generator import ImageGenerator
+from curiokraft_book.orchestrator.llm_client import LLMClient
+from curiokraft_book.orchestrator.providers import DiskInboxProvider
 from curiokraft_book.orchestrator.retry_manager import RetryManager
 from curiokraft_book.orchestrator.state_manager import PipelineStateManager
 from curiokraft_book.validators.duplicates import ObjectRegistryValidator
@@ -62,18 +65,18 @@ if sys.platform == "win32":
 logs_dir = Path("logs")
 logs_dir.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(logs_dir / "pipeline.log", encoding="utf-8"),
-        logging.FileHandler(logs_dir / "debug.log", encoding="utf-8"),
-    ],
+# All handlers use the redacting formatter so provider API keys can never
+# reach the on-disk logs, even when they appear inside error tracebacks.
+setup_logging(
+    level="DEBUG",
+    log_files=[logs_dir / "pipeline.log", logs_dir / "debug.log"],
+    redact_secrets=True,
 )
 
 failure_logger = logging.getLogger("curiokraft.failures")
 failure_handler = logging.FileHandler(logs_dir / "failures.log", encoding="utf-8")
 failure_handler.setLevel(logging.WARNING)
+failure_handler.setFormatter(build_formatter(redact_secrets=True))
 failure_logger.addHandler(failure_handler)
 
 console = Console(force_terminal=True, legacy_windows=False)
@@ -348,7 +351,7 @@ def run_doctor():
     )
 
     # 4. Active API Provider
-    client = ModelClient()
+    client = LLMClient()
     table.add_row(
         "Active AI Provider",
         client.provider.upper(),
@@ -549,8 +552,8 @@ def generate_samples(
         preferred_ids = ["P001", "P005", "P047", "P083", "P105"]
         target_pages = [p for p in all_pages if p["page_id"] in preferred_ids][:count]
 
-    model_client = ModelClient()
-    debate_engine = DebateEngine(model_client)
+    image_generator = ImageGenerator()
+    debate_engine = DebateEngine()
     retry_manager = RetryManager()
 
     out_dir = Path("output/samples")
@@ -580,7 +583,7 @@ def generate_samples(
 
             raw_sample_path = out_dir / f"{p_id}_raw.png"
 
-            raw_canvas = model_client.generate_illustration(
+            raw_canvas = image_generator.generate(
                 positive_prompt=debate_res.positive_prompt,
                 negative_prompt=debate_res.negative_prompt,
                 canonical_label=canonical,
@@ -641,11 +644,19 @@ def generate_full_book(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force fresh generation, bypassing existing cache"
     ),
+    parallel: bool = typer.Option(
+        False, "--parallel", "-p", help="Enable parallel processing for faster batch generation"
+    ),
+    workers: int = typer.Option(
+        4, "--workers", "-w", help="Number of parallel workers (default: 4, recommended: 2-8)"
+    ),
 ):
     """[Stage 3: Production] Execute full 110-page interior batch generation & QA."""
+    mode_label = f"PARALLEL ({workers} workers)" if parallel else "SEQUENTIAL"
     console.print(
         Panel.fit(
-            f"[bold green]CurioKraft 110-Page Interior Production Batch [source={source}][/bold green]"
+            f"[bold green]CurioKraft 110-Page Interior Production Batch\n"
+            f"Mode: {mode_label} | Source: {source}[/bold green]"
         )
     )
 
@@ -666,13 +677,26 @@ def generate_full_book(
         def on_page_progress(current: int, total: int, label: str):
             progress.update(task, completed=current, description=f"[cyan]{label}")
 
-        report = runner.run_full_book_batch(
-            progress_callback=on_page_progress, source_mode=source, force_fresh=force
-        )
+        if parallel:
+            report = runner.run_full_book_batch_parallel(
+                max_workers=workers,
+                progress_callback=on_page_progress,
+                source_mode=source,
+                force_fresh=force,
+            )
+        else:
+            report = runner.run_full_book_batch(
+                progress_callback=on_page_progress, source_mode=source, force_fresh=force
+            )
 
     console.print(
         f"[bold green][PASS] Batch Complete:[/] {report.successful_pages}/{report.total_pages} pages produced in {report.output_directory}"
     )
+
+    if report.failed_pages > 0:
+        console.print(
+            f"[yellow]⚠️  Warning: {report.failed_pages} pages failed. Check logs for details.[/yellow]"
+        )
 
     # Run Whole-Book QA Audit Agent
     console.print("[bold cyan]Running AGT-010-BOOKQA Whole-Book Audit Agent...[/bold cyan]")
@@ -1058,8 +1082,7 @@ def show_prompt(
     if custom is not None:
         pos_prompt, neg_prompt = custom
     else:
-        client = ModelClient()
-        debate = DebateEngine(client)
+        debate = DebateEngine()
         res = debate.run_page_debate(target)
         pos_prompt, neg_prompt = res.positive_prompt, res.negative_prompt
 
@@ -1126,8 +1149,7 @@ def export_prompts(
     else:
         target_pages = all_pages
 
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
 
     out_p = Path(output_file)
     json_p = Path(json_out)
@@ -1143,7 +1165,7 @@ def export_prompts(
         "> [!TIP]",
         "> ⚙️ **Optimal Google AI Studio Configuration:**",
         "> - **Aspect Ratio:** `3:4` (Vertical Portrait) | **Output Format:** `Images only` | **Temperature:** `0.9` (Interior & Covers)",
-        "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
+        "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
         "> - 🧠 **Multi-Agent Pre-Generation Debate Audit:** See [logs/agent_debates_log.md](../logs/agent_debates_log.md) for full specialist proposals and Judge scoring.",
         "",
         "---",
@@ -1384,8 +1406,7 @@ def show_debate(
         console.print(f"[red]Page {page_id} not found in manifest.[/red]")
         sys.exit(1)
 
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
     res = debate.run_page_debate(target)
     label = target.get("display_label", target.get("canonical_object", "").upper())
 
@@ -1433,8 +1454,7 @@ def export_debate_log(
     console.print(
         Panel.fit("[bold cyan]Exporting Pre-Generation Multi-Agent Specialist Debates[/bold cyan]")
     )
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
     out_path = debate.export_full_debate_log(output_file=output_file)
     console.print(
         f"[bold green][PASS] Successfully exported all 110 agent debates to:[/] [cyan]{out_path}[/cyan]\n"

@@ -79,7 +79,7 @@ $env:ANTHROPIC_API_KEY = "sk-ant-api03-..."
 # Option D: Offline Simulation Mode (Zero API cost, zero quota usage)
 #### Method 3: Free Web UI Workflow (Zero API Cost)
 If you prefer not to use paid API keys or want to generate illustrations using Google's free web interface with saved presets:
-- See the dedicated setup guide: [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) for the exact **3:4 Aspect Ratio**, **Images only** output mode, and copy-paste **System Instruction presets**.
+- See the dedicated setup guide: [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) for the exact **3:4 Aspect Ratio**, **Images only** output mode, and copy-paste **System Instruction presets**.
 - Run `curiokraft-book prompt export` to export prompts into Markdown.
 - Drop generated `.jpg` or `.png` illustrations into `inbox/raw_pages/` and run `curiokraft-book ingest`.
 

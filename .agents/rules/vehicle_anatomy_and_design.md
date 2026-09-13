@@ -6,7 +6,7 @@ globs: ["**/*vehicle*", "**/prompts*", "**/taxonomy.yaml", "**/agents.yaml", "**
 # CurioKraft Vehicle Anatomy & Structural Design Rules
 
 ## 1. Core Mandate
-Every agent constructing, reviewing, debating, or generating prompts for vehicles and transportation in CurioKraft publications MUST follow the authoritative standard in `docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md` and the `vehicle-prompt-crafting` skill.
+Every agent constructing, reviewing, debating, or generating prompts for vehicles and transportation in CurioKraft publications MUST follow the authoritative standard in `docs/standards/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md` and the `vehicle-prompt-crafting` skill.
 
 ## 2. Inviolable Laws of Vehicle Design
 

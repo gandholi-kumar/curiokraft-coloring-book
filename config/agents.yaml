@@ -35,7 +35,7 @@ agents:
       PROMPT COHERENCE AUDIT:
       Verify the final prompt contains no contradictions, no ambiguous count words ("a bunch", "some", "several"),
       and no missing fill-style specifications for numerals (hollow vs solid).
-      Enforce that all vehicle prompts strictly obey docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and the vehicle-prompt-crafting skill (non-wheeled vehicles must never receive wheel tokens, and must include anti-wheel negatives).
+      Enforce that all vehicle prompts strictly obey docs/standards/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and the vehicle-prompt-crafting skill (non-wheeled vehicles must never receive wheel tokens, and must include anti-wheel negatives).
 
   design_specialist:
     id: "AGT-002-DESIGN"
@@ -58,7 +58,7 @@ agents:
       2. MARGIN BREATHING ROOM: Generous 25% empty white margin space around the centered subject on all four sides.
       3. CATEGORY-AUTHENTIC PERSPECTIVE & POSE (from taxonomy.yaml category visual templates):
          - Living Animals: Natural species-appropriate anatomy and locomotion (quadrupedal standing on all 4 legs for 4-legged mammals, bipedal standing on two feet for birds, streamlined swimming for aquatic). Default to three-quarter front view to clearly reveal all limbs without perspective distortion. Cuteness is strictly expressed via friendly smiling round eyes, chubby cheeks, and simplified bold contours — NEVER through humanoid posture, upright standing on hind legs, human arms, or human clothing.
-         - Vehicles: Domain-authentic propulsion and support anatomy (from docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and vehicle_domain_matrix):
+         - Vehicles: Domain-authentic propulsion and support anatomy (from docs/standards/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md and vehicle_domain_matrix):
            * Wheeled 4-Wheel (Cars, Buses, Trucks): Three-quarter profile, 4 chunky round wheels with clean hubcaps, colorable windows.
            * Wheeled 2-Wheel (Bicycles, Motorcycles, Scooters): Side profile, exactly two wheels, tubular frame, handlebars, seat.
            * Rail Vehicles (Trains): Locomotive cabin, cowcatcher, multiple steel rail wheels aligned along track baseline.
@@ -239,7 +239,7 @@ agents:
       3. Educational Spreads: Hollow bubble numeral mandate + container uniformity + vertical centering.
       4. Animal Anatomy & Posture 11-Block Sequence: For all living creatures, prompts must strictly follow the 11-block hierarchy (Subject -> Species Anatomy & Limbs -> Posture & Orientation -> Safeguards -> Expression -> Style -> Line Art -> Composition -> Background -> Prohibitions -> Negative Bundle). Never use unqualified 'standing'.
       5. Back Cover Master Illustration: Enforce continuous background across both bottom corners with gentle rolling turquoise waves, stardust, and doodles. Mandate strictly NO text, NO words, NO letters, NO numbers, and NO white cutout boxes in the bottom-left (publisher logo) or bottom-right (barcode) zones across all volumes.
-      6. Vehicle Structural Anatomy & Domain Hierarchy: For all vehicles and transport objects, prompts must follow the vehicle domain standard (docs/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md). Never inject wheels into non-wheeled vehicles (rockets, helicopters, boats, submarines); ensure twin runner skids for helicopters, base fins/nozzles for rockets, and exactly two wheels for cycles.
+      6. Vehicle Structural Anatomy & Domain Hierarchy: For all vehicles and transport objects, prompts must follow the vehicle domain standard (docs/standards/VEHICLE_DESIGN_AND_ANATOMY_STANDARD.md). Never inject wheels into non-wheeled vehicles (rockets, helicopters, boats, submarines); ensure twin runner skids for helicopters, base fins/nozzles for rockets, and exactly two wheels for cycles.
       7. Counting Spread Grid Anchors: Prompts must define explicit row-by-row coordinates (e.g. 'Row 1: 2 items; Row 2: 2 items; Row 3: 2 items; Row 4: 2 items; left column has 4 items, right column has 4 items') rather than ambiguous clusters.
 
   vision_qa:

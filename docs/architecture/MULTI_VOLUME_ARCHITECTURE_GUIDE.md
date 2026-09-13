@@ -371,5 +371,5 @@ curiokraft-book generate special-pages --assets inbox/special_assets_vol3 --outp
 ### 3. The Bookend Continuity Rule
 Whichever mascot is chosen for a volume, **the identical character image must appear on both Page 001 (Welcome) and Page 110 (Completion Certificate)**. The child meets their animal buddy on Day 1, and that same buddy congratulates them upon completion.
 
-*(For full prompt templates, asset guides, and thresholding details, see [docs/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](SPECIAL_PAGES_AND_MASCOT_GUIDE.md)).*
+*(For full prompt templates, asset guides, and thresholding details, see [docs/architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](../architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md)).*
 

@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
 
-from curiokraft_book.orchestrator.model_client import ModelClient
+from curiokraft_book.orchestrator.vision_client import VisionClient
 
 logger = logging.getLogger("curiokraft.blueprint_reader")
 
@@ -91,11 +91,11 @@ class LayoutBlueprintReader:
         self,
         blueprints_dir: Path | str = DEFAULT_BLUEPRINTS_DIR,
         inbox_dir: Path | str = DEFAULT_INBOX_DIR,
-        model_client: ModelClient | None = None,
+        vision_client: VisionClient | None = None,
     ):
         self.blueprints_dir = Path(blueprints_dir)
         self.inbox_dir = Path(inbox_dir)
-        self.client = model_client or ModelClient()
+        self.vision = vision_client or VisionClient()
 
     def find_blueprint(self, target_type: str = "back_cover") -> Path | None:
         """Locate user-dropped blueprint matching the target_type."""
@@ -174,7 +174,7 @@ class LayoutBlueprintReader:
             "so our specialist agents can structure the illustration prompt to match this user's design."
         )
 
-        resp = self.client.call_vision(
+        resp = self.vision.call_vision(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             image_path=path,

@@ -160,12 +160,13 @@ coloring-book/
 │   └── reports/                             # KDP Preflight certificates & audit logs
 │
 ├── docs/                                    # 📚 Comprehensive Documentation Suite
-│   ├── PUBLISHING_WORKFLOWS_GUIDE.md        # 🚀 Master Interactive Publishing Workflows Guide
-│   ├── GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md # ⚙️ AI Studio Sidebar & System Presets
-│   ├── KDP_PRINT_SPECIFICATIONS.md          # 📐 KDP Print Geometry & Barcode Specifications
-│   ├── MULTI_VOLUME_ARCHITECTURE_GUIDE.md   # 🏛️ Multi-Volume Scaling (Vol 2, Vol 3) & Decoupling
-│   ├── MULTI_AGENT_SYSTEM_AND_DEBATES.md    # 🧠 Complete Multi-Agent Council, Contracts & Debates
-│   └── ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md # ✅ 15-Minute Pre-Publish Checklist
+│   ├── README.md                            # 🗂️ Documentation index — start here
+│   ├── setup/                               # ⚙️ Environment & one-time setup
+│   ├── workflows/                           # 🚀 Publishing & execution guides
+│   ├── architecture/                        # 🏛️ System design, agents & debate engine
+│   ├── standards/                           # 📏 Authoritative creative standards
+│   ├── reference/                           # 📐 KDP print geometry specifications
+│   └── archive/                             # 🗄️ Superseded documentation
 │
 └── logs/                                    # 📝 Observability, Diagnostics & Traces
 ```
@@ -174,10 +175,13 @@ coloring-book/
 
 ## Documentation & Publishing Guides
 
-* 🚀 **[Master Publishing Workflows Guide](docs/PUBLISHING_WORKFLOWS_GUIDE.md)** — **Start here!** Clear separation between **Track 1 (Free Google AI Studio Web Workflow)** and **Track 2 (Automated API Batch)**.
-* ⚙️ **[Google AI Studio Setup & Prompt Presets](docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Browser configuration & prompt presets.
-* 📐 **[Amazon KDP Print Specifications](docs/KDP_PRINT_SPECIFICATIONS.md)** — Exact geometry, spine calculations, and barcode safe zones.
-* 🏛️ **[Multi-Volume Architecture Guide](docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, Volume 3, and themed editions.
-* 🧠 **[Multi-Agent System & Debate Engine](docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — 10 specialist agents, 4-round debates, and audit logs.
+* 🗂️ **[Full Documentation Index](docs/README.md)** — Every guide, grouped into setup, workflows, architecture, standards, and reference.
+* 🚀 **[Master Publishing Workflows Guide](docs/workflows/PUBLISHING_WORKFLOWS_GUIDE.md)** — **Start here!** Clear separation between **Track 1 (Free Google AI Studio Web Workflow)** and **Track 2 (Automated API Batch)**.
+* ⚙️ **[Google AI Studio Setup & Prompt Presets](docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Browser configuration & prompt presets.
+* 📐 **[Amazon KDP Print Specifications](docs/reference/KDP_PRINT_SPECIFICATIONS.md)** — Exact geometry, spine calculations, and barcode safe zones.
+* 🏛️ **[Multi-Volume Architecture Guide](docs/architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, Volume 3, and themed editions.
+* 🧠 **[Multi-Agent System & Debate Engine](docs/architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — 10 specialist agents, 4-round debates, and audit logs.
+* 🗺️ **[Architecture Diagrams](docs/architecture/ARCHITECTURE_DIAGRAMS.md)** — Mermaid diagrams of the pipeline, page lifecycle state machine, and module map.
+* ⚡ **[Performance Profiling Guide](docs/workflows/PERFORMANCE.md)** — Profiling decorators, measured overhead, and how to profile a real run.
 * 📥 **[Image Inbox Naming Conventions](inbox/raw_pages/README.md)** — File naming rules and fallback candidates.
 
