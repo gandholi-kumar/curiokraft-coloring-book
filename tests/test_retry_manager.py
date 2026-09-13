@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from curiokraft_book.orchestrator.retry_manager import RecoveryAction, RetryManager
+from curiokraft_book.orchestrator.retry_manager import RetryManager
 
 
 def test_attempt_programmatic_rescue_binarize_fails(tmp_path: Path):
@@ -33,9 +33,7 @@ def test_attempt_programmatic_rescue_binarize_fails(tmp_path: Path):
     assert violations == ["RESCUE_BINARIZE_FAILED"]
 
 
-def test_attempt_programmatic_rescue_margin_fit_fails(
-    tmp_path: Path, monkeypatch
-):
+def test_attempt_programmatic_rescue_margin_fit_fails(tmp_path: Path, monkeypatch):
     """Line 73: margin fitting step returns failure."""
     # Give binarize a fake-success so we reach the margin fitter
     raw = tmp_path / "raw.png"
@@ -45,6 +43,7 @@ def test_attempt_programmatic_rescue_margin_fit_fails(
     # Mock binarize to succeed so we reach the margin fitter
     def mock_binarize_success(*_a, **_k):
         from curiokraft_book.rescue.binarizer import RescueBinarizeResult
+
         return RescueBinarizeResult(
             success=True,
             input_path=str(raw),
@@ -60,6 +59,7 @@ def test_attempt_programmatic_rescue_margin_fit_fails(
 
     def fail_fit(*_a, **_k):
         from curiokraft_book.rescue.margin_fitter import MarginFitResult
+
         # Return a failure result with dummy values for required fields
         return MarginFitResult(
             success=False,
@@ -75,9 +75,7 @@ def test_attempt_programmatic_rescue_margin_fit_fails(
             right_margin_px=0,
         )
 
-    monkeypatch.setattr(
-        "curiokraft_book.orchestrator.retry_manager.fit_to_safe_margins", fail_fit
-    )
+    monkeypatch.setattr("curiokraft_book.orchestrator.retry_manager.fit_to_safe_margins", fail_fit)
 
     mgr = RetryManager()
     ok, msg, violations = mgr.attempt_programmatic_rescue(raw, out)
@@ -96,6 +94,7 @@ def test_attempt_programmatic_rescue_success_path(tmp_path: Path, monkeypatch):
     # Mock binarize to succeed so we reach the margin fitter
     def mock_binarize_success(*_a, **_k):
         from curiokraft_book.rescue.binarizer import RescueBinarizeResult
+
         return RescueBinarizeResult(
             success=True,
             input_path=str(raw),
@@ -112,6 +111,7 @@ def test_attempt_programmatic_rescue_success_path(tmp_path: Path, monkeypatch):
     # Mock margin fitter to succeed so we reach the validators
     def mock_fit_success(*_a, **_k):
         from curiokraft_book.rescue.margin_fitter import MarginFitResult
+
         return MarginFitResult(
             success=True,
             input_path=str(raw),
@@ -211,9 +211,7 @@ def test_formulate_revised_prompt_fortifies_against_shading(
 def test_formulate_revised_prompt_idempotent_on_shading():
     """Calling twice with the same violation does not double-append."""
     mgr = RetryManager(max_retries=5)
-    first = mgr.formulate_revised_prompt(
-        "pos", "neg", ["Gray violation"], attempt_number=0
-    )
+    first = mgr.formulate_revised_prompt("pos", "neg", ["Gray violation"], attempt_number=0)
     second = mgr.formulate_revised_prompt(
         first.revised_positive_prompt,
         first.revised_negative_prompt,
@@ -222,12 +220,10 @@ def test_formulate_revised_prompt_idempotent_on_shading():
     )
     # Should only contain one instance of the fortification
     assert (
-        first.revised_positive_prompt.count("stark pure binary black and white line art only")
-        == 1
+        first.revised_positive_prompt.count("stark pure binary black and white line art only") == 1
     )
     assert (
-        second.revised_positive_prompt.count("stark pure binary black and white line art only")
-        == 1
+        second.revised_positive_prompt.count("stark pure binary black and white line art only") == 1
     )
 
 

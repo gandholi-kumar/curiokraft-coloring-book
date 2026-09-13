@@ -8,6 +8,7 @@ Image analysis lives in :mod:`vision_client`; image creation lives in
 
 import json
 import logging
+import os
 from typing import Any
 
 from pydantic import BaseModel
@@ -36,9 +37,7 @@ class LLMClient:
         """
         load_env_file()
         self.provider, self.model_name = resolve_provider_and_model(provider, model_name)
-        logger.info(
-            f"Initialized LLMClient with provider: {self.provider} ({self.model_name})"
-        )
+        logger.info(f"Initialized LLMClient with provider: {self.provider} ({self.model_name})")
 
     def call_agent(
         self,

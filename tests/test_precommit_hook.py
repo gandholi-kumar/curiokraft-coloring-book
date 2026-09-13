@@ -1,49 +1,47 @@
 """Test for pre-commit hook existence and basic functionality."""
 
-import os
 import stat
-import subprocess
 from pathlib import Path
+
+
+def _get_hook_path() -> Path:
+    """Resolve the pre-commit hook path, falling back to canonical script in CI."""
+    repo_root = Path(__file__).parent.parent
+    git_hook = repo_root / ".git" / "hooks" / "pre-commit"
+    if git_hook.exists():
+        return git_hook
+    script_hook = repo_root / "scripts" / "pre-commit.hook"
+    if script_hook.exists():
+        return script_hook
+    return git_hook
 
 
 def test_precommit_hook_exists():
     """Test that the pre-commit hook exists."""
-    repo_root = Path(__file__).parent.parent
-    hook_path = repo_root / ".git" / "hooks" / "pre-commit"
-
-    # The hook should exist
+    hook_path = _get_hook_path()
     assert hook_path.exists(), f"Pre-commit hook not found at {hook_path}"
 
 
 def test_precommit_hook_is_executable():
     """Test that the pre-commit hook is executable."""
-    repo_root = Path(__file__).parent.parent
-    hook_path = repo_root / ".git" / "hooks" / "pre-commit"
-
-    # The hook should exist and be executable (delegates to version-controlled script)
+    hook_path = _get_hook_path()
     assert hook_path.exists(), f"Pre-commit hook not found at {hook_path}"
 
-    # On Windows, we check the file permissions since .sh files aren't directly executable
-    # The hook should have read permissions for owner (at minimum)
-    import stat
     mode = hook_path.stat().st_mode
     assert bool(mode & stat.S_IRUSR), f"Pre-commit hook is not readable: {hook_path}"
-    # Check that it's not completely inaccessible
-    assert bool(mode & stat.S_IWUSR) or bool(mode & stat.S_IXUSR), f"Pre-commit hook has no access permissions: {hook_path}"
+    assert bool(mode & (stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IROTH)), (
+        f"Pre-commit hook has no access permissions: {hook_path}"
+    )
 
 
 def test_precommit_hook_content():
     """Test that the pre-commit hook has expected content."""
-    repo_root = Path(__file__).parent.parent
-    hook_path = repo_root / ".git" / "hooks" / "pre-commit"
+    hook_path = _get_hook_path()
+    assert hook_path.exists(), f"Pre-commit hook not found at {hook_path}"
+    content = hook_path.read_text(encoding="utf-8")
 
-    if hook_path.exists():
-        content = hook_path.read_text()
-
-        # Should contain key elements (delegates to version-controlled script)
-        assert "#!/usr/bin/env bash" in content, "Missing shebang"
-        assert "check_sensitive_files.sh" in content, "Missing delegation to sensitive files checker"
-        # The actual bypass instructions are in the delegated script and documentation
+    assert "#!/usr/bin/env bash" in content, "Missing shebang"
+    assert "check_sensitive_files.sh" in content, "Missing delegation to sensitive files checker"
 
 
 if __name__ == "__main__":

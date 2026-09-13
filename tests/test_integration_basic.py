@@ -3,12 +3,9 @@
 These tests verify that the core components work together correctly.
 """
 
-import pytest
-import tempfile
-import os
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
+import pytest
 
 
 def test_cli_import_and_basic_structure():
@@ -17,16 +14,16 @@ def test_cli_import_and_basic_structure():
 
     # Basic smoke test - app should exist
     assert app is not None
-    assert hasattr(app, 'registered_groups')
+    assert hasattr(app, "registered_groups")
 
 
 def test_orchestrator_components_can_be_imported():
     """Test that orchestrator components can be imported together."""
     from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
     from curiokraft_book.orchestrator.debate_engine import DebateEngine
+    from curiokraft_book.orchestrator.image_generator import ImageGenerator
     from curiokraft_book.orchestrator.llm_client import LLMClient
     from curiokraft_book.orchestrator.vision_client import VisionClient
-    from curiokraft_book.orchestrator.image_generator import ImageGenerator
 
     # All imports should succeed
     assert InteriorBatchRunner is not None
@@ -38,8 +35,9 @@ def test_orchestrator_components_can_be_imported():
 
 def test_model_client_facade_exists():
     """Test that the ModelClient facade still works for backward compatibility."""
-    from curiokraft_book.orchestrator.model_client import ModelClient
     import warnings
+
+    from curiokraft_book.orchestrator.model_client import ModelClient
 
     # Should be able to instantiate (with deprecation warning)
     with warnings.catch_warnings():
@@ -47,15 +45,16 @@ def test_model_client_facade_exists():
         client = ModelClient()
 
     # Should have the expected methods
-    assert hasattr(client, 'call_agent')
-    assert hasattr(client, 'call_vision')
-    assert hasattr(client, 'generate_illustration')
+    assert hasattr(client, "call_agent")
+    assert hasattr(client, "call_vision")
+    assert hasattr(client, "generate_illustration")
 
 
 def test_logging_configuration_works():
     """Test that logging configuration can be set up."""
-    from curiokraft_book.logging_config import setup_logging, RedactingFormatter
     import logging
+
+    from curiokraft_book.logging_config import RedactingFormatter, setup_logging
 
     # Should not raise an exception
     setup_logging(level="INFO", redact_secrets=True)
@@ -67,10 +66,15 @@ def test_logging_configuration_works():
     # Test redacting formatter works
     formatter = RedactingFormatter("%(message)s")
     import logging
+
     record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname="", lineno=0,
+        name="test",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
         msg="API key: sk-1234567890abcdefghijklmnopqrstuvwxyz",
-        args=(), exc_info=None,
+        args=(),
+        exc_info=None,
     )
     output = formatter.format(record)
     assert "***REDACTED***" in output
@@ -79,8 +83,9 @@ def test_logging_configuration_works():
 
 def test_profiling_module_can_be_used():
     """Test that the profiling module works correctly."""
-    from curiokraft_book.profiling import profile, timer
     import time
+
+    from curiokraft_book.profiling import profile, timer
 
     @profile
     def test_function():
@@ -100,7 +105,6 @@ def test_profiling_module_can_be_used():
 
 def test_configuration_files_exist():
     """Test that expected configuration files exist in the repository."""
-    import os
     repo_root = Path(__file__).parent.parent
 
     # Key config files should exist
@@ -111,7 +115,7 @@ def test_configuration_files_exist():
         "config/taxonomy.yaml",
         "manifest/pages.json",
         "manifest/objects.json",
-        "pyproject.toml"
+        "pyproject.toml",
     ]
 
     for file_path in expected_files:
@@ -125,12 +129,7 @@ def test_source_structure_intact():
     src_root = repo_root / "src" / "curiokraft_book"
 
     # Key directories should exist
-    expected_dirs = [
-        "orchestrator",
-        "compositor",
-        "validators",
-        "rescue"
-    ]
+    expected_dirs = ["orchestrator", "compositor", "validators", "rescue"]
 
     for dir_name in expected_dirs:
         dir_path = src_root / dir_name
@@ -140,7 +139,7 @@ def test_source_structure_intact():
     expected_modules = [
         "cli.py",
         "profiling.py",  # Our new module
-        "logging_config.py"
+        "logging_config.py",
     ]
 
     for module_name in expected_modules:

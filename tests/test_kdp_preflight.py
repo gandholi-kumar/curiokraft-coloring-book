@@ -16,8 +16,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from curiokraft_book.constants import (
     DEFAULT_BOOK_TITLE,
     DEFAULT_IMPRINT,

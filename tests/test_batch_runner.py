@@ -469,7 +469,9 @@ def test_batch_runner_resizes_non_standard_inbox_artwork(temp_dir: Path):
     )
     runner.inbox_provider.inbox_dir = inbox_dir
 
-    out = runner.generate_single_page(manifest_p_data := json.loads(manifest_p.read_text(encoding="utf-8"))["pages"][0], source_mode="inbox")
+    out = runner.generate_single_page(
+        json.loads(manifest_p.read_text(encoding="utf-8"))["pages"][0], source_mode="inbox"
+    )
     assert out.exists()
     with Image.open(out) as img:
         assert img.size == (2550, 3300)

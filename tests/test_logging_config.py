@@ -83,7 +83,9 @@ def test_redacts_bearer_token(formatter):
 
 
 def test_redacts_x_goog_api_key_header(formatter):
-    out = _format("headers: {'x-goog-api-key': 'AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7'}", formatter)
+    out = _format(
+        "headers: {'x-goog-api-key': 'AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7'}", formatter
+    )
     assert "AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7" not in out
 
 

@@ -13,14 +13,11 @@ exercised by making the font directory empty or pointing at a bad file.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
-import pytest
 from PIL import ImageFont
 
-from curiokraft_book.compositor.fonts import get_typography_font, PREFERRED_FONT_ORDER
-
+from curiokraft_book.compositor.fonts import get_typography_font
 
 # ----------------------------------------------------------------------
 # A *minimal* valid TrueType font (just the ``head`` and ``maxp`` tables,
@@ -29,7 +26,7 @@ from curiokraft_book.compositor.fonts import get_typography_font, PREFERRED_FONT
 # See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html
 _MINIMAL_TTF = (
     b"\x00\x01\x00\x00"  # sfnt version 1.0
-    b"\x00\x02"          # 2 tables
+    b"\x00\x02"  # 2 tables
     b"\x00\x00\x00\x00"  # searchRange, entrySelector, rangeShift (placeholder)
     b"head\x00\x00\x00\x24\x00\x00\x00\x00"  # ``head`` table, 36 bytes, offset 0x24
     # ``head`` table content (36 bytes)
@@ -68,11 +65,11 @@ def test_custom_font_path_bad_file_is_ignored(tmp_path: Path):
     bad = tmp_path / "notreally.ttf"
     bad.write_text("this is not a font")
     # also put a good font in the directory so step 2 can run
-    good = _write_font(tmp_path, "fredoka-Regular.ttf")
+    _write_font(tmp_path, "fredoka-Regular.ttf")
 
     font = get_typography_font(
         font_size_pt=24,
-        custom_font_path=str(bad),   # points at the bad file
+        custom_font_path=str(bad),  # points at the bad file
         fonts_dir=str(tmp_path),
     )
     assert isinstance(font, ImageFont.FreeTypeFont)
@@ -209,5 +206,4 @@ def test_system_font_candidates_all_missing_falls_back_to_default(tmp_path: Path
     # The default font is an ImageFont.FreeTypeFont (PIL's load_default returns FreeTypeFont)
     assert isinstance(font, ImageFont.FreeTypeFont)
     # We can also check that it's the default by comparing to a fresh load_default()
-    # Note: load_default() returns a new instance each time, so we compare types
-    assert type(font) == type(ImageFont.load_default())
+    assert type(font) is type(ImageFont.load_default())

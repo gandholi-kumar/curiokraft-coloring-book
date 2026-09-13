@@ -1083,9 +1083,6 @@ class DebateEngine:
         age_max: int,
     ) -> _CoverDebateSpec:
         """Build cover-specific debate spec with distinct front/back content preserved."""
-        import json
-        from pathlib import Path
-
         if cover_type == "back_cover":
             # Back cover: flashcard preview + feature pills
             cards = extract_cover_showcase_cards(manifest_path, count=3)
@@ -1116,6 +1113,7 @@ class DebateEngine:
                         m_data = json.load(mf)
                         page_count = len(m_data.get("pages", [])) or 110
             except (OSError, json.JSONDecodeError):
+                # Fallback to default page count if manifest is missing or malformed
                 pass
 
             # Resolve volume name dynamically
@@ -1162,9 +1160,15 @@ class DebateEngine:
                         f"Bottom layout: lower {wave_pct}% continuous pastel turquoise and mint wave with zero white cutout boxes or placeholder badges."
                     ),
                     "prohibited": [
-                        "white box on left", "white cutout box", "logo placeholder",
-                        "text in bottom corners", "barcode on artwork", "border on right edge",
-                        "crayons on cards", "single-sided claims", "5pt outlines jargon",
+                        "white box on left",
+                        "white cutout box",
+                        "logo placeholder",
+                        "text in bottom corners",
+                        "barcode on artwork",
+                        "border on right edge",
+                        "crayons on cards",
+                        "single-sided claims",
+                        "5pt outlines jargon",
                     ],
                 },
                 "AGT-004-MARKET": {
@@ -1172,7 +1176,12 @@ class DebateEngine:
                         f"Headline: '{headline}'. Description: '{description}'. "
                         f"Pills: {pills_text}. Highlighting double-sided preschool value, zero developer prompt jargon."
                     ),
-                    "prohibited": ["single-sided pages", "blank backs", "5pt outlines", "vector stroke"],
+                    "prohibited": [
+                        "single-sided pages",
+                        "blank backs",
+                        "5pt outlines",
+                        "vector stroke",
+                    ],
                 },
                 "AGT-005-EDU": {
                     "pedagogical_milestone": f"Ages {age_min}-{age_max} early vocabulary and fine motor dexterity.",
@@ -1238,8 +1247,8 @@ class DebateEngine:
             )
 
             judge_rationale = (
-                f"Approved BACK COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
-                f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+                "Approved BACK COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
+                "borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
             )
 
             return _CoverDebateSpec(
@@ -1268,8 +1277,10 @@ class DebateEngine:
                         "Spine continuity: LEFT edge directly abuts spine — 100% borderless and horizontally flat."
                     ),
                     "prohibited": [
-                        "border on left edge", "spine crease shadow",
-                        "black drop shadows", "barcode on front",
+                        "border on left edge",
+                        "spine crease shadow",
+                        "black drop shadows",
+                        "barcode on front",
                     ],
                 },
                 "AGT-004-MARKET": {
@@ -1321,8 +1332,8 @@ class DebateEngine:
             )
 
             judge_rationale = (
-                f"Approved FRONT COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
-                f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+                "Approved FRONT COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
+                "borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
             )
 
             return _CoverDebateSpec(

@@ -181,7 +181,6 @@ def test_barcode_box_dark_pixels_fail(tmp_path: Path):
 def test_dark_pixels_outside_barcode_box_are_ignored(tmp_path: Path):
     """Ink elsewhere on the cover must not trip the barcode check."""
     cover = make_cover(tmp_path)
-    bx1, by1, bx2, by2 = _barcode_box(WIDTH_PX, HEIGHT_PX)
     with Image.open(cover) as img:
         # Top-left corner, far from both the barcode box and the margins check
         ImageDraw.Draw(img).rectangle([0, 0, 400, 400], fill=0)

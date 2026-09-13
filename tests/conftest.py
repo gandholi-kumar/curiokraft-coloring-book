@@ -16,6 +16,7 @@ def _no_live_image_api(monkeypatch):
         def _generate(*args, **kwargs):
             hits.append(name)
             raise RuntimeError(f"{name} called")
+
         return lambda: types.SimpleNamespace(generate=_generate)
 
     monkeypatch.setattr(

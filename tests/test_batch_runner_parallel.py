@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner, RateLimiter
-from curiokraft_book.orchestrator.state_manager import PageStatus
 
 
 @pytest.fixture
@@ -202,9 +201,7 @@ def test_parallel_batch_progress_callback(runner):
         progress_calls.append({"current": current, "total": total, "label": label})
 
     with patch.object(runner, "generate_single_page", return_value=Path("/fake/page.png")):
-        runner.run_full_book_batch_parallel(
-            max_workers=2, progress_callback=track_progress
-        )
+        runner.run_full_book_batch_parallel(max_workers=2, progress_callback=track_progress)
 
     # Should be called once per page
     assert len(progress_calls) == 4

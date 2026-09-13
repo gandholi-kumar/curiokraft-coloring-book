@@ -427,7 +427,9 @@ class InteriorBatchRunner:
             self.rate_limiter.acquire()
 
             # Generate page (existing logic)
-            master_path = self.generate_single_page(page, source_mode=source_mode, force_fresh=force_fresh)
+            master_path = self.generate_single_page(
+                page, source_mode=source_mode, force_fresh=force_fresh
+            )
 
             # Thread-safe state update
             with self._state_lock:
@@ -566,7 +568,9 @@ class InteriorBatchRunner:
 
                 # Update progress callback (thread-safe)
                 if progress_callback:
-                    progress_label = f"Page {page_num:03d}: {label} ({completed_count}/{total_count})"
+                    progress_label = (
+                        f"Page {page_num:03d}: {label} ({completed_count}/{total_count})"
+                    )
                     progress_callback(completed_count, total_count, progress_label)
 
         logger.info(

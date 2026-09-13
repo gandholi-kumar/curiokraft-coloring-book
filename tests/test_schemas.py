@@ -12,31 +12,31 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from curiokraft_book.schemas import (
-    CurioKraftPromptManifest,
-    PromptDefaults,
-    PromptItem,
-)
+from curiokraft_book import schemas
+
+CurioKraftPromptManifest = schemas.CurioKraftPromptManifest
+PromptDefaults = schemas.PromptDefaults
+PromptItem = schemas.PromptItem
 
 
 def _item(**overrides) -> PromptItem:
     """A minimal valid ``PromptItem``; override any field per test."""
-    base = dict(
-        id="P001",
-        label="Apple",
-        type="interior_page",
-        drop_target="inbox/raw_pages/raw_p001_apple.png",
-        preset_name="CurioKraft - Interior Coloring Pages",
-        temperature=0.5,
-        positive_prompt="a simple apple line drawing",
-        negative_prompt="shading, gray, color",
-    )
+    base = {
+        "id": "P001",
+        "label": "Apple",
+        "type": "interior_page",
+        "drop_target": "inbox/raw_pages/raw_p001_apple.png",
+        "preset_name": "CurioKraft - Interior Coloring Pages",
+        "temperature": 0.5,
+        "positive_prompt": "a simple apple line drawing",
+        "negative_prompt": "shading, gray, color",
+    }
     base.update(overrides)
     return PromptItem(**base)
 
 
 def _manifest(**overrides) -> CurioKraftPromptManifest:
-    base = dict(book_title="Test Book", book_id="test-vol1", total_prompts=1)
+    base = {"book_title": "Test Book", "book_id": "test-vol1", "total_prompts": 1}
     base.update(overrides)
     return CurioKraftPromptManifest(**base)
 
@@ -121,20 +121,28 @@ def test_prompt_item_rejects_unknown_preset():
 
 @pytest.mark.parametrize(
     "missing",
-    ["id", "label", "type", "drop_target", "preset_name", "temperature",
-     "positive_prompt", "negative_prompt"],
+    [
+        "id",
+        "label",
+        "type",
+        "drop_target",
+        "preset_name",
+        "temperature",
+        "positive_prompt",
+        "negative_prompt",
+    ],
 )
 def test_prompt_item_requires_core_fields(missing: str):
-    fields = dict(
-        id="P001",
-        label="Apple",
-        type="interior_page",
-        drop_target="inbox/raw_pages/raw_p001_apple.png",
-        preset_name="CurioKraft - Interior Coloring Pages",
-        temperature=0.5,
-        positive_prompt="positive",
-        negative_prompt="negative",
-    )
+    fields = {
+        "id": "P001",
+        "label": "Apple",
+        "type": "interior_page",
+        "drop_target": "inbox/raw_pages/raw_p001_apple.png",
+        "preset_name": "CurioKraft - Interior Coloring Pages",
+        "temperature": 0.5,
+        "positive_prompt": "positive",
+        "negative_prompt": "negative",
+    }
     del fields[missing]
     with pytest.raises(ValidationError):
         PromptItem(**fields)
@@ -161,7 +169,7 @@ def test_manifest_defaults():
 
 @pytest.mark.parametrize("missing", ["book_title", "book_id", "total_prompts"])
 def test_manifest_requires_core_fields(missing: str):
-    fields = dict(book_title="T", book_id="b", total_prompts=0)
+    fields = {"book_title": "T", "book_id": "b", "total_prompts": 0}
     del fields[missing]
     with pytest.raises(ValidationError):
         CurioKraftPromptManifest(**fields)
@@ -207,8 +215,6 @@ def test_manifest_rejects_malformed_prompt_entry():
 
 
 def test_package_reexports_model_classes():
-    import curiokraft_book.schemas as schemas
-
     assert schemas.PromptItem is PromptItem
     assert schemas.PromptDefaults is PromptDefaults
     assert schemas.CurioKraftPromptManifest is CurioKraftPromptManifest

@@ -94,6 +94,7 @@ def resolve_provider_and_model(
         model_name = DEFAULT_TEXT_MODELS.get(resolved, OFFLINE_MODEL_NAME)
     return resolved, model_name
 
+
 class ModelResponse(BaseModel):
     """Standardized response from an LLM model call."""
 

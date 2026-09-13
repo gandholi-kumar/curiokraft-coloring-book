@@ -36,7 +36,6 @@ from curiokraft_book.orchestrator.debate_engine import (
     resolve_animal_anatomy_profile,
 )
 
-
 # ----------------------------------------------------------------------
 # Config loaders
 # ----------------------------------------------------------------------
@@ -369,6 +368,7 @@ def test_auto_pick_volume_mascot_ultimate_fallback(tmp_path: Path):
     )
     assert auto_pick_volume_mascot(str(manifest), str(cfg)) == "panda"
 
+
 # ----------------------------------------------------------------------
 # Alphabet spread prompt building
 # ----------------------------------------------------------------------
@@ -397,9 +397,7 @@ def test_build_alphabet_spread_prompt_unknown_section_returns_none():
 
 
 def test_build_alphabet_spread_prompt_uses_object_when_word_missing():
-    cards = [
-        {"letter": chr(ord("A") + i), "object": f"thing_{i}"} for i in range(13)
-    ]
+    cards = [{"letter": chr(ord("A") + i), "object": f"thing_{i}"} for i in range(13)]
     prompt = _build_alphabet_spread_prompt("a_to_m", page_record={"cards": cards})
     assert prompt is not None
     assert "THING 0" in prompt
@@ -435,10 +433,7 @@ def test_get_custom_alphabet_spread_prompt_n_to_z_by_page_number():
 
 def test_get_custom_alphabet_spread_prompt_unrelated_returns_none():
     assert (
-        get_custom_alphabet_spread_prompt(
-            {"canonical_object": "banana", "page_number": 5}
-        )
-        is None
+        get_custom_alphabet_spread_prompt({"canonical_object": "banana", "page_number": 5}) is None
     )
 
 
@@ -518,9 +513,18 @@ def test_build_alphabet_spread_prompt_auto_matches_manifest_pages():
         },
     ]
     prompt = _build_alphabet_spread_prompt(
-        "a_to_m", page_record=None, all_manifest_pages=pages + [
-            {"page_id": "P007", "page_number": 7, "canonical_object": "cat", "display_label": "CAT", "type": "coloring_page"},
-        ]
+        "a_to_m",
+        page_record=None,
+        all_manifest_pages=pages
+        + [
+            {
+                "page_id": "P007",
+                "page_number": 7,
+                "canonical_object": "cat",
+                "display_label": "CAT",
+                "type": "coloring_page",
+            },
+        ],
     )
     assert prompt is not None
     assert "APPLE" in prompt
@@ -546,9 +550,7 @@ def test_get_custom_alphabet_spread_prompt_none_when_builder_returns_none(monkey
         lambda *a, **k: None,
     )
     assert (
-        get_custom_alphabet_spread_prompt(
-            {"canonical_object": "alphabet_a_to_m", "page_number": 2}
-        )
+        get_custom_alphabet_spread_prompt({"canonical_object": "alphabet_a_to_m", "page_number": 2})
         is None
     )
 
@@ -563,9 +565,27 @@ def test_extract_cover_showcase_cards_objects_only_group(tmp_path: Path):
     manifest = _write_manifest(
         tmp_path,
         [
-            {"page_id": "P004", "page_number": 4, "canonical_object": "spoon", "section": "Household", "type": "coloring_page"},
-            {"page_id": "P005", "page_number": 5, "canonical_object": "cup", "section": "Household", "type": "coloring_page"},
-            {"page_id": "P006", "page_number": 6, "canonical_object": "ball", "section": "Toys", "type": "coloring_page"},
+            {
+                "page_id": "P004",
+                "page_number": 4,
+                "canonical_object": "spoon",
+                "section": "Household",
+                "type": "coloring_page",
+            },
+            {
+                "page_id": "P005",
+                "page_number": 5,
+                "canonical_object": "cup",
+                "section": "Household",
+                "type": "coloring_page",
+            },
+            {
+                "page_id": "P006",
+                "page_number": 6,
+                "canonical_object": "ball",
+                "section": "Toys",
+                "type": "coloring_page",
+            },
         ],
     )
     cards = extract_cover_showcase_cards(str(manifest), count=3)
@@ -706,6 +726,4 @@ def test_export_full_debate_log_missing_manifest_raises(tmp_path: Path):
 
     engine = DebateEngine()
     with pytest.raises(FileNotFoundError):
-        engine.export_full_debate_log(
-            str(tmp_path / "absent.json"), str(tmp_path / "out.md")
-        )
+        engine.export_full_debate_log(str(tmp_path / "absent.json"), str(tmp_path / "out.md"))

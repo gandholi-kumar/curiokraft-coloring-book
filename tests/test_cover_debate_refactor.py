@@ -5,8 +5,9 @@ Verifies that the refactored run_cover_debate() produces identical outputs
 to the original implementation while reducing code duplication.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from curiokraft_book.orchestrator.debate_engine import DebateEngine, _CoverDebateSpec
 from curiokraft_book.orchestrator.llm_client import LLMClient
@@ -219,7 +220,13 @@ def test_assemble_cover_debate_creates_result(debate_engine):
 def test_no_code_duplication_in_round_assembly():
     """Verify DRY principle: round assembly logic is not duplicated."""
     # Read the debate_engine source to verify no duplication
-    engine_path = Path(__file__).parent.parent / "src" / "curiokraft_book" / "orchestrator" / "debate_engine.py"
+    engine_path = (
+        Path(__file__).parent.parent
+        / "src"
+        / "curiokraft_book"
+        / "orchestrator"
+        / "debate_engine.py"
+    )
 
     with open(engine_path, encoding="utf-8") as f:
         source = f.read()

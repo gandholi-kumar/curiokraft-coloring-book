@@ -3,19 +3,18 @@
 import os
 import sys
 from io import BytesIO
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from curiokraft_book.orchestrator.providers import (
-    load_env_file,
-    resolve_provider_and_model,
+    DEFAULT_TEXT_MODELS,
+    OFFLINE_MODEL_NAME,
     BaseImageProvider,
     GeminiImageProvider,
     ModelResponse,
-    DEFAULT_TEXT_MODELS,
-    OFFLINE_MODEL_NAME,
+    load_env_file,
+    resolve_provider_and_model,
 )
 
 
@@ -43,7 +42,7 @@ def test_load_env_file_ignores_bad_lines(tmp_path, monkeypatch):
         "# comment\n"
         "KEY1=value1\n"
         "KEY2=value2 with spaces\n"
-        "KEY3=\"quoted\"\n"
+        'KEY3="quoted"\n'
         "KEY4='single-quoted'\n"
         "BADLINE\n"
         "KEY5=\n"

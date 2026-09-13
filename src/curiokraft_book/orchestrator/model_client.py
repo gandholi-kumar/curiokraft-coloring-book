@@ -77,9 +77,7 @@ class ModelClient:
         # Preserve the attributes callers historically read off ModelClient.
         self.provider = self.llm.provider
         self.model_name = self.llm.model_name
-        logger.info(
-            f"Initialized deprecated ModelClient facade (provider: {self.provider})"
-        )
+        logger.info(f"Initialized deprecated ModelClient facade (provider: {self.provider})")
 
     def call_agent(self, *args, **kwargs):
         """DEPRECATED: use :meth:`LLMClient.call_agent`."""

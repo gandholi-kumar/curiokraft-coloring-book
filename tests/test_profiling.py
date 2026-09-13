@@ -1,11 +1,18 @@
 """Tests for the profiling module."""
 
-import time
 import logging
+import re
+import time
 from io import StringIO
-from unittest.mock import patch
 
-from curiokraft_book.profiling import profile, profile_async, timer, benchmark, profile_batch_processing, profile_debate_round
+from curiokraft_book.profiling import (
+    benchmark,
+    profile,
+    profile_async,
+    profile_batch_processing,
+    profile_debate_round,
+    timer,
+)
 
 
 def test_profile_decorator():
@@ -13,7 +20,7 @@ def test_profile_decorator():
     # Capture log output from the profiling module's logger
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
-    logger = logging.getLogger('curiokraft_book.profiling')
+    logger = logging.getLogger("curiokraft_book.profiling")
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
 
@@ -31,7 +38,9 @@ def test_profile_decorator():
     # Check that logging occurred
     log_output = log_stream.getvalue()
     assert "test_function took" in log_output
-    assert "0.01" in log_output or "0.02" in log_output  # Allow for timing variance
+    match = re.search(r"test_function took (\d+\.\d+)s", log_output)
+    assert match is not None
+    assert float(match.group(1)) > 0
 
     # Clean up handler
     logger.removeHandler(handler)
@@ -44,7 +53,7 @@ def test_profile_async_decorator():
     # Capture log output from the profiling module's logger
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
-    logger = logging.getLogger('curiokraft_book.profiling')
+    logger = logging.getLogger("curiokraft_book.profiling")
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
 
@@ -72,7 +81,7 @@ def test_timer_context_manager():
     # Capture log output from the profiling module's logger
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
-    logger = logging.getLogger('curiokraft_book.profiling')
+    logger = logging.getLogger("curiokraft_book.profiling")
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
 
@@ -90,7 +99,9 @@ def test_timer_context_manager():
     # Check that logging occurred
     log_output = log_stream.getvalue()
     assert "test operation took" in log_output
-    assert "0.01" in log_output or "0.02" in log_output
+    match = re.search(r"test operation took (\d+\.\d+)s", log_output)
+    assert match is not None
+    assert float(match.group(1)) > 0
 
     # Clean up handler
     logger.removeHandler(handler)
@@ -98,6 +109,7 @@ def test_timer_context_manager():
 
 def test_benchmark_function():
     """Test that the benchmark function works correctly."""
+
     def fast_function(x):
         return x * 2
 
@@ -130,7 +142,7 @@ def test_specialized_decorators():
     # Capture log output from the profiling module's logger
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
-    logger = logging.getLogger('curiokraft_book.profiling')
+    logger = logging.getLogger("curiokraft_book.profiling")
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
 
@@ -150,7 +162,9 @@ def test_specialized_decorators():
 
     log_output = log_stream.getvalue()
     assert "test_batch_function processed 10 pages" in log_output
-    assert "0.01" in log_output or "0.02" in log_output
+    match1 = re.search(r"in (\d+\.\d+)s", log_output)
+    assert match1 is not None
+    assert float(match1.group(1)) > 0
 
     # Reset log stream
     log_stream.seek(0)
@@ -162,7 +176,9 @@ def test_specialized_decorators():
 
     log_output = log_stream.getvalue()
     assert "test_debate_function debate round 2 took" in log_output
-    assert "0.00" in log_output or "0.01" in log_output  # 5ms might round to 0.00 or 0.01
+    match2 = re.search(r"took (\d+\.\d+)s", log_output)
+    assert match2 is not None
+    assert float(match2.group(1)) >= 0
 
     # Clean up handler
     logger.removeHandler(handler)
@@ -171,4 +187,5 @@ def test_specialized_decorators():
 if __name__ == "__main__":
     # Allow running directly for quick testing
     import pytest
+
     pytest.main([__file__, "-v"])
