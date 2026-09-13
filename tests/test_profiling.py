@@ -6,7 +6,10 @@ import time
 from io import StringIO
 
 from curiokraft_book.profiling import (
+    _extract_argument,
+    _format_bytes,
     benchmark,
+    memory_profile,
     profile,
     profile_async,
     profile_batch_processing,
@@ -181,6 +184,133 @@ def test_specialized_decorators():
     assert float(match2.group(1)) >= 0
 
     # Clean up handler
+    logger.removeHandler(handler)
+
+
+def test_format_bytes():
+    assert _format_bytes(500) == "500.0B"
+    assert _format_bytes(1536) == "1.5KB"
+    assert _format_bytes(2 * 1024 * 1024) == "2.0MB"
+    assert _format_bytes(5 * 1024 * 1024 * 1024) == "5.0GB"
+
+
+def test_extract_argument():
+    def dummy_func(a, b, page_count=1):
+        pass
+
+    assert _extract_argument(dummy_func, (), {"page_count": 5}, "page_count") == 5
+    assert _extract_argument(dummy_func, (1, 2, 10), {}, "page_count") == 10
+    assert _extract_argument(dummy_func, (1,), {}, "page_count") is None
+    assert _extract_argument(dummy_func, (), {}, "nonexistent") is None
+    assert _extract_argument("not_a_callable", (), {}, "a") is None
+
+
+def test_memory_profile_enabled():
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.profiling")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+    with memory_profile("Allocation Test"):
+        data = list(range(1000))
+        assert len(data) == 1000
+
+    log_output = log_stream.getvalue()
+    assert "Allocation Test memory:" in log_output
+    assert "peak=" in log_output
+    logger.removeHandler(handler)
+
+
+def test_profiling_when_disabled():
+    import asyncio
+
+    logger = logging.getLogger("curiokraft_book.profiling")
+    orig_level = logger.level
+    logger.setLevel(logging.WARNING)
+    try:
+
+        @profile
+        def sync_fn():
+            return "sync"
+
+        @profile_async
+        async def async_fn():
+            return "async"
+
+        @profile_batch_processing
+        def batch_fn(page_count=1):
+            return "batch"
+
+        @profile_debate_round
+        def debate_fn(round_num=1):
+            return "debate"
+
+        assert sync_fn() == "sync"
+        assert asyncio.run(async_fn()) == "async"
+        assert batch_fn() == "batch"
+        assert debate_fn() == "debate"
+
+        with timer("Disabled Timer"):
+            pass
+
+        with memory_profile("Disabled Memory"):
+            pass
+    finally:
+        logger.setLevel(orig_level)
+
+
+def test_profile_batch_processing_variations():
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.profiling")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+    @profile_batch_processing
+    def positional_batch(page_count):
+        time.sleep(0.005)
+        return page_count
+
+    class BatchWorker:
+        page_count = 20
+
+        @profile_batch_processing
+        def work(self):
+            time.sleep(0.005)
+            return "done"
+
+    assert positional_batch(15) == 15
+    worker = BatchWorker()
+    assert worker.work() == "done"
+
+    log_output = log_stream.getvalue()
+    assert "processed 15 pages" in log_output
+    assert "processed 20 pages" in log_output
+    logger.removeHandler(handler)
+
+
+def test_profile_debate_round_variations():
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.profiling")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+    @profile_debate_round
+    def positional_debate(round_num):
+        return round_num
+
+    @profile_debate_round
+    def no_arg_debate():
+        return "ok"
+
+    assert positional_debate(3) == 3
+    assert no_arg_debate() == "ok"
+
+    log_output = log_stream.getvalue()
+    assert "debate round 3" in log_output
+    assert "no_arg_debate debate round took" in log_output
     logger.removeHandler(handler)
 
 
