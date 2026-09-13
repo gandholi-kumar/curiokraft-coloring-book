@@ -9,13 +9,13 @@ import pytest
 from pathlib import Path
 
 from curiokraft_book.orchestrator.debate_engine import DebateEngine, _CoverDebateSpec
-from curiokraft_book.orchestrator.model_client import ModelClient
+from curiokraft_book.orchestrator.llm_client import LLMClient
 
 
 @pytest.fixture
 def debate_engine():
     """Create a DebateEngine instance for testing."""
-    return DebateEngine(model_client=ModelClient())
+    return DebateEngine(llm_client=LLMClient(provider="mock"))
 
 
 def test_back_cover_debate_structure(debate_engine):

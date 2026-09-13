@@ -38,7 +38,9 @@ from curiokraft_book.constants import (
 )
 from curiokraft_book.logging_config import build_formatter, setup_logging
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
-from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
+from curiokraft_book.orchestrator.image_generator import ImageGenerator
+from curiokraft_book.orchestrator.llm_client import LLMClient
+from curiokraft_book.orchestrator.providers import DiskInboxProvider
 from curiokraft_book.orchestrator.retry_manager import RetryManager
 from curiokraft_book.orchestrator.state_manager import PipelineStateManager
 from curiokraft_book.validators.duplicates import ObjectRegistryValidator
@@ -349,7 +351,7 @@ def run_doctor():
     )
 
     # 4. Active API Provider
-    client = ModelClient()
+    client = LLMClient()
     table.add_row(
         "Active AI Provider",
         client.provider.upper(),
@@ -550,8 +552,8 @@ def generate_samples(
         preferred_ids = ["P001", "P005", "P047", "P083", "P105"]
         target_pages = [p for p in all_pages if p["page_id"] in preferred_ids][:count]
 
-    model_client = ModelClient()
-    debate_engine = DebateEngine(model_client)
+    image_generator = ImageGenerator()
+    debate_engine = DebateEngine()
     retry_manager = RetryManager()
 
     out_dir = Path("output/samples")
@@ -581,7 +583,7 @@ def generate_samples(
 
             raw_sample_path = out_dir / f"{p_id}_raw.png"
 
-            raw_canvas = model_client.generate_illustration(
+            raw_canvas = image_generator.generate(
                 positive_prompt=debate_res.positive_prompt,
                 negative_prompt=debate_res.negative_prompt,
                 canonical_label=canonical,
@@ -1080,8 +1082,7 @@ def show_prompt(
     if custom is not None:
         pos_prompt, neg_prompt = custom
     else:
-        client = ModelClient()
-        debate = DebateEngine(client)
+        debate = DebateEngine()
         res = debate.run_page_debate(target)
         pos_prompt, neg_prompt = res.positive_prompt, res.negative_prompt
 
@@ -1148,8 +1149,7 @@ def export_prompts(
     else:
         target_pages = all_pages
 
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
 
     out_p = Path(output_file)
     json_p = Path(json_out)
@@ -1406,8 +1406,7 @@ def show_debate(
         console.print(f"[red]Page {page_id} not found in manifest.[/red]")
         sys.exit(1)
 
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
     res = debate.run_page_debate(target)
     label = target.get("display_label", target.get("canonical_object", "").upper())
 
@@ -1455,8 +1454,7 @@ def export_debate_log(
     console.print(
         Panel.fit("[bold cyan]Exporting Pre-Generation Multi-Agent Specialist Debates[/bold cyan]")
     )
-    client = ModelClient()
-    debate = DebateEngine(client)
+    debate = DebateEngine()
     out_path = debate.export_full_debate_log(output_file=output_file)
     console.print(
         f"[bold green][PASS] Successfully exported all 110 agent debates to:[/] [cyan]{out_path}[/cyan]\n"

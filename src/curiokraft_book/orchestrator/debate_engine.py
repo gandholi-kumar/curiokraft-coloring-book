@@ -29,7 +29,7 @@ from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_TAXONOMY_CONFIG,
 )
-from curiokraft_book.orchestrator.model_client import ModelClient
+from curiokraft_book.orchestrator.llm_client import LLMClient
 
 logger = logging.getLogger("curiokraft.debate_engine")
 
@@ -1064,10 +1064,10 @@ class DebateEngine:
 
     def __init__(
         self,
-        model_client: ModelClient | None = None,
+        llm_client: LLMClient | None = None,
         agents_config_path: str = str(DEFAULT_AGENTS_CONFIG),
     ):
-        self.client = model_client or ModelClient()
+        self.llm = llm_client or LLMClient()
         self.agents_config_path = agents_config_path
 
     def _build_cover_debate_spec(

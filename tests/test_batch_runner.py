@@ -124,7 +124,7 @@ def test_book_qa_audit(sample_mini_manifest: Path, temp_dir: Path):
 
 
 def test_mock_image_provider():
-    from curiokraft_book.orchestrator.model_client import MockImageProvider
+    from curiokraft_book.orchestrator.providers import MockImageProvider
 
     provider = MockImageProvider()
     img = provider.generate("cute banana", canonical_label="banana", section="Fruits")
@@ -135,7 +135,7 @@ def test_mock_image_provider():
 def test_inbox_image_provider(temp_dir: Path):
     from PIL import Image, ImageDraw
 
-    from curiokraft_book.orchestrator.model_client import DiskInboxProvider
+    from curiokraft_book.orchestrator.providers import DiskInboxProvider
 
     inbox = temp_dir / "test_inbox"
     inbox.mkdir(parents=True, exist_ok=True)

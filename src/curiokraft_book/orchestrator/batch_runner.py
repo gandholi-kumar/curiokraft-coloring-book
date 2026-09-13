@@ -22,7 +22,9 @@ from curiokraft_book.constants import (
     DEFAULT_RAW_GENERATED_DIR,
 )
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
-from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
+from curiokraft_book.orchestrator.image_generator import ImageGenerator
+from curiokraft_book.orchestrator.llm_client import LLMClient
+from curiokraft_book.orchestrator.providers import DiskInboxProvider
 from curiokraft_book.orchestrator.retry_manager import RetryManager
 from curiokraft_book.orchestrator.state_manager import PageStatus, PipelineStateManager
 from curiokraft_book.validators.dimensions import validate_dimensions
@@ -88,14 +90,15 @@ class InteriorBatchRunner:
         output_masters_dir: str | Path = DEFAULT_INTERIOR_MASTERS_DIR,
         raw_generated_dir: str | Path = DEFAULT_RAW_GENERATED_DIR,
         inbox_dir: str | Path = DEFAULT_INBOX_DIR,
-        model_client: ModelClient | None = None,
+        image_generator: ImageGenerator | None = None,
+        llm_client: LLMClient | None = None,
     ):
         self.manifest_path = Path(manifest_path)
         self.output_masters_dir = Path(output_masters_dir)
         self.raw_generated_dir = Path(raw_generated_dir)
         self.inbox_dir = Path(inbox_dir)
-        self.model_client = model_client or ModelClient()
-        self.debate_engine = DebateEngine(self.model_client)
+        self.image_generator = image_generator or ImageGenerator()
+        self.debate_engine = DebateEngine(llm_client)
         self.state_mgr = PipelineStateManager(manifest_path=self.manifest_path)
         self.retry_manager = RetryManager()
         self.inbox_provider = DiskInboxProvider(
@@ -212,7 +215,7 @@ class InteriorBatchRunner:
             logger.info(f"Using existing raw illustration from {raw_img_jpg}")
             raw_canvas = Image.open(raw_img_jpg).convert("L")
         else:
-            raw_canvas = self.model_client.generate_illustration(
+            raw_canvas = self.image_generator.generate(
                 positive_prompt=debate_res.positive_prompt,
                 negative_prompt=debate_res.negative_prompt,
                 canonical_label=canonical,
