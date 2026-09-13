@@ -8,6 +8,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 from PIL import Image
 from pydantic import BaseModel, Field
@@ -47,7 +48,7 @@ class RateLimiter:
         """
         self.rpm = requests_per_minute
         self.window_seconds = 60
-        self.calls = deque()
+        self.calls: deque[float] = deque()
         self.lock = Lock()
 
     def acquire(self):
@@ -405,7 +406,7 @@ class InteriorBatchRunner:
 
     def _generate_page_safe(
         self, page: dict, source_mode: str = "auto", force_fresh: bool = False
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         """
         Thread-safe wrapper for single page generation.
         Handles exceptions and state persistence with lock.
