@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: blocks accidental commit of sensitive files.
+#
+# Delegates to the version-controlled script so the check stays in sync
+# for everyone. See scripts/check_sensitive_files.sh for details.
+#
+# Install: cp scripts/pre-commit.hook .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run:  pre-commit install   (uses the local hook in .pre-commit-config.yaml)
+
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+exec "$REPO_ROOT/scripts/check_sensitive_files.sh"
