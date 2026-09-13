@@ -27,6 +27,7 @@ from curiokraft_book.orchestrator.llm_client import LLMClient
 from curiokraft_book.orchestrator.providers import DiskInboxProvider
 from curiokraft_book.orchestrator.retry_manager import RetryManager
 from curiokraft_book.orchestrator.state_manager import PageStatus, PipelineStateManager
+from curiokraft_book.profiling import timer
 from curiokraft_book.validators.dimensions import validate_dimensions
 from curiokraft_book.validators.grayscale import validate_black_and_white
 from curiokraft_book.validators.margins import validate_margins
@@ -50,23 +51,32 @@ class RateLimiter:
         self.lock = Lock()
 
     def acquire(self):
-        """Block until a request slot is available within rate limit."""
-        with self.lock:
-            now = time.time()
+        """Block until a request slot is available within rate limit.
 
-            # Remove calls outside the 60-second window
-            while self.calls and self.calls[0] < now - self.window_seconds:
-                self.calls.popleft()
+        Sleeps *outside* the lock so concurrent workers keep making progress,
+        and loops rather than recursing: re-entering ``self.lock`` from inside
+        the ``with`` block deadlocked the calling thread permanently.
+        """
+        while True:
+            with self.lock:
+                now = time.time()
 
-            # If at limit, sleep until oldest call expires
-            if len(self.calls) >= self.rpm:
+                # Remove calls outside the 60-second window
+                while self.calls and self.calls[0] < now - self.window_seconds:
+                    self.calls.popleft()
+
+                # Slot available: claim it and return
+                if len(self.calls) < self.rpm:
+                    self.calls.append(now)
+                    return
+
+                # At limit: work out how long until the oldest call expires
                 sleep_time = self.calls[0] + self.window_seconds - now + 0.1
-                if sleep_time > 0:
-                    logger.debug(f"Rate limit reached, sleeping {sleep_time:.2f}s")
-                    time.sleep(sleep_time)
-                    return self.acquire()  # Retry after sleep
 
-            self.calls.append(now)
+            # Release the lock before sleeping, then re-check the window
+            if sleep_time > 0:
+                logger.debug(f"Rate limit reached, sleeping {sleep_time:.2f}s")
+                time.sleep(sleep_time)
 
 
 class BatchProductionReport(BaseModel):
@@ -322,6 +332,20 @@ class InteriorBatchRunner:
         Returns:
             BatchProductionReport with full batch statistics.
         """
+        with timer("Full book batch (sequential)"):
+            return self._run_full_book_batch_impl(
+                progress_callback=progress_callback,
+                source_mode=source_mode,
+                force_fresh=force_fresh,
+            )
+
+    def _run_full_book_batch_impl(
+        self,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        source_mode: str = "auto",
+        force_fresh: bool = False,
+    ) -> BatchProductionReport:
+        """Sequential batch implementation. Timed by :meth:`run_full_book_batch`."""
         with open(self.manifest_path, encoding="utf-8") as f:
             manifest_data = json.load(f)
 
@@ -467,6 +491,22 @@ class InteriorBatchRunner:
             >>> report = runner.run_full_book_batch_parallel(max_workers=4)
             >>> print(f"Success: {report.successful_pages}/{report.total_pages}")
         """
+        with timer(f"Full book batch (parallel, {max_workers} workers)"):
+            return self._run_full_book_batch_parallel_impl(
+                max_workers=max_workers,
+                progress_callback=progress_callback,
+                source_mode=source_mode,
+                force_fresh=force_fresh,
+            )
+
+    def _run_full_book_batch_parallel_impl(
+        self,
+        max_workers: int = 4,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        source_mode: str = "auto",
+        force_fresh: bool = False,
+    ) -> BatchProductionReport:
+        """Parallel batch implementation. Timed by :meth:`run_full_book_batch_parallel`."""
         with open(self.manifest_path, encoding="utf-8") as f:
             manifest_data = json.load(f)
 

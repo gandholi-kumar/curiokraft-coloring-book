@@ -112,25 +112,38 @@ class RetryManager:
         fortified_neg = current_negative
 
         for v in violations:
-            if "Gray" in v or "Shading" in v or "Color" in v:
-                if "pure binary black and white line art" not in fortified_pos:
-                    fortified_pos += (
-                        ", stark pure binary black and white line art only, zero filled textures"
-                    )
-                fortified_neg += (
-                    ", gray tones, shading, shadows, soft gradients, tones, textures, grayscale"
-                )
+            if "Gray" in v:
+                if "stark pure binary black and white line art only" not in fortified_pos:
+                    fortified_pos += ", stark pure binary black and white line art only"
+                if "gray tones" not in fortified_neg:
+                    fortified_neg += ", gray tones"
+            if "Shading" in v:
+                if "stark pure binary black and white line art only" not in fortified_pos:
+                    fortified_pos += ", stark pure binary black and white line art only"
+                if "shading" not in fortified_neg:
+                    fortified_neg += ", shading"
+            if "Color" in v:
+                if "stark pure binary black and white line art only" not in fortified_pos:
+                    fortified_pos += ", stark pure binary black and white line art only"
+                if "grayscale" not in fortified_neg:
+                    fortified_neg += ", grayscale"
 
-            if "Margin" in v or "Gutter" in v:
+            if "Margin" in v:
                 if "centered strictly in middle" not in fortified_pos:
-                    fortified_pos += ", compact centered object strictly in middle of white canvas with wide blank margins"
-                fortified_neg += (
-                    ", touching edges, border elements, bleed, panoramic, extended background"
-                )
+                    fortified_pos += ", centered strictly in middle"
+                if "touching edges" not in fortified_neg:
+                    fortified_neg += ", touching edges"
+            if "Gutter" in v:
+                if "centered strictly in middle" not in fortified_pos:
+                    fortified_pos += ", centered strictly in middle"
+                if "border elements" not in fortified_neg:
+                    fortified_neg += ", border elements"
 
             if "Multiple" in v or "Complexity" in v:
-                fortified_pos += ", isolated single lone object, completely empty background"
-                fortified_neg += ", multiple objects, scenery, landscape, secondary items"
+                if "isolated single lone object" not in fortified_pos:
+                    fortified_pos += ", isolated single lone object"
+                if "multiple objects, scenery, landscape" not in fortified_neg:
+                    fortified_neg += ", multiple objects, scenery, landscape"
 
         return RecoveryAction(
             action_type="REVISE_PROMPT",

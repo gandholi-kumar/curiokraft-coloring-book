@@ -179,5 +179,7 @@ coloring-book/
 * 📐 **[Amazon KDP Print Specifications](docs/KDP_PRINT_SPECIFICATIONS.md)** — Exact geometry, spine calculations, and barcode safe zones.
 * 🏛️ **[Multi-Volume Architecture Guide](docs/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, Volume 3, and themed editions.
 * 🧠 **[Multi-Agent System & Debate Engine](docs/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — 10 specialist agents, 4-round debates, and audit logs.
+* 🗺️ **[Architecture Diagrams](docs/ARCHITECTURE_DIAGRAMS.md)** — Mermaid diagrams of the pipeline, page lifecycle state machine, and module map.
+* ⚡ **[Performance Profiling Guide](docs/PERFORMANCE.md)** — Profiling decorators, measured overhead, and how to profile a real run.
 * 📥 **[Image Inbox Naming Conventions](inbox/raw_pages/README.md)** — File naming rules and fallback candidates.
 
