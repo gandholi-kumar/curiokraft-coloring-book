@@ -57,15 +57,44 @@ def test_rate_limiter_allows_requests_within_limit():
 def test_rate_limiter_blocks_excess_requests():
     """Verify rate limiter blocks when exceeding limit."""
     limiter = RateLimiter(requests_per_minute=5)
+    limiter.window_seconds = 1  # Shrink the window so the test stays fast
 
     start = time.time()
     for _ in range(6):  # 6 requests with 5 RPM limit
         limiter.acquire()
     elapsed = time.time() - start
 
-    # 6th request should be delayed (60s / 5 = 12s between requests)
-    # Since we make 6 requests instantly, the last one waits ~12s
-    assert elapsed >= 12.0
+    # The 6th request cannot be served until the oldest call leaves the window,
+    # so it must block for roughly one window.
+    assert elapsed >= 0.9
+    assert elapsed < 30.0
+
+
+def test_rate_limiter_does_not_deadlock_at_limit():
+    """Regression: acquiring past the limit must not deadlock.
+
+    The previous implementation slept while holding ``self.lock`` and then
+    recursed into ``acquire()``, which re-entered a non-reentrant ``threading.Lock``
+    on the same thread and blocked forever. Any caller that actually reached the
+    rate limit hung the process.
+    """
+    limiter = RateLimiter(requests_per_minute=3)
+    limiter.window_seconds = 1
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def acquire_three():
+        for _ in range(3):
+            limiter.acquire()
+        return True
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(acquire_three) for _ in range(3)]
+        # 20s is far longer than the 3s the limiter legitimately needs; a
+        # timeout here means we are back to the deadlock.
+        results = [f.result(timeout=20) for f in futures]
+
+    assert all(results)
 
 
 def test_rate_limiter_thread_safe():
@@ -73,6 +102,7 @@ def test_rate_limiter_thread_safe():
     from concurrent.futures import ThreadPoolExecutor
 
     limiter = RateLimiter(requests_per_minute=10)
+    limiter.window_seconds = 1  # Shrink the window so the test stays fast
 
     def acquire_token():
         limiter.acquire()
@@ -80,7 +110,7 @@ def test_rate_limiter_thread_safe():
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [executor.submit(acquire_token) for _ in range(15)]
-        results = [f.result() for f in futures]
+        results = [f.result(timeout=30) for f in futures]
 
     assert all(results)
     assert len(limiter.calls) <= 10  # Should respect limit
@@ -215,8 +245,12 @@ def test_thread_safe_state_updates(runner):
     assert len(page_ids) == len(set(page_ids))  # No duplicates
 
     # Verify state manager consistency
-    state = runner.state_mgr.get_all_pages()
-    assert len(state) >= 4  # At least 4 pages recorded
+    for page_id in page_ids:
+        record = runner.state_mgr.get_page(page_id)
+        assert record is not None, f"Page {page_id} missing from state manager"
+
+    summary = runner.state_mgr.get_summary()
+    assert sum(summary.values()) >= 4  # At least 4 pages recorded
 
 
 def test_parallel_batch_respects_worker_count(runner):
@@ -231,25 +265,35 @@ def test_parallel_batch_respects_worker_count(runner):
     with patch.object(runner, "generate_single_page", side_effect=track_timing):
         runner.run_full_book_batch_parallel(max_workers=2)
 
-    # With 2 workers and 4 pages (0.2s each), should take ~0.4s total
-    # (2 batches of 2 pages processed in parallel)
-    total_time = call_times[-1] - call_times[0]
-    assert 0.3 < total_time < 0.6  # Allow some overhead
+    # 4 pages of 0.2s across 2 workers means the *last* page starts after one
+    # full 0.2s wave, so the spread of start times is ~0.2s. Fully sequential
+    # execution would spread them across ~0.8s instead.
+    start_spread = call_times[-1] - call_times[0]
+    assert 0.15 < start_spread < 0.5, f"start spread {start_spread:.2f}s implies wrong concurrency"
 
 
 def test_parallel_batch_with_rate_limiting(runner):
     """Verify rate limiting is applied during parallel processing."""
-    # Set very low rate limit for testing
+    # Limit must be lower than the page count, otherwise the limiter never
+    # engages and the assertion below could never hold.
     runner.rate_limiter = RateLimiter(requests_per_minute=10)
+    runner.rate_limiter.window_seconds = 1  # Keep the test fast
 
     with patch.object(runner, "generate_single_page", return_value=Path("/fake/page.png")):
+        runner.run_full_book_batch_parallel(max_workers=4)
+
+    # 4 pages against a 10-per-window limit never blocks...
+    assert len(runner.rate_limiter.calls) == 4
+
+    # ...whereas a limit below the page count must throttle.
+    runner.rate_limiter = RateLimiter(requests_per_minute=2)
+    runner.rate_limiter.window_seconds = 1
+    with patch.object(runner, "generate_single_page", return_value=Path("/fake/page.png")):
         start = time.time()
-        runner.run_full_book_batch_parallel(max_workers=2)
+        runner.run_full_book_batch_parallel(max_workers=4)
         elapsed = time.time() - start
 
-    # With 10 RPM limit and 4 pages, should take at least some time
-    # (not instant even with mocking)
-    assert elapsed > 0.1
+    assert elapsed >= 0.9, f"expected throttling with 2 RPM over 4 pages, got {elapsed:.2f}s"
 
 
 def test_parallel_batch_empty_manifest(tmp_path):
