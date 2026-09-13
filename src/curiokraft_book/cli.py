@@ -1165,7 +1165,7 @@ def export_prompts(
         "> [!TIP]",
         "> ⚙️ **Optimal Google AI Studio Configuration:**",
         "> - **Aspect Ratio:** `3:4` (Vertical Portrait) | **Output Format:** `Images only` | **Temperature:** `0.9` (Interior & Covers)",
-        "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
+        "> - **System Instructions:** See full copy-paste presets for Interior & Cover in [docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](../docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)",
         "> - 🧠 **Multi-Agent Pre-Generation Debate Audit:** See [logs/agent_debates_log.md](../logs/agent_debates_log.md) for full specialist proposals and Judge scoring.",
         "",
         "---",

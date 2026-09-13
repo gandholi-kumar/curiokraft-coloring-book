@@ -45,8 +45,7 @@ private_docs/
 
 # Internal Engineering Bookkeeping (kept locally, never published)
 # These track work-in-progress and session history rather than shipping code.
-docs/TECHNICAL_DEBT_*.md
-docs/IMPLEMENTATION_SESSION_SUMMARY.md
+docs/internal/
 
 # Proprietary Amazon KDP Form Ingestion (Internal HTML dumps & session artifacts - keep strictly confidential)
 inbox/kdp_forms/*.html

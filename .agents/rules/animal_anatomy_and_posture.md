@@ -6,7 +6,7 @@ globs: ["**/*animal*", "**/prompts*", "**/taxonomy.yaml", "**/agents.yaml", "**/
 # CurioKraft Animal Anatomy & Posture Rules
 
 ## 1. Core Mandate
-Every agent constructing, reviewing, debating, or generating prompts for animals in CurioKraft publications MUST follow the authoritative standard in `docs/ANIMAL_ANATOMY_AND_POSTURE_STANDARD.md`.
+Every agent constructing, reviewing, debating, or generating prompts for animals in CurioKraft publications MUST follow the authoritative standard in `docs/standards/ANIMAL_ANATOMY_AND_POSTURE_STANDARD.md`.
 
 ## 2. Inviolable Laws
 1. **Species Anatomy > Artistic Style**:

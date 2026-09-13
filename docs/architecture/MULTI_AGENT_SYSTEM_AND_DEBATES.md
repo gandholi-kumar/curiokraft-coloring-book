@@ -511,5 +511,5 @@ flowchart TD
 | **`AGT-KDP-004`** | **Form Ingestion & Reverse Engineering** | • Parses live saved Amazon HTML forms dropped in `inbox/kdp_forms/`.<br>• Maps all 82 form elements, input names, IDs, selects, and character limits.<br>• Feeds live field schema back to the agent team for 100% field alignment. |
 
 > [!NOTE]
-> All 4 agent deliberations, rationale, and search strategies are rendered transparently in Tab 4 of `output/kdp/kdp_submission_helper.html` and documented in [docs/KDP_PUBLISHING_METADATA_GUIDE.md](KDP_PUBLISHING_METADATA_GUIDE.md).
+> All 4 agent deliberations, rationale, and search strategies are rendered transparently in Tab 4 of `output/kdp/kdp_submission_helper.html` and documented in [docs/workflows/KDP_PUBLISHING_METADATA_GUIDE.md](../workflows/KDP_PUBLISHING_METADATA_GUIDE.md).
 

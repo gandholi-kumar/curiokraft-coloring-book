@@ -85,7 +85,7 @@ def measure_decorator_overhead(iterations: int = 200_000) -> dict:
     Runs the same trivial function three ways: undecorated, decorated with
     profiling disabled (level above INFO), and decorated with profiling
     enabled. The difference is the overhead the project claims in
-    ``docs/PERFORMANCE.md``.
+    ``docs/workflows/PERFORMANCE.md``.
     """
 
     def trivial():

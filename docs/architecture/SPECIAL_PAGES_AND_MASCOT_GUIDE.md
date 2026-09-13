@@ -121,7 +121,7 @@ Even if an asset contains subtle JPEG compression artifacts or a faux checkerboa
 
 ## ⚙️ Configuration in `book_config.yaml`
 
-The special pages and mascot system is 100% configurable in [`config/book_config.yaml`](../config/book_config.yaml) without code changes:
+The special pages and mascot system is 100% configurable in [`config/book_config.yaml`](../../config/book_config.yaml) without code changes:
 
 ```yaml
 book:
