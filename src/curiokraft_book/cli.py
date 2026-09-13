@@ -36,6 +36,7 @@ from curiokraft_book.constants import (
     DEFAULT_SPECIAL_ASSETS_DIR,
     DEFAULT_WELCOME_PAGE_ENABLED,
 )
+from curiokraft_book.logging_config import build_formatter, setup_logging
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.model_client import DiskInboxProvider, ModelClient
 from curiokraft_book.orchestrator.retry_manager import RetryManager
@@ -62,18 +63,18 @@ if sys.platform == "win32":
 logs_dir = Path("logs")
 logs_dir.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(logs_dir / "pipeline.log", encoding="utf-8"),
-        logging.FileHandler(logs_dir / "debug.log", encoding="utf-8"),
-    ],
+# All handlers use the redacting formatter so provider API keys can never
+# reach the on-disk logs, even when they appear inside error tracebacks.
+setup_logging(
+    level="DEBUG",
+    log_files=[logs_dir / "pipeline.log", logs_dir / "debug.log"],
+    redact_secrets=True,
 )
 
 failure_logger = logging.getLogger("curiokraft.failures")
 failure_handler = logging.FileHandler(logs_dir / "failures.log", encoding="utf-8")
 failure_handler.setLevel(logging.WARNING)
+failure_handler.setFormatter(build_formatter(redact_secrets=True))
 failure_logger.addHandler(failure_handler)
 
 console = Console(force_terminal=True, legacy_windows=False)
