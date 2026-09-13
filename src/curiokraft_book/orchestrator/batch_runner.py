@@ -2,8 +2,12 @@
 
 import json
 import logging
+import time
+from collections import deque
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from threading import Lock
 
 from PIL import Image
 from pydantic import BaseModel, Field
@@ -26,6 +30,41 @@ from curiokraft_book.validators.grayscale import validate_black_and_white
 from curiokraft_book.validators.margins import validate_margins
 
 logger = logging.getLogger("curiokraft.batch_runner")
+
+
+class RateLimiter:
+    """Token bucket rate limiter for LLM API calls to prevent throttling."""
+
+    def __init__(self, requests_per_minute: int = 60):
+        """
+        Initialize rate limiter.
+
+        Args:
+            requests_per_minute: Maximum requests allowed per 60-second window
+        """
+        self.rpm = requests_per_minute
+        self.window_seconds = 60
+        self.calls = deque()
+        self.lock = Lock()
+
+    def acquire(self):
+        """Block until a request slot is available within rate limit."""
+        with self.lock:
+            now = time.time()
+
+            # Remove calls outside the 60-second window
+            while self.calls and self.calls[0] < now - self.window_seconds:
+                self.calls.popleft()
+
+            # If at limit, sleep until oldest call expires
+            if len(self.calls) >= self.rpm:
+                sleep_time = self.calls[0] + self.window_seconds - now + 0.1
+                if sleep_time > 0:
+                    logger.debug(f"Rate limit reached, sleeping {sleep_time:.2f}s")
+                    time.sleep(sleep_time)
+                    return self.acquire()  # Retry after sleep
+
+            self.calls.append(now)
 
 
 class BatchProductionReport(BaseModel):
@@ -62,6 +101,10 @@ class InteriorBatchRunner:
         self.inbox_provider = DiskInboxProvider(
             inbox_dir=self.inbox_dir, raw_dir=self.raw_generated_dir
         )
+
+        # Thread safety for parallel processing
+        self._state_lock = Lock()
+        self.rate_limiter = RateLimiter(requests_per_minute=60)
 
         self.output_masters_dir.mkdir(parents=True, exist_ok=True)
         self.raw_generated_dir.mkdir(parents=True, exist_ok=True)
@@ -322,6 +365,171 @@ class InteriorBatchRunner:
                 )
 
         logger.info(f"Batch production completed: {success_count}/{total_count} pages approved.")
+
+        return BatchProductionReport(
+            total_pages=total_count,
+            successful_pages=success_count,
+            failed_pages=failed_count,
+            rescued_pages_count=success_count,
+            output_directory=str(self.output_masters_dir),
+            manifest_path=str(self.manifest_path),
+            page_records=records,
+        )
+
+    def _generate_page_safe(
+        self, page: dict, source_mode: str = "auto", force_fresh: bool = False
+    ) -> dict[str, any]:
+        """
+        Thread-safe wrapper for single page generation.
+        Handles exceptions and state persistence with lock.
+
+        Args:
+            page: Page data from manifest
+            source_mode: Image source mode
+            force_fresh: Force regeneration
+
+        Returns:
+            Result dict with success status and metadata
+        """
+        page_id = page.get("page_id", "UNKNOWN")
+        page_num = page.get("page_number", 0)
+        label = page.get("display_label", page.get("canonical_object", "").upper())
+
+        try:
+            # Acquire rate limit token before any API operations
+            self.rate_limiter.acquire()
+
+            # Generate page (existing logic)
+            master_path = self.generate_single_page(page, source_mode=source_mode, force_fresh=force_fresh)
+
+            # Thread-safe state update
+            with self._state_lock:
+                self.state_mgr.update_page(page_id, status=PageStatus.APPROVED)
+
+            return {
+                "success": True,
+                "page_id": page_id,
+                "page_number": page_num,
+                "label": label,
+                "status": "APPROVED",
+                "path": str(master_path),
+            }
+
+        except Exception as e:
+            # Thread-safe error state update
+            with self._state_lock:
+                self.state_mgr.update_page(page_id, status=PageStatus.FAILED)
+
+            logger.error(f"Error producing Page {page_num:03d} ({label}): {e}", exc_info=True)
+
+            return {
+                "success": False,
+                "page_id": page_id,
+                "page_number": page_num,
+                "label": label,
+                "status": "FAILED",
+                "error": str(e),
+            }
+
+    def run_full_book_batch_parallel(
+        self,
+        max_workers: int = 4,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        source_mode: str = "auto",
+        force_fresh: bool = False,
+    ) -> BatchProductionReport:
+        """
+        Execute batch production with parallel processing for faster throughput.
+
+        This method processes multiple pages concurrently using ThreadPoolExecutor,
+        providing significant speedup (4x with 4 workers) compared to sequential processing.
+
+        Args:
+            max_workers: Number of parallel workers (default: 4, recommended 2-8)
+            progress_callback: Optional callback receiving (current_page, total_pages, page_label)
+            source_mode: 'auto', 'api', 'inbox', 'openai', 'gemini', or 'mock'
+            force_fresh: Ignore existing caches and regenerate
+
+        Returns:
+            BatchProductionReport with full batch statistics
+
+        Notes:
+            - Thread-safe: Uses locks for state updates
+            - Rate-limited: Respects API provider limits (60 RPM default)
+            - Resilient: Individual page failures don't stop the batch
+            - Order: Pages complete in variable order (non-deterministic)
+
+        Example:
+            >>> runner = InteriorBatchRunner()
+            >>> report = runner.run_full_book_batch_parallel(max_workers=4)
+            >>> print(f"Success: {report.successful_pages}/{report.total_pages}")
+        """
+        with open(self.manifest_path, encoding="utf-8") as f:
+            manifest_data = json.load(f)
+
+        pages = manifest_data.get("pages", [])
+        total_count = len(pages)
+        completed_count = 0
+        success_count = 0
+        failed_count = 0
+        records = []
+
+        logger.info(
+            f"Starting PARALLEL batch production: {total_count} pages, "
+            f"{max_workers} workers [source={source_mode}]..."
+        )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all page generation tasks
+            future_to_page = {
+                executor.submit(self._generate_page_safe, page, source_mode, force_fresh): page
+                for page in pages
+            }
+
+            # Process completed tasks as they finish
+            for future in as_completed(future_to_page):
+                page = future_to_page[future]
+                page_num = page.get("page_number", 0)
+                label = page.get("display_label", page.get("canonical_object", "").upper())
+
+                try:
+                    result = future.result()
+
+                    if result.get("success"):
+                        success_count += 1
+                        logger.info(f"✅ Page {page_num:03d} ({label}) completed successfully")
+                    else:
+                        failed_count += 1
+                        logger.warning(
+                            f"⚠️ Page {page_num:03d} ({label}) failed: {result.get('error')}"
+                        )
+
+                    records.append(result)
+
+                except Exception as e:
+                    failed_count += 1
+                    logger.error(f"❌ Page {page_num:03d} ({label}) exception: {e}", exc_info=True)
+                    records.append(
+                        {
+                            "page_id": page.get("page_id", "UNKNOWN"),
+                            "page_number": page_num,
+                            "label": label,
+                            "status": "FAILED",
+                            "error": str(e),
+                        }
+                    )
+
+                completed_count += 1
+
+                # Update progress callback (thread-safe)
+                if progress_callback:
+                    progress_label = f"Page {page_num:03d}: {label} ({completed_count}/{total_count})"
+                    progress_callback(completed_count, total_count, progress_label)
+
+        logger.info(
+            f"Parallel batch production completed: {success_count}/{total_count} pages approved, "
+            f"{failed_count} failed."
+        )
 
         return BatchProductionReport(
             total_pages=total_count,

@@ -641,11 +641,19 @@ def generate_full_book(
     force: bool = typer.Option(
         False, "--force", "-f", help="Force fresh generation, bypassing existing cache"
     ),
+    parallel: bool = typer.Option(
+        False, "--parallel", "-p", help="Enable parallel processing for faster batch generation"
+    ),
+    workers: int = typer.Option(
+        4, "--workers", "-w", help="Number of parallel workers (default: 4, recommended: 2-8)"
+    ),
 ):
     """[Stage 3: Production] Execute full 110-page interior batch generation & QA."""
+    mode_label = f"PARALLEL ({workers} workers)" if parallel else "SEQUENTIAL"
     console.print(
         Panel.fit(
-            f"[bold green]CurioKraft 110-Page Interior Production Batch [source={source}][/bold green]"
+            f"[bold green]CurioKraft 110-Page Interior Production Batch\n"
+            f"Mode: {mode_label} | Source: {source}[/bold green]"
         )
     )
 
@@ -666,13 +674,26 @@ def generate_full_book(
         def on_page_progress(current: int, total: int, label: str):
             progress.update(task, completed=current, description=f"[cyan]{label}")
 
-        report = runner.run_full_book_batch(
-            progress_callback=on_page_progress, source_mode=source, force_fresh=force
-        )
+        if parallel:
+            report = runner.run_full_book_batch_parallel(
+                max_workers=workers,
+                progress_callback=on_page_progress,
+                source_mode=source,
+                force_fresh=force,
+            )
+        else:
+            report = runner.run_full_book_batch(
+                progress_callback=on_page_progress, source_mode=source, force_fresh=force
+            )
 
     console.print(
         f"[bold green][PASS] Batch Complete:[/] {report.successful_pages}/{report.total_pages} pages produced in {report.output_directory}"
     )
+
+    if report.failed_pages > 0:
+        console.print(
+            f"[yellow]⚠️  Warning: {report.failed_pages} pages failed. Check logs for details.[/yellow]"
+        )
 
     # Run Whole-Book QA Audit Agent
     console.print("[bold cyan]Running AGT-010-BOOKQA Whole-Book Audit Agent...[/bold cyan]")
