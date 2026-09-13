@@ -381,6 +381,28 @@ class DebateResult(BaseModel):
     judge_rationale: str
 
 
+class _CoverDebateSpec(BaseModel):
+    """Per-cover-type payload assembled into the shared 4-round debate structure.
+
+    Front and back covers keep completely different content, layouts, and prompts.
+    This spec only captures the fields that feed the shared round-assembly helper.
+    """
+
+    page_id: str
+    canonical_object: str
+    display_label: str
+    section: str = "Covers"
+    r1_outputs: dict[str, Any]
+    r2_outputs: dict[str, Any]
+    r3_outputs: dict[str, Any]
+    positive_prompt: str
+    negative_prompt: str
+    judge_verdict: str = "APPROVED"
+    judge_score: float = 98.0
+    winner_agent: str = "AGT-002-DESIGN"
+    judge_rationale: str = ""
+
+
 # =============================================================================
 # Living Taxonomy Classifier — reads from taxonomy.yaml
 # =============================================================================
@@ -1048,6 +1070,330 @@ class DebateEngine:
         self.client = model_client or ModelClient()
         self.agents_config_path = agents_config_path
 
+    def _build_cover_debate_spec(
+        self,
+        cover_type: str,
+        manifest_path: str,
+        book_config_path: str,
+        blueprint_spec: Any,
+        title: str,
+        subtitle: str,
+        brand: str,
+        age_min: int,
+        age_max: int,
+    ) -> _CoverDebateSpec:
+        """Build cover-specific debate spec with distinct front/back content preserved."""
+        import json
+        from pathlib import Path
+
+        if cover_type == "back_cover":
+            # Back cover: flashcard preview + feature pills
+            cards = extract_cover_showcase_cards(manifest_path, count=3)
+            cards_desc_list = [f"{c['category_name']}: {c['description']}" for c in cards]
+            cards_summary = "; ".join(cards_desc_list)
+
+            c_back = _CURRICULUM.get("cover_styling", {}).get("back_cover", {})
+            headlines = c_back.get(
+                "headline_options", ["DISCOVER, COLOR & LEARN!", "LITTLE HANDS, BIG DISCOVERIES!"]
+            )
+            headline = headlines[0] if headlines else "DISCOVER, COLOR & LEARN!"
+
+            # Dynamic page count from manifest
+            page_count = 110
+            try:
+                m_p = Path(manifest_path)
+                if not m_p.is_absolute():
+                    candidates = [
+                        Path.cwd() / manifest_path,
+                        Path(__file__).parent.parent.parent.parent / manifest_path,
+                    ]
+                    for c in candidates:
+                        if c.exists():
+                            m_p = c
+                            break
+                if m_p.exists():
+                    with open(m_p, encoding="utf-8") as mf:
+                        m_data = json.load(mf)
+                        page_count = len(m_data.get("pages", [])) or 110
+            except (OSError, json.JSONDecodeError):
+                pass
+
+            # Resolve volume name dynamically
+            volume_name = ""
+            if manifest_path:
+                mp_str = str(manifest_path).lower()
+                m_vol = re.search(r"vol(?:ume)?[_-]?(\d+)", mp_str)
+                if m_vol:
+                    volume_name = f"Volume {m_vol.group(1)}"
+                elif "pages.json" in mp_str:
+                    volume_name = "Volume 1"
+
+            vol_label = f" {volume_name}" if volume_name else ""
+            description = (
+                f"Continue your little one's joyful learning journey with{vol_label}! "
+                f"Packed with {page_count}+ adorable preschool illustrations and everyday first words, "
+                "it's perfect for building fine motor skills, early vocabulary, and creative confidence!"
+            )
+
+            # Layout slots from blueprint
+            if blueprint_spec:
+                card_cols = blueprint_spec.card_grid.columns
+                pill_count = blueprint_spec.feature_callouts.count
+                pill_layout = blueprint_spec.feature_callouts.layout.replace("_", " ")
+                wave_pct = blueprint_spec.baseline_wave.height_percentage
+            else:
+                card_cols = 3
+                pill_count = 4
+                pill_layout = "2x2 grid"
+                wave_pct = 20
+
+            pills_text = (
+                f"'{pill_count}+ Brand-New Simple Drawings', 'Chunky Outlines for Little Hands', "
+                f"'{page_count} Full Pages of Double-Sided Coloring', 'Perfect for Ages {age_min}-{age_max}'"
+            )
+
+            r1_outputs = {
+                "AGT-002-DESIGN": {
+                    "composition": (
+                        f"Back cover master illustration matching front cover style and palette (#FFF9E6). "
+                        f"Flashcard grid: exactly {card_cols} upright white rounded cards in a single row ({cards_summary}). "
+                        f"Middle-lower zone: {pill_count} pastel rounded feature pills in {pill_layout}. "
+                        f"Spine continuity: RIGHT edge directly abuts book spine — must remain 100% borderless and horizontally flat. "
+                        f"Bottom layout: lower {wave_pct}% continuous pastel turquoise and mint wave with zero white cutout boxes or placeholder badges."
+                    ),
+                    "prohibited": [
+                        "white box on left", "white cutout box", "logo placeholder",
+                        "text in bottom corners", "barcode on artwork", "border on right edge",
+                        "crayons on cards", "single-sided claims", "5pt outlines jargon",
+                    ],
+                },
+                "AGT-004-MARKET": {
+                    "commercial_messaging": (
+                        f"Headline: '{headline}'. Description: '{description}'. "
+                        f"Pills: {pills_text}. Highlighting double-sided preschool value, zero developer prompt jargon."
+                    ),
+                    "prohibited": ["single-sided pages", "blank backs", "5pt outlines", "vector stroke"],
+                },
+                "AGT-005-EDU": {
+                    "pedagogical_milestone": f"Ages {age_min}-{age_max} early vocabulary and fine motor dexterity.",
+                },
+            }
+
+            r2_outputs = {
+                "cross_consensus": (
+                    "Agreed on 100% continuous turquoise wave across bottom 20% (strictly zero white boxes for logo/barcode), "
+                    "truthful double-sided printing messaging, zero developer prompt jargon, and authentic manifest card showcase."
+                )
+            }
+
+            r3_outputs = {
+                "AGT-006-REDTEAM": {
+                    "stress_test_findings": [
+                        "Verify zero AI white box / cutout at bottom-left: background wave and stardust must flow continuously.",
+                        "Verify double-sided truth: strictly prohibit 'single-sided' or 'blank backs' tokens.",
+                        "Verify zero developer prompt jargon: ban '5pt bold outlines' from visible copy.",
+                        "Verify right edge is borderless and horizontally flat to seamlessly match spine and front cover.",
+                    ],
+                    "risk_level": "LOW",
+                    "recommended_hardening": (
+                        "Mandate strictly NO text, NO words, NO letters, and NO white cutout boxes in bottom corners. "
+                        "Reinforce negative tokens: white badge on left, white box on left, single-sided, 5pt outlines."
+                    ),
+                }
+            }
+
+            pos = (
+                f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
+                "perfectly matching and continuing the visual style, color palette, and organic framing of the front cover. "
+                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6), perfectly matching the front cover. "
+                f"Bottom baseline features the exact same smooth, gentle rolling wave in pastel turquoise and mint across the lower 15-{wave_pct}% of the canvas at the exact same horizontal height. "
+                "WRAPAROUND SPINE CONTINUITY MANDATE: The RIGHT edge of this back cover directly abuts the book spine — keep the entire RIGHT edge completely clean, borderless, and horizontally flat with zero corner frames, zero diagonal rivers, and zero vertical decorative borders, ensuring a 100% continuous, uninterrupted horizontal flow across the spine into the front cover. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER LEFT corners only. "
+                "The entire canvas is sprinkled with subtle celebratory toddler star dust: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue, and soft pastel floating love hearts in pink and lilac. "
+                f"Top section: bold uppercase headline in dark navy '{headline}'. "
+                f"Directly below the headline, a friendly parent description in clean, dark navy rounded typography: '{description}' "
+                f"Middle section: exactly {card_cols} clean, upright white rounded flashcard preview boxes arranged in a single neat horizontal row (1 row by {card_cols} columns), showcasing authentic black-and-white coloring book sample pages from inside this specific volume. "
+                "Each card is a clean rounded white rectangle with a thin dark charcoal border. (CRITICAL: Strictly NO crayons on cards, NO angled crayons, and NO coloring tools—display pure, clean coloring pages). "
+                f"Inside each card is pure 2D black-and-white coloring book line art with bold outlines and large open spaces for toddlers to color: "
+                f"{cards_summary}. "
+                f"Middle-lower zone (directly below the flashcards and above the bottom rolling wave): utilizes the space with {pill_count} neat, colorful pastel rounded feature note pills arranged in a balanced {pill_layout} with playful star bullets: "
+                f"'★ {page_count}+ Brand-New Simple Drawings', '★ Chunky Easy Outlines for Little Hands', '★ {page_count} Full Pages of Double-Sided Coloring', and '★ Perfect for Ages {age_min}–{age_max}'. "
+                "Bottom layout: The bottom-left and bottom-right corners feature clean, unbroken continuous pastel background artwork with the gentle wavy turquoise baseline, delicate twinkling star dust, soft floating hearts, and subtle playful doodles. "
+                "(CRITICAL INVIOLABLE MULTI-VOLUME MANDATE: The lower 20% of the canvas containing the wavy turquoise baseline must remain 100% flat, continuous, and clear with strictly ZERO text, ZERO cards, ZERO notes, and ZERO white cutout boxes or placeholder badges anywhere in the bottom-left or bottom-right positions. Background color (#FFF9E6), rolling waves, star dust, and doodles MUST flow continuously and seamlessly across both bottom positions; strictly ZERO text is to be printed in these two locations, as the publisher logo badge and barcode are programmatically composited in code post-generation). "
+                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly balanced typography, cards, and colors."
+            )
+
+            neg = (
+                "text in bottom-left corner, text in bottom-right corner, barcode numbers, publisher text, bottom labels, "
+                "letters in bottom left, letters in bottom right, text on turquoise wave, words on bottom baseline, "
+                "white badge on left, white box on left, logo badge, empty white rectangle on left, white badge cutout, placeholder box, "
+                "single-sided, single-sided pages, single sided, blank backs, anti-bleed blank backs, "
+                "5pt bold outlines, 5pt stroke, vector stroke, prompt engineering, "
+                "corner frame on right edge, border on right edge, right vertical border, diagonal river across right edge, "
+                "numbers in corners, dimensions, measurements, margin text, technical annotations, labels, 0.60 in, 180px, "
+                "white rectangle on right, barcode box, barcode placeholder, printed barcode, barcode lines, qr code, "
+                "fake logo, gibberish text in badge, text inside white badge, crayons on cards, wax crayons, "
+                "colored drawings inside cards, colored line art inside cards, realistic shading, grayscale shading in cards, "
+                "2x3 grid, 6 cards, blurry, low resolution, dark moody colors, photographic, realistic textures, "
+                "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges"
+            )
+
+            judge_rationale = (
+                f"Approved BACK COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
+                f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+            )
+
+            return _CoverDebateSpec(
+                page_id="COVER_BACK",
+                canonical_object="back_cover",
+                display_label="BACK COVER MASTER ARTWORK",
+                section="Covers",
+                r1_outputs=r1_outputs,
+                r2_outputs=r2_outputs,
+                r3_outputs=r3_outputs,
+                positive_prompt=pos,
+                negative_prompt=neg,
+                judge_rationale=judge_rationale,
+            )
+
+        else:  # front_cover
+            hero_char, companions, page_count = extract_front_cover_ensemble(manifest_path)
+            companions_desc = ", ".join(companions)
+
+            r1_outputs = {
+                "AGT-002-DESIGN": {
+                    "composition": (
+                        f"Front cover master illustration. Central hero: {hero_char}. "
+                        f"Companions: {companions_desc}. 3D puffy candy title 'TINY HANDS' arched at top. "
+                        "Butter-cream canvas (#FFF9E6) with rolling turquoise wave across lower 15-20%. "
+                        "Spine continuity: LEFT edge directly abuts spine — 100% borderless and horizontally flat."
+                    ),
+                    "prohibited": [
+                        "border on left edge", "spine crease shadow",
+                        "black drop shadows", "barcode on front",
+                    ],
+                },
+                "AGT-004-MARKET": {
+                    "commercial_appeal": "Instant preschool delight with candy-colored 3D bubbly title and adorable hero animal.",
+                },
+            }
+
+            r2_outputs = {
+                "cross_consensus": "Agreed on vibrant 2D sticker art with white puffy die-cut outlines."
+            }
+
+            r3_outputs = {
+                "AGT-006-REDTEAM": {
+                    "stress_test_findings": [
+                        "Verify spine shadow removal: left edge must have zero vertical crease or shadow.",
+                        "Verify safe live area: top banner comfortably 1.0 inch below top margin.",
+                    ],
+                    "risk_level": "LOW",
+                    "recommended_hardening": "Add negative tokens against spine lines, vertical crease, and dark shadows.",
+                }
+            }
+
+            pos = (
+                f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
+                f"Generous top safety margin: leave the top 10-12% of the canvas as clean sunny golden-cream background. Position the top text banner '{brand} Presents' comfortably inside the safe live area, centered at least 1.0 inch / 300px below the top canvas edge in clean, bold navy preschool lettering so it will not be cut off during physical trimming. "
+                "Directly below, main title 'TINY HANDS' rendered in a joyful upward rainbow arch in large, chunky 3D puffy inflated bubble jelly/candy letters with high-gloss specular reflections (white highlight curves on the top surfaces). "
+                "Each letter in 'TINY HANDS' has an individual vibrant saturated candy color: T (warm orange), I (sunny yellow), N (electric cyan blue), Y (peach orange), H (hot pink), A (golden yellow), N (bright red/coral), D (sky blue), S (tangerine orange). "
+                "The letters feature a clean bright white puffy die-cut contour outline with soft warm pastel depth (strictly NO dark black drop shadows, NO harsh black outlines). "
+                "Directly below 'TINY HANDS', the words 'COLOR & LEARN' are also rendered in large, vibrant multi-colored 3D puffy bubble letters (NOT plain white): C (hot pink), O (bright yellow), L (cyan blue), O (lime green), R (vibrant purple), & (golden orange), L (hot pink), E (sunny yellow), A (electric blue), R (lime green), N (violet purple), with glossy candy highlights and a clean thick puffy white contour outline. "
+                f"Directly underneath the arched title lockup, clean bold dark navy rounded lettering reading '{subtitle}', flanked by cute little decorative stars. "
+                f"Central joyful toddler illustration: {hero_char}. "
+                f"Surrounding the hero character is a rich ensemble of adorable, chunky preschool objects: {companions_desc}, plus a curved floating rainbow wax crayon with colorful motion lines in the sky. "
+                "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
+                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6) with a gentle, smooth pastel turquoise and mint rolling wave across the lower 15-20% of the canvas. "
+                "WRAPAROUND SPINE CONTINUITY MANDATE: The LEFT edge of this front cover directly abuts the book spine — keep the entire LEFT edge completely clean, borderless, and horizontally flat with zero corner frames and zero vertical decorative borders, allowing the butter-cream sky and bottom turquoise wave to flow seamlessly and continuously into the spine without any seams or step jumps. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER RIGHT corners only. "
+                "The entire atmosphere is filled with celebratory toddler star dust and magical confetti: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue; soft pastel floating love hearts in pink and lilac; and colorful tiny confetti dots, sparkles, and sprinkles floating merrily through the air. "
+                f"Bottom layout: a wide clean white rounded pill banner with bold navy text '{page_count}+ EVERYDAY OBJECTS' and 'FIRST WORDS • LETTERS & NUMBERS', accompanied on the right by a circular sunny yellow roundel badge reading 'AGES {age_min}-{age_max} YEARS'. "
+                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
+            )
+
+            neg = (
+                "corner frame on left edge, border on left edge, left vertical border, clean pastel floor, text on floor, words on floor, "
+                "floor label, dark black shadows, heavy black shadows, black drop shadows, dark ground shadows, harsh contact shadows, "
+                "spine shadow line, vertical crease, spine crease shadow, book fold shadow, 3d book mockup shadow, shading line along spine, "
+                "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, "
+                "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
+                "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, "
+                "barcode on front cover, spine lines across front cover"
+            )
+
+            judge_rationale = (
+                f"Approved FRONT COVER MASTER ARTWORK specification: Enforced 100% continuous turquoise wave across bottom baseline, "
+                f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+            )
+
+            return _CoverDebateSpec(
+                page_id="COVER_FRONT",
+                canonical_object="front_cover",
+                display_label="FRONT COVER MASTER ARTWORK",
+                section="Covers",
+                r1_outputs=r1_outputs,
+                r2_outputs=r2_outputs,
+                r3_outputs=r3_outputs,
+                positive_prompt=pos,
+                negative_prompt=neg,
+                judge_rationale=judge_rationale,
+            )
+
+    @staticmethod
+    def _assemble_cover_debate(spec: _CoverDebateSpec) -> DebateResult:
+        """Build the shared 4-round transcript from a cover-specific spec.
+
+        Front and back covers supply different r1/r2/r3 payloads and prompts.
+        Only the round-assembly scaffolding is shared.
+        """
+        judge_rationale = (
+            f"Approved {spec.display_label} specification: Enforced 100% continuous turquoise "
+            "wave across bottom baseline, borderless spine edge clearance, truthful "
+            "double-sided parent benefits, and dynamic manifest-derived assets."
+        )
+        r4_outputs = {
+            "AGT-007-JUDGE": {
+                "verdict": spec.judge_verdict,
+                "winner": spec.winner_agent,
+                "score": spec.judge_score,
+                "rationale": judge_rationale,
+            },
+            "AGT-008-PROMPT": {
+                "positive_prompt": spec.positive_prompt,
+                "negative_prompt": spec.negative_prompt,
+            },
+        }
+        rounds = [
+            DebateRound(
+                round_number=1, round_name="Specialist Proposals", agent_outputs=spec.r1_outputs
+            ),
+            DebateRound(
+                round_number=2, round_name="Cross-Specialist Review", agent_outputs=spec.r2_outputs
+            ),
+            DebateRound(
+                round_number=3,
+                round_name="Adversarial Red-Team Critique",
+                agent_outputs=spec.r3_outputs,
+            ),
+            DebateRound(
+                round_number=4,
+                round_name="Judge Synthesis & Specification Lock",
+                agent_outputs=r4_outputs,
+            ),
+        ]
+        return DebateResult(
+            page_id=spec.page_id,
+            canonical_object=spec.canonical_object,
+            display_label=spec.display_label,
+            section=spec.section,
+            winner_agent=spec.winner_agent,
+            final_score=spec.judge_score,
+            positive_prompt=spec.positive_prompt,
+            negative_prompt=spec.negative_prompt,
+            rounds=rounds,
+            judge_verdict=spec.judge_verdict,
+            judge_rationale=judge_rationale,
+        )
+
     def run_page_debate(self, page_record: dict[str, Any]) -> DebateResult:
         """Execute 4-round multi-agent debate for any manifest page record dynamically."""
         page_id = page_record.get("page_id", "P000")
@@ -1605,294 +1951,20 @@ class DebateEngine:
         if not blueprint_spec:
             blueprint_spec = bp_reader.get_layout_spec(cover_type)
 
-        rounds: list[DebateRound] = []
-
-        if cover_type == "back_cover":
-            # 1. Dynamically extract 3 representative interior cards from active manifest
-            cards = extract_cover_showcase_cards(manifest_path, count=3)
-            cards_desc_list = [f"{c['category_name']}: {c['description']}" for c in cards]
-            cards_summary = "; ".join(cards_desc_list)
-
-            # 2. Marketing Copy & Benefit Pills (Strictly double-sided, zero developer prompt jargon)
-            c_back = _CURRICULUM.get("cover_styling", {}).get("back_cover", {})
-            headlines = c_back.get(
-                "headline_options", ["DISCOVER, COLOR & LEARN!", "LITTLE HANDS, BIG DISCOVERIES!"]
-            )
-            headline = headlines[0] if headlines else "DISCOVER, COLOR & LEARN!"
-
-            # Dynamic page count from manifest
-            page_count = 110
-            try:
-                m_p = Path(manifest_path)
-                if not m_p.is_absolute():
-                    candidates = [
-                        Path.cwd() / manifest_path,
-                        Path(__file__).parent.parent.parent.parent / manifest_path,
-                    ]
-                    for c in candidates:
-                        if c.exists():
-                            m_p = c
-                            break
-                if m_p.exists():
-                    with open(m_p, encoding="utf-8") as mf:
-                        m_data = json.load(mf)
-                        page_count = len(m_data.get("pages", [])) or 110
-            except (OSError, json.JSONDecodeError):
-                # Manifest file missing or unreadable; default to baseline page_count
-                pass
-
-            vol_label = f" {volume_name}" if volume_name else ""
-            description = (
-                f"Continue your little one's joyful learning journey with{vol_label}! "
-                f"Packed with {page_count}+ adorable preschool illustrations and everyday first words, "
-                "it's perfect for building fine motor skills, early vocabulary, and creative confidence!"
-            )
-
-            # Layout slots: from user blueprint if present, else standard responsive
-            if blueprint_spec:
-                card_cols = blueprint_spec.card_grid.columns
-                pill_count = blueprint_spec.feature_callouts.count
-                pill_layout = blueprint_spec.feature_callouts.layout.replace("_", " ")
-                wave_pct = blueprint_spec.baseline_wave.height_percentage
-            else:
-                card_cols = 3
-                pill_count = 4
-                pill_layout = "2x2 grid"
-                wave_pct = 20
-
-            pills_text = (
-                f"'{pill_count}+ Brand-New Simple Drawings', 'Chunky Outlines for Little Hands', "
-                f"'{page_count} Full Pages of Double-Sided Coloring', 'Perfect for Ages {age_min}-{age_max}'"
-            )
-
-            # Round 1: Specialist Proposals
-            r1_outputs = {
-                "AGT-002-DESIGN": {
-                    "composition": (
-                        f"Back cover master illustration matching front cover style and palette (#FFF9E6). "
-                        f"Flashcard grid: exactly {card_cols} upright white rounded cards in a single row ({cards_summary}). "
-                        f"Middle-lower zone: {pill_count} pastel rounded feature pills in {pill_layout}. "
-                        f"Spine continuity: RIGHT edge directly abuts book spine — must remain 100% borderless and horizontally flat. "
-                        f"Bottom layout: lower {wave_pct}% continuous pastel turquoise and mint wave with zero white cutout boxes or placeholder badges."
-                    ),
-                    "prohibited": [
-                        "white box on left",
-                        "white cutout box",
-                        "logo placeholder",
-                        "text in bottom corners",
-                        "barcode on artwork",
-                        "border on right edge",
-                        "crayons on cards",
-                        "single-sided claims",
-                        "5pt outlines jargon",
-                    ],
-                },
-                "AGT-004-MARKET": {
-                    "commercial_messaging": (
-                        f"Headline: '{headline}'. Description: '{description}'. "
-                        f"Pills: {pills_text}. Highlighting double-sided preschool value, zero developer prompt jargon."
-                    ),
-                    "prohibited": [
-                        "single-sided pages",
-                        "blank backs",
-                        "5pt outlines",
-                        "vector stroke",
-                    ],
-                },
-                "AGT-005-EDU": {
-                    "pedagogical_milestone": f"Ages {age_min}-{age_max} early vocabulary and fine motor dexterity.",
-                },
-            }
-
-            # Round 2: Cross-Specialist Consensus
-            r2_outputs = {
-                "cross_consensus": (
-                    "Agreed on 100% continuous turquoise wave across bottom 20% (strictly zero white boxes for logo/barcode), "
-                    "truthful double-sided printing messaging, zero developer prompt jargon, and authentic manifest card showcase."
-                )
-            }
-
-            # Round 3: Adversarial Red-Team Stress-Test
-            r3_outputs = {
-                "AGT-006-REDTEAM": {
-                    "stress_test_findings": [
-                        "Verify zero AI white box / cutout at bottom-left: background wave and stardust must flow continuously.",
-                        "Verify double-sided truth: strictly prohibit 'single-sided' or 'blank backs' tokens.",
-                        "Verify zero developer prompt jargon: ban '5pt bold outlines' from visible copy.",
-                        "Verify right edge is borderless and horizontally flat to seamlessly match spine and front cover.",
-                    ],
-                    "risk_level": "LOW",
-                    "recommended_hardening": (
-                        "Mandate strictly NO text, NO words, NO letters, and NO white cutout boxes in bottom corners. "
-                        "Reinforce negative tokens: white badge on left, white box on left, single-sided, 5pt outlines."
-                    ),
-                }
-            }
-
-            # Round 4: Judge Synthesis
-            pos = (
-                f"Cohesive, print-ready 2D preschool toddler coloring book back cover master illustration for '{title}', "
-                "perfectly matching and continuing the visual style, color palette, and organic framing of the front cover. "
-                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6), perfectly matching the front cover. "
-                f"Bottom baseline features the exact same smooth, gentle rolling wave in pastel turquoise and mint across the lower 15-{wave_pct}% of the canvas at the exact same horizontal height. "
-                "WRAPAROUND SPINE CONTINUITY MANDATE: The RIGHT edge of this back cover directly abuts the book spine — keep the entire RIGHT edge completely clean, borderless, and horizontally flat with zero corner frames, zero diagonal rivers, and zero vertical decorative borders, ensuring a 100% continuous, uninterrupted horizontal flow across the spine into the front cover. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER LEFT corners only. "
-                "The entire canvas is sprinkled with subtle celebratory toddler star dust: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue, and soft pastel floating love hearts in pink and lilac. "
-                f"Top section: bold uppercase headline in dark navy '{headline}'. "
-                f"Directly below the headline, a friendly parent description in clean, dark navy rounded typography: '{description}' "
-                f"Middle section: exactly {card_cols} clean, upright white rounded flashcard preview boxes arranged in a single neat horizontal row (1 row by {card_cols} columns), showcasing authentic black-and-white coloring book sample pages from inside this specific volume. "
-                "Each card is a clean rounded white rectangle with a thin dark charcoal border. (CRITICAL: Strictly NO crayons on cards, NO angled crayons, and NO coloring tools—display pure, clean coloring pages). "
-                f"Inside each card is pure 2D black-and-white coloring book line art with bold outlines and large open spaces for toddlers to color: "
-                f"{cards_summary}. "
-                f"Middle-lower zone (directly below the flashcards and above the bottom rolling wave): utilizes the space with {pill_count} neat, colorful pastel rounded feature note pills arranged in a balanced {pill_layout} with playful star bullets: "
-                f"'★ {page_count}+ Brand-New Simple Drawings', '★ Chunky Easy Outlines for Little Hands', '★ {page_count} Full Pages of Double-Sided Coloring', and '★ Perfect for Ages {age_min}–{age_max}'. "
-                "Bottom layout: The bottom-left and bottom-right corners feature clean, unbroken continuous pastel background artwork with the gentle wavy turquoise baseline, delicate twinkling star dust, soft floating hearts, and subtle playful doodles. "
-                "(CRITICAL INVIOLABLE MULTI-VOLUME MANDATE: The lower 20% of the canvas containing the wavy turquoise baseline must remain 100% flat, continuous, and clear with strictly ZERO text, ZERO cards, ZERO notes, and ZERO white cutout boxes or placeholder badges anywhere in the bottom-left or bottom-right positions. Background color (#FFF9E6), rolling waves, star dust, and doodles MUST flow continuously and seamlessly across both bottom positions; strictly ZERO text is to be printed in these two locations, as the publisher logo badge and barcode are programmatically composited in code post-generation). "
-                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, perfectly balanced typography, cards, and colors."
-            )
-
-            neg = (
-                "text in bottom-left corner, text in bottom-right corner, barcode numbers, publisher text, bottom labels, "
-                "letters in bottom left, letters in bottom right, text on turquoise wave, words on bottom baseline, "
-                "white badge on left, white box on left, logo badge, empty white rectangle on left, white badge cutout, placeholder box, "
-                "single-sided, single-sided pages, single sided, blank backs, anti-bleed blank backs, "
-                "5pt bold outlines, 5pt stroke, vector stroke, prompt engineering, "
-                "corner frame on right edge, border on right edge, right vertical border, diagonal river across right edge, "
-                "numbers in corners, dimensions, measurements, margin text, technical annotations, labels, 0.60 in, 180px, "
-                "white rectangle on right, barcode box, barcode placeholder, printed barcode, barcode lines, qr code, "
-                "fake logo, gibberish text in badge, text inside white badge, crayons on cards, wax crayons, "
-                "colored drawings inside cards, colored line art inside cards, realistic shading, grayscale shading in cards, "
-                "2x3 grid, 6 cards, blurry, low resolution, dark moody colors, photographic, realistic textures, "
-                "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges"
-            )
-
-            page_id = "COVER_BACK"
-            label = "BACK COVER MASTER ARTWORK"
-            canonical = "back_cover"
-            section = "Covers"
-
-        else:  # front_cover
-            hero_char, companions, page_count = extract_front_cover_ensemble(manifest_path)
-            companions_desc = ", ".join(companions)
-
-            r1_outputs = {
-                "AGT-002-DESIGN": {
-                    "composition": (
-                        f"Front cover master illustration. Central hero: {hero_char}. "
-                        f"Companions: {companions_desc}. 3D puffy candy title 'TINY HANDS' arched at top. "
-                        "Butter-cream canvas (#FFF9E6) with rolling turquoise wave across lower 15-20%. "
-                        "Spine continuity: LEFT edge directly abuts spine — 100% borderless and horizontally flat."
-                    ),
-                    "prohibited": [
-                        "border on left edge",
-                        "spine crease shadow",
-                        "black drop shadows",
-                        "barcode on front",
-                    ],
-                },
-                "AGT-004-MARKET": {
-                    "commercial_appeal": "Instant preschool delight with candy-colored 3D bubbly title and adorable hero animal.",
-                },
-            }
-            r2_outputs = {
-                "cross_consensus": "Agreed on vibrant 2D sticker art with white puffy die-cut outlines."
-            }
-            r3_outputs = {
-                "AGT-006-REDTEAM": {
-                    "stress_test_findings": [
-                        "Verify spine shadow removal: left edge must have zero vertical crease or shadow.",
-                        "Verify safe live area: top banner comfortably 1.0 inch below top margin.",
-                    ],
-                    "risk_level": "LOW",
-                    "recommended_hardening": "Add negative tokens against spine lines, vertical crease, and dark shadows.",
-                }
-            }
-
-            pos = (
-                f"Eye-catching vibrant 2D preschool toddler coloring book front cover master illustration for '{title}'. "
-                f"Generous top safety margin: leave the top 10-12% of the canvas as clean sunny golden-cream background. Position the top text banner '{brand} Presents' comfortably inside the safe live area, centered at least 1.0 inch / 300px below the top canvas edge in clean, bold navy preschool lettering so it will not be cut off during physical trimming. "
-                "Directly below, main title 'TINY HANDS' rendered in a joyful upward rainbow arch in large, chunky 3D puffy inflated bubble jelly/candy letters with high-gloss specular reflections (white highlight curves on the top surfaces). "
-                "Each letter in 'TINY HANDS' has an individual vibrant saturated candy color: T (warm orange), I (sunny yellow), N (electric cyan blue), Y (peach orange), H (hot pink), A (golden yellow), N (bright red/coral), D (sky blue), S (tangerine orange). "
-                "The letters feature a clean bright white puffy die-cut contour outline with soft warm pastel depth (strictly NO dark black drop shadows, NO harsh black outlines). "
-                "Directly below 'TINY HANDS', the words 'COLOR & LEARN' are also rendered in large, vibrant multi-colored 3D puffy bubble letters (NOT plain white): C (hot pink), O (bright yellow), L (cyan blue), O (lime green), R (vibrant purple), & (golden orange), L (hot pink), E (sunny yellow), A (electric blue), R (lime green), N (violet purple), with glossy candy highlights and a clean thick puffy white contour outline. "
-                f"Directly underneath the arched title lockup, clean bold dark navy rounded lettering reading '{subtitle}', flanked by cute little decorative stars. "
-                f"Central joyful toddler illustration: {hero_char}. "
-                f"Surrounding the hero character is a rich ensemble of adorable, chunky preschool objects: {companions_desc}, plus a curved floating rainbow wax crayon with colorful motion lines in the sky. "
-                "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
-                "Background: cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6) with a gentle, smooth pastel turquoise and mint rolling wave across the lower 15-20% of the canvas. "
-                "WRAPAROUND SPINE CONTINUITY MANDATE: The LEFT edge of this front cover directly abuts the book spine — keep the entire LEFT edge completely clean, borderless, and horizontally flat with zero corner frames and zero vertical decorative borders, allowing the butter-cream sky and bottom turquoise wave to flow seamlessly and continuously into the spine without any seams or step jumps. Playful organic wavy/scalloped corner frames in pastel turquoise, mint, and lemon-yellow are positioned strictly on the OUTER RIGHT corners only. "
-                "The entire atmosphere is filled with celebratory toddler star dust and magical confetti: floating 4-point and 5-point twinkling stars in golden yellow, orange, and blue; soft pastel floating love hearts in pink and lilac; and colorful tiny confetti dots, sparkles, and sprinkles floating merrily through the air. "
-                f"Bottom layout: a wide clean white rounded pill banner with bold navy text '{page_count}+ EVERYDAY OBJECTS' and 'FIRST WORDS • LETTERS & NUMBERS', accompanied on the right by a circular sunny yellow roundel badge reading 'AGES {age_min}-{age_max} YEARS'. "
-                "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
-            )
-
-            neg = (
-                "corner frame on left edge, border on left edge, left vertical border, clean pastel floor, text on floor, words on floor, "
-                "floor label, dark black shadows, heavy black shadows, black drop shadows, dark ground shadows, harsh contact shadows, "
-                "spine shadow line, vertical crease, spine crease shadow, book fold shadow, 3d book mockup shadow, shading line along spine, "
-                "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, "
-                "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, "
-                "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, "
-                "barcode on front cover, spine lines across front cover"
-            )
-
-            page_id = "COVER_FRONT"
-            label = "FRONT COVER MASTER ARTWORK"
-            canonical = "front_cover"
-            section = "Covers"
-
-        judge_verdict = "APPROVED"
-        judge_rationale = (
-            f"Approved {label} specification: Enforced 100% continuous turquoise wave across bottom baseline, "
-            f"borderless spine edge clearance, truthful double-sided parent benefits, and dynamic manifest-derived assets."
+        # Build cover-specific spec (front/back keep distinct prompts & content)
+        spec = self._build_cover_debate_spec(
+            cover_type=cover_type,
+            manifest_path=manifest_path,
+            book_config_path=book_config_path,
+            blueprint_spec=blueprint_spec,
+            title=title,
+            subtitle=subtitle,
+            brand=brand,
+            age_min=age_min,
+            age_max=age_max,
         )
-
-        r4_outputs = {
-            "AGT-007-JUDGE": {
-                "verdict": judge_verdict,
-                "winner": "AGT-002-DESIGN",
-                "score": 98.0,
-                "rationale": judge_rationale,
-            },
-            "AGT-008-PROMPT": {
-                "positive_prompt": pos,
-                "negative_prompt": neg,
-            },
-        }
-
-        rounds.append(
-            DebateRound(round_number=1, round_name="Specialist Proposals", agent_outputs=r1_outputs)
-        )
-        rounds.append(
-            DebateRound(
-                round_number=2, round_name="Cross-Specialist Review", agent_outputs=r2_outputs
-            )
-        )
-        rounds.append(
-            DebateRound(
-                round_number=3, round_name="Adversarial Red-Team Critique", agent_outputs=r3_outputs
-            )
-        )
-        rounds.append(
-            DebateRound(
-                round_number=4,
-                round_name="Judge Synthesis & Specification Lock",
-                agent_outputs=r4_outputs,
-            )
-        )
-
-        return DebateResult(
-            page_id=page_id,
-            canonical_object=canonical,
-            display_label=label,
-            section=section,
-            winner_agent="AGT-002-DESIGN",
-            final_score=98.0,
-            positive_prompt=pos,
-            negative_prompt=neg,
-            rounds=rounds,
-            judge_verdict=judge_verdict,
-            judge_rationale=judge_rationale,
-        )
+        # Shared 4-round assembly
+        return self._assemble_cover_debate(spec)
 
     def run_mascot_debate(
         self,
