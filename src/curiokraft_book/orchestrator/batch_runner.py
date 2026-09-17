@@ -21,6 +21,11 @@ from curiokraft_book.constants import (
     DEFAULT_PAGE_COUNT,
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_RAW_GENERATED_DIR,
+    SAFE_BOTTOM_IN,
+    SAFE_GUTTER_IN,
+    SAFE_OUTSIDE_IN,
+    get_certificate_page_number,
+    get_stroke_hierarchy_config,
 )
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
 from curiokraft_book.orchestrator.image_generator import ImageGenerator
@@ -146,6 +151,13 @@ class InteriorBatchRunner:
             found_inbox = self.inbox_provider.find_image(
                 page_id=page_id, page_number=page_num, canonical_label=canonical
             )
+            # Also check direct semantic raw naming in inbox/raw_pages
+            if not found_inbox or not found_inbox.exists():
+                inbox_raw = Path("inbox/raw_pages")
+                for cand in [inbox_raw / "raw_welcome.png", inbox_raw / f"raw_p{page_num:03d}.png"]:
+                    if cand.exists():
+                        found_inbox = cand
+                        break
 
             if found_inbox and found_inbox.exists():
                 logger.info(f"Ingesting user welcome illustration from {found_inbox}")
@@ -156,12 +168,14 @@ class InteriorBatchRunner:
                     page_id, status=PageStatus.GENERATED, raw_image_path=str(raw_img_path)
                 )
 
-            mascot_path = raw_img_path if raw_img_path.exists() else None
-            render_welcome_page(output_path=final_master_path, mascot_image_path=mascot_path)
+            # Ingest raw illustration cleanly via render_welcome_page
+            render_welcome_page(output_path=final_master_path)
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
-                raw_image_path=str(raw_img_path) if raw_img_path.exists() else None,
+                raw_image_path=str(raw_img_path)
+                if raw_img_path.exists()
+                else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -170,10 +184,22 @@ class InteriorBatchRunner:
             return final_master_path
 
         if page_type == "certificate_page":
+            cert_num = get_certificate_page_number()
             raw_img_path = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.png"
             found_inbox = self.inbox_provider.find_image(
                 page_id=page_id, page_number=page_num, canonical_label=canonical
             )
+            # Also check direct semantic raw naming in inbox/raw_pages
+            if not found_inbox or not found_inbox.exists():
+                inbox_raw = Path("inbox/raw_pages")
+                for cand in [
+                    inbox_raw / "raw_certificate.png",
+                    inbox_raw / f"raw_p{page_num:03d}.png",
+                    inbox_raw / f"raw_p{cert_num:03d}.png",
+                ]:
+                    if cand.exists():
+                        found_inbox = cand
+                        break
 
             if found_inbox and found_inbox.exists():
                 logger.info(f"Ingesting user certificate illustration from {found_inbox}")
@@ -184,12 +210,41 @@ class InteriorBatchRunner:
                     page_id, status=PageStatus.GENERATED, raw_image_path=str(raw_img_path)
                 )
 
-            award_path = raw_img_path if raw_img_path.exists() else None
-            render_certificate_page(output_path=final_master_path, award_image_path=award_path)
+            # Ingest raw illustration cleanly via render_certificate_page
+            render_certificate_page(output_path=final_master_path)
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
-                raw_image_path=str(raw_img_path) if raw_img_path.exists() else None,
+                raw_image_path=str(raw_img_path)
+                if raw_img_path.exists()
+                else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
+                composite_image_path=str(final_master_path),
+                qa_passed=True,
+                qa_score=100.0,
+                violations=[],
+            )
+
+            # Single-sided mode: also mark page 110 blank verso in state if present
+            if cert_num == 109 and self.state_mgr.get_page("P110"):
+                p110_path = self.output_masters_dir / "page_110.png"
+                if p110_path.exists():
+                    self.state_mgr.update_page(
+                        "P110",
+                        status=PageStatus.APPROVED,
+                        composite_image_path=str(p110_path),
+                        qa_passed=True,
+                        qa_score=100.0,
+                        violations=[],
+                    )
+
+            return final_master_path
+
+        if page_type in ["blank_page", "bleed_guard", "blank"]:
+            blank_canvas = Image.new("L", (2550, 3300), 255)
+            blank_canvas.save(final_master_path, dpi=(300, 300))
+            self.state_mgr.update_page(
+                page_id,
+                status=PageStatus.APPROVED,
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -212,30 +267,42 @@ class InteriorBatchRunner:
         raw_img_path = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.png"
         raw_img_jpg = self.raw_generated_dir / f"raw_p{page_num:03d}_{canonical}.jpg"
 
-        found_inbox = self.inbox_provider.find_image(
-            page_id=page_id, page_number=page_num, canonical_label=canonical
-        )
-
-        if found_inbox and found_inbox.exists() and not force_fresh:
-            logger.info(f"Using fresh user illustration from inbox: {found_inbox}")
-            raw_canvas = Image.open(found_inbox).convert("L")
-        elif raw_img_path.exists() and raw_img_path.stat().st_size > 500 and not force_fresh:
-            logger.info(f"Using existing raw illustration from {raw_img_path}")
-            raw_canvas = Image.open(raw_img_path).convert("L")
-        elif raw_img_jpg.exists() and raw_img_jpg.stat().st_size > 500 and not force_fresh:
-            logger.info(f"Using existing raw illustration from {raw_img_jpg}")
-            raw_canvas = Image.open(raw_img_jpg).convert("L")
-        else:
+        if source_mode == "mock":
             raw_canvas = self.image_generator.generate(
                 positive_prompt=debate_res.positive_prompt,
                 negative_prompt=debate_res.negative_prompt,
                 canonical_label=canonical,
                 section=section,
-                source_mode=source_mode,
+                source_mode="mock",
                 page_id=page_id,
                 page_number=page_num,
-                force_fresh=force_fresh,
+                force_fresh=True,
             )
+        else:
+            found_inbox = self.inbox_provider.find_image(
+                page_id=page_id, page_number=page_num, canonical_label=canonical
+            )
+
+            if found_inbox and found_inbox.exists() and not force_fresh:
+                logger.info(f"Using fresh user illustration from inbox: {found_inbox}")
+                raw_canvas = Image.open(found_inbox).convert("L")
+            elif raw_img_path.exists() and raw_img_path.stat().st_size > 500 and not force_fresh:
+                logger.info(f"Using existing raw illustration from {raw_img_path}")
+                raw_canvas = Image.open(raw_img_path).convert("L")
+            elif raw_img_jpg.exists() and raw_img_jpg.stat().st_size > 500 and not force_fresh:
+                logger.info(f"Using existing raw illustration from {raw_img_jpg}")
+                raw_canvas = Image.open(raw_img_jpg).convert("L")
+            else:
+                raw_canvas = self.image_generator.generate(
+                    positive_prompt=debate_res.positive_prompt,
+                    negative_prompt=debate_res.negative_prompt,
+                    canonical_label=canonical,
+                    section=section,
+                    source_mode=source_mode,
+                    page_id=page_id,
+                    page_number=page_num,
+                    force_fresh=force_fresh,
+                )
 
         page_type = page_data.get("type", "")
         composition = page_data.get("composition", "")
@@ -256,12 +323,19 @@ class InteriorBatchRunner:
                 pos_y = (3300 - new_h) // 2
                 canvas_300.paste(resized, (pos_x, pos_y))
             else:
-                scale_ratio = min(2000 / raw_canvas.width, 2300 / raw_canvas.height)
-                new_w = int(raw_canvas.width * scale_ratio)
+                # Standard coloring page: expand to fill 90-93% printable zone
+                is_left_page = page_num % 2 == 0
+                gutter_px = int(SAFE_GUTTER_IN * 300)
+                outside_px = int(SAFE_OUTSIDE_IN * 300)
+                bottom_px = int(SAFE_BOTTOM_IN * 300)
+                left_px = outside_px if is_left_page else gutter_px
+                target_usable_w = 2550 - gutter_px - outside_px
+                scale_ratio = target_usable_w / raw_canvas.width
+                new_w = target_usable_w
                 new_h = int(raw_canvas.height * scale_ratio)
                 resized = raw_canvas.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                pos_x = (2550 - new_w) // 2
-                pos_y = 650 + (2300 - new_h) // 2
+                pos_x = left_px
+                pos_y = 3300 - bottom_px - new_h
                 canvas_300.paste(resized, (pos_x, pos_y))
             raw_canvas = canvas_300
 
@@ -271,9 +345,10 @@ class InteriorBatchRunner:
         )
 
         # 3. Deterministic Code-Level Rescue & Safe Margin Fit
+        is_left_page = page_num % 2 == 0
         rescued_img_path = self.output_masters_dir / f"temp_rescued_{page_num:03d}.png"
         rescue_ok, msg, violations = self.retry_manager.attempt_programmatic_rescue(
-            raw_img_path, rescued_img_path, is_spread=is_spread
+            raw_img_path, rescued_img_path, is_spread=is_spread, is_left_page=is_left_page
         )
 
         if not rescue_ok:
@@ -301,8 +376,12 @@ class InteriorBatchRunner:
 
         # 5. Final Deterministic Quality Certification
         dim_check = validate_dimensions(final_master_path)
-        margin_check = validate_margins(final_master_path)
-        bw_check = validate_black_and_white(final_master_path)
+        margin_check = validate_margins(final_master_path, is_left_page=is_left_page)
+        h_cfg = get_stroke_hierarchy_config()
+        allow_gray = bool(h_cfg.get("use_generated_image_as_is") or h_cfg.get("enabled"))
+        bw_check = validate_black_and_white(
+            final_master_path, allow_intentional_gray_lines=allow_gray
+        )
 
         all_passed = dim_check.passed and margin_check.passed and bw_check.passed
 

@@ -28,9 +28,14 @@ class PromptItem(BaseModel):
         default=None, description="Page number for interior pages, null for covers"
     )
     label: str = Field(..., description="Descriptive title or object name")
-    type: Literal["front_cover", "back_cover", "interior_page", "special_asset"] = Field(
-        ..., description="Asset type category"
-    )
+    type: Literal[
+        "front_cover",
+        "back_cover",
+        "interior_page",
+        "special_asset",
+        "welcome_page",
+        "certificate_page",
+    ] = Field(..., description="Asset type category")
     section: str = Field(
         default="General",
         description="Book section (e.g. Covers, A-Z Alphabet, Fruits & Vegetables)",

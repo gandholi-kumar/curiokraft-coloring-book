@@ -12,6 +12,7 @@ from curiokraft_book.constants import (
     CANVAS_WIDTH_PX,
     HEADER_RESERVATION_IN,
     SAFE_MARGIN_IN,
+    SAFE_TOP_IN,
     TARGET_COVERAGE_RATIO,
 )
 
@@ -42,6 +43,10 @@ def fit_to_safe_margins(
     header_reservation_in: float = HEADER_RESERVATION_IN,
     target_coverage_ratio: float = TARGET_COVERAGE_RATIO,
     is_spread: bool = False,
+    inside_gutter_in: float | None = None,
+    outside_margin_in: float | None = None,
+    bottom_margin_in: float | None = None,
+    is_left_page: bool = False,
 ) -> MarginFitResult:
     """Crop artwork to its tight bounding box, center, scale, and place on a pristine 300 DPI canvas.
 
@@ -55,10 +60,14 @@ def fit_to_safe_margins(
         canvas_width: Target master width in pixels (default: 2550).
         canvas_height: Target master height in pixels (default: 3300).
         dpi: Target DPI resolution (default: 300).
-        safe_margin_in: Safe margin boundary in inches (default: 0.50 in = 150 px).
-        header_reservation_in: Top margin reserved for typography in inches (default: 1.20 in = 360 px).
-        target_coverage_ratio: Target coverage of the usable artwork zone (default: 0.72).
+        safe_margin_in: Safe margin boundary in inches (default: 0.30 in).
+        header_reservation_in: Top margin reserved for typography in inches (default: 1.0 in = 300 px).
+        target_coverage_ratio: Target coverage of the usable artwork zone (default: 0.95).
         is_spread: If True, bypasses header reservation and uses full safe margin canvas.
+        inside_gutter_in: Inside binding gutter margin in inches (default: from constants/config).
+        outside_margin_in: Outside trim margin in inches (default: from constants/config).
+        bottom_margin_in: Bottom margin in inches (default: from constants/config).
+        is_left_page: True if this is an even verso page where gutter is on the right.
 
     Returns:
         MarginFitResult with repositioning coordinates and scale factor.
@@ -107,24 +116,57 @@ def fit_to_safe_margins(
     min_y, max_y = int(np.min(y_indices)), int(np.max(y_indices))
     orig_bbox = (min_x, min_y, max_x, max_y)
 
+    # Resolve safe margin pixel boundaries
+    if is_spread:
+        # Spreads use symmetric safe margins (>= 0.50 in = 150 px) on all 4 sides
+        spread_m_px = int(max(safe_margin_in, 0.50) * dpi)
+        left_margin_px = spread_m_px
+        right_margin_px = spread_m_px
+        bottom_margin_px = spread_m_px
+    elif inside_gutter_in is not None or outside_margin_in is not None:
+        gutter_in = inside_gutter_in if inside_gutter_in is not None else safe_margin_in
+        outside_in = outside_margin_in if outside_margin_in is not None else safe_margin_in
+        bottom_in = bottom_margin_in if bottom_margin_in is not None else safe_margin_in
+
+        if is_left_page:
+            left_margin_px = int(outside_in * dpi)
+            right_margin_px = int(gutter_in * dpi)
+        else:
+            left_margin_px = int(gutter_in * dpi)
+            right_margin_px = int(outside_in * dpi)
+        bottom_margin_px = int(bottom_in * dpi)
+        default_max_upscale = 3.5
+    else:
+        margin_px = int(safe_margin_in * dpi)
+        left_margin_px = margin_px
+        right_margin_px = margin_px
+        bottom_margin_px = margin_px
+        default_max_upscale = 1.25
+
     # Crop tight bounding box
     cropped_img = img_gray.crop((min_x, min_y, max_x + 1, max_y + 1))
     crop_w, crop_h = cropped_img.size
 
     # Define usable artwork envelope
-    margin_px = int(safe_margin_in * dpi)
+    if is_spread:
+        top_margin_px = int(max(safe_margin_in, 0.50) * dpi)
+    elif inside_gutter_in is not None or outside_margin_in is not None:
+        top_margin_px = int(SAFE_TOP_IN * dpi)
+    else:
+        top_margin_px = margin_px
+
     if is_spread or header_reservation_in <= 0.0:
         header_px = 0
-        usable_w = canvas_width - (2 * margin_px)
-        usable_h = canvas_height - (2 * margin_px)
+        usable_w = canvas_width - (left_margin_px + right_margin_px)
+        usable_h = canvas_height - (top_margin_px + bottom_margin_px)
         eff_coverage = 1.0 if target_coverage_ratio == 0.72 else target_coverage_ratio
         max_upscale = 3.5
     else:
         header_px = int(header_reservation_in * dpi)
-        usable_w = canvas_width - (2 * margin_px)
-        usable_h = canvas_height - (margin_px + header_px)
+        usable_w = canvas_width - (left_margin_px + right_margin_px)
+        usable_h = canvas_height - (bottom_margin_px + header_px)
         eff_coverage = target_coverage_ratio
-        max_upscale = 1.25
+        max_upscale = default_max_upscale
 
     # Calculate optimal uniform scale factor
     scale_w = (usable_w * eff_coverage) / crop_w if crop_w > 0 else 1.0
@@ -136,16 +178,20 @@ def fit_to_safe_margins(
 
     # Resize cropped artwork with high-quality Lanczos resampling
     resized_artwork = cropped_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    arr_resized = np.array(resized_artwork)
+    # Ensure paper background is clean white (255) while preserving stroke hierarchy & tone gradients
+    arr_resized = np.where(arr_resized > 230, 255, arr_resized).astype(np.uint8)
+    resized_artwork = Image.fromarray(arr_resized, mode="L")
 
     # Create pristine pure white canvas (#FFFFFF)
     canvas = Image.new("L", (canvas_width, canvas_height), 255)
 
     # Calculate centered position within usable zone
-    pos_x = margin_px + (usable_w - new_w) // 2
+    pos_x = left_margin_px + (usable_w - new_w) // 2
     if header_px > 0:
         pos_y = header_px + (usable_h - new_h) // 2
     else:
-        pos_y = margin_px + (usable_h - new_h) // 2
+        pos_y = top_margin_px + (usable_h - new_h) // 2
 
     canvas.paste(resized_artwork, (pos_x, pos_y))
 

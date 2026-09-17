@@ -443,10 +443,17 @@ def test_get_custom_alphabet_spread_prompt_unrelated_returns_none():
 
 
 def _real_manifest_page(canonical: str) -> dict:
-    data = json.loads(Path(str(DEFAULT_PAGES_MANIFEST)).read_text(encoding="utf-8"))
-    for p in data["pages"]:
-        if p.get("canonical_object") == canonical:
-            return p
+    candidates = [
+        Path(str(DEFAULT_PAGES_MANIFEST)),
+        Path("manifest/pages.json"),
+        Path("data/pages.json"),
+    ]
+    for c in candidates:
+        if c.exists():
+            data = json.loads(c.read_text(encoding="utf-8"))
+            for p in data.get("pages", []):
+                if p.get("canonical_object") == canonical:
+                    return p
     raise AssertionError(f"page {canonical} not found in manifest")
 
 

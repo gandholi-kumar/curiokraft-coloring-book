@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from PIL import Image, ImageDraw
 from pydantic import BaseModel
 
@@ -60,6 +61,7 @@ def composite_typography(
     stroke_width_px: int = TYPOGRAPHY_STROKE_WIDTH_PX,
     letter_spacing_px: int = TYPOGRAPHY_LETTER_SPACING_PX,
     custom_font_path: str | Path | None = None,
+    snap_binary: bool | None = None,
 ) -> TypographyCompositorResult:
     """Render uppercase bubbly vector typography onto the top of the master canvas.
 
@@ -160,8 +162,16 @@ def composite_typography(
         if i < len(chars) - 1:
             curr_x += spacing
 
-    # 5. Snap antialiasing to pure binary black (0) and white (255)
-    img = img.point(lambda p: 0 if p < 160 else 255, mode="L")
+    # 5. Snap edge antialiasing for pure binary line art (while preserving intentional background lines)
+    if snap_binary is None:
+        arr_check = np.array(img)
+        mid_count = np.sum((arr_check >= 50) & (arr_check <= 200))
+        mid_ratio = mid_count / arr_check.size
+        # If image has extensive mid-tone line art (> 1.5%), preserve strokes; otherwise snap antialiasing
+        snap_binary = bool(mid_ratio <= 0.015)
+
+    if snap_binary:
+        img = img.point(lambda p: 0 if p < 160 else 255, mode="L")
 
     # Determine output path
     if output_path:

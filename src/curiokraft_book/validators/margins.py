@@ -11,7 +11,11 @@ from curiokraft_book.constants import (
     INK_THRESHOLD,
     KDP_MIN_GUTTER_IN,
     KDP_MIN_OUTSIDE_IN,
+    SAFE_BOTTOM_IN,
+    SAFE_GUTTER_IN,
     SAFE_MARGIN_IN,
+    SAFE_OUTSIDE_IN,
+    SAFE_TOP_IN,
 )
 
 
@@ -54,7 +58,7 @@ def validate_margins(
     kdp_min_gutter_in: float = KDP_MIN_GUTTER_IN,
     kdp_min_outside_in: float = KDP_MIN_OUTSIDE_IN,
     ink_threshold: int = INK_THRESHOLD,
-    is_left_page: bool = False,
+    is_left_page: bool | None = None,
 ) -> MarginValidationResult:
     """Validate that all artwork ink remains strictly inside KDP and project safe boundaries.
 
@@ -66,11 +70,17 @@ def validate_margins(
         kdp_min_outside_in: Authoritative KDP hard minimum outside margin (default: 0.250 in).
         ink_threshold: Grayscale pixel value below which pixels are considered ink (default: 240).
         is_left_page: True if this is an even (left-hand) page where gutter is on the right.
+                      If None, auto-detected from page number in filename.
 
     Returns:
         MarginValidationResult with bounding box and margin clearance metrics.
     """
     path = Path(image_path)
+    if is_left_page is None:
+        import re
+
+        p_match = re.search(r"(?:page_|p)(\d+)", path.stem.lower())
+        is_left_page = (int(p_match.group(1)) % 2 == 0) if p_match else False
     if not path.exists():
         empty_metrics = MarginMetrics(
             left_margin_in=0,
@@ -193,24 +203,36 @@ def validate_margins(
             f"KDP Bottom Margin Violation: Bottom margin is {bottom_margin_in}in (KDP hard minimum is {kdp_min_outside_in}in)"
         )
 
-    # Project Safe Zone Target Checks (0.50 in)
+    # Project Safe Zone Target Checks (configurable safe margins, restricted bleed permitted)
+    gutter_limit = safe_margin_in if safe_margin_in != SAFE_MARGIN_IN else SAFE_GUTTER_IN
+    outside_limit = safe_margin_in if safe_margin_in != SAFE_MARGIN_IN else SAFE_OUTSIDE_IN
+    top_limit = safe_margin_in if safe_margin_in != SAFE_MARGIN_IN else SAFE_TOP_IN
+    bottom_limit = safe_margin_in if safe_margin_in != SAFE_MARGIN_IN else SAFE_BOTTOM_IN
+
     project_safe_compliant = True
-    min_safe_px = int(safe_margin_in * dpi)
+    min_gutter_px = int(gutter_limit * dpi)
+    min_outside_px = int(outside_limit * dpi)
+    min_top_px = int(top_limit * dpi)
+    min_bottom_px = int(bottom_limit * dpi)
+
+    left_limit_px = min_outside_px if is_left_page else min_gutter_px
+    right_limit_px = min_gutter_px if is_left_page else min_outside_px
+
     if (
-        min_x < min_safe_px
-        or right_margin_px < min_safe_px
-        or min_y < min_safe_px
-        or bottom_margin_px < min_safe_px
+        left_margin_px < left_limit_px
+        or right_margin_px < right_limit_px
+        or min_y < min_top_px
+        or bottom_margin_px < min_bottom_px
     ):
         project_safe_compliant = False
         if kdp_compliant:
             violations.append(
-                f"Project Safe Zone Target Breached: Content extends into the {safe_margin_in}in conservative safety boundary."
+                f"Project Safe Zone Target Breached: Content extends beyond safe boundaries (gutter={gutter_limit}in, outside={outside_limit}in, top={top_limit}in, bottom={bottom_limit}in)."
             )
 
     # Calculate usable canvas coverage
-    usable_width = canvas_width - (2 * min_safe_px)
-    usable_height = canvas_height - (2 * min_safe_px)
+    usable_width = canvas_width - (min_gutter_px + min_outside_px)
+    usable_height = canvas_height - (min_top_px + min_bottom_px)
     usable_area = usable_width * usable_height
     artwork_area = artwork_width * artwork_height
     coverage_ratio = round(artwork_area / usable_area, 3) if usable_area > 0 else 0.0
