@@ -33,12 +33,16 @@ Select the workflow that matches your preferred generation setup:
 Use this workflow to generate high-quality illustrations in the free **Google AI Studio Web UI** (or Gemini Chat / Google One) without paying for developer API tokens.
 
 ### Step 1: Export Master Prompts
+
 Synthesize and export all 110 interior page prompts plus Front and Back Cover prompts into a single clean markdown document:
+
 ```powershell
 curiokraft-book prompt export
 ```
+
 * **Output generated:** `generated/prompts_export.md`
 * To inspect or copy a single page prompt directly in your terminal:
+
   ```powershell
   curiokraft-book prompt show --page P005
   curiokraft-book cover prompt
@@ -47,6 +51,7 @@ curiokraft-book prompt export
 ---
 
 ### Step 2: Generate Illustrations in Google AI Studio
+
 1. Open [Google AI Studio](https://aistudio.google.com).
 2. Configure the recommended settings in the right sidebar:
    * **Model:** `gemini-2.5-flash` (or latest Gemini Image model)
@@ -59,6 +64,7 @@ curiokraft-book prompt export
 ---
 
 ### Step 3: Save Downloaded Images into Inbox Folders
+
 Download the generated images and save them using standard naming:
 
 * **Interior Illustrations:** Save into `inbox/raw_pages/`
@@ -74,38 +80,49 @@ Download the generated images and save them using standard naming:
 ---
 
 ### Step 4: Ingest & Programmatically Process Images
+
 Run the ingestion engine to binarize (Otsu thresholding), scale to safe printable margins, and overlay toddler vector bubble typography:
+
 ```powershell
 curiokraft-book ingest
 ```
+
 * Automatically moves processed files from `inbox/raw_pages/` to `generated/raw_pages/` to keep your inbox clean.
 * Outputs certified 300 DPI master canvases into `output/interior_masters/page_001.png` through `page_110.png`.
 
 ---
 
 ### Step 5: Render Special Pages (Page 001 Welcome & Page 110 Certificate)
+
 Page 001 and Page 110 are bookend milestone pages that use modular assets (`tiny_mascot`, `super_colorist_badge`, `welcome_scene`, `celebration_scene`, `crayons`, `stars`, `sparkles`) located in `inbox/special_assets/`.
 
 To render both pages with automated centering, white-background cleaning, and strict KDP 300 DPI typography:
+
 ```powershell
 curiokraft-book generate special-pages
 ```
+
 * **Output generated:** `output/interior_masters/page_001.png` & `output/interior_masters/page_110.png`
 * **Guide & Multi-Volume Customization:** See [docs/architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](../architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md)
 
 ---
 
 ### Step 6: (Optional) Verify Visual Samples
+
 To inspect sample pages before assembling the final book:
+
 ```powershell
 curiokraft-book sample generate --pages P002,P004,P006 --source inbox
 ```
+
 Inspect the output in `output/samples/`.
 
 ---
 
 ### Step 7: Build Cover & Assemble Interior PDF
+
 Once all pages are ingested and special pages are rendered:
+
 ```powershell
 # 1. Composite KDP Full-Wrap Cover (17.498 x 11.250 in with spine and barcode safe box)
 curiokraft-book cover build
@@ -113,24 +130,29 @@ curiokraft-book cover build
 # 2. Compile 110 master PNGs into print-ready interior PDF
 curiokraft-book assemble interior
 ```
+
 * **Cover Output:** `output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png` & `output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf`
 * **Interior Output:** `output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf`
 
 ---
 
 ### Step 8: Run Preflight Certification & Publish
+
 ```powershell
 curiokraft-book preflight run
 ```
+
 * Runs the full 18-point KDP diagnostic check (margins, bleed, resolution, page count, barcode clearance).
 * Generates official certificate: `output/reports/FINAL_KDP_PREFLIGHT_CERTIFICATE.txt`.
 
 ---
 
 ### Step 9: Generate KDP Submission Metadata & 1-Click Helper
+
 ```powershell
 curiokraft-book kdp generate
 ```
+
 * **4-Agent Deliberation:** Convenes AGT-KDP-001 (SEO), AGT-KDP-002 (Copywriter), AGT-KDP-003 (Compliance), and AGT-KDP-004 (Form Parser) to synthesize complete publishing data.
 * **Strict Zero Emojis:** Guarantees 100% standard characters to avoid Amazon's *"Emoji characters are not supported"* submission rejection.
 * **A9 Deduplicated Keywords:** Generates 7 keyword boxes ($\le 50$ chars) strictly excluding words in Title/Subtitle.
@@ -144,6 +166,7 @@ curiokraft-book kdp generate
 Use this workflow if you have an **OpenAI** or **Google Cloud (Gemini)** API key and want fully hands-off batch generation.
 
 ### Step 1: Set API Key in Environment
+
 Open PowerShell in your project folder and set your active key:
 
 ```powershell
@@ -157,7 +180,9 @@ $env:GEMINI_API_KEY = "AIzaSy-your-gemini-api-key-here"
 ---
 
 ### Step 2: Generate Visual Samples (Gate 2 Visual Approval)
+
 Generate 3 sample pages to verify style and prompt synthesis before running the full book:
+
 ```powershell
 # Using OpenAI:
 curiokraft-book sample generate --count 3 --source openai
@@ -165,12 +190,15 @@ curiokraft-book sample generate --count 3 --source openai
 # OR using Gemini:
 curiokraft-book sample generate --count 3 --source gemini
 ```
+
 * Review sample master PNGs in `output/samples/`.
 
 ---
 
 ### Step 3: Run Full 110-Page Production Batch
+
 Execute the automated multi-agent debate, generation, code rescue, and vector typography pipeline across all 110 pages:
+
 ```powershell
 # Using OpenAI:
 curiokraft-book generate book --source openai
@@ -178,12 +206,14 @@ curiokraft-book generate book --source openai
 # OR using Gemini:
 curiokraft-book generate book --source gemini
 ```
+
 * **Output:** `output/interior_masters/page_001.png` through `page_110.png`.
 * Check progress in the terminal progress bar or inspect `logs/pipeline.log`.
 
 ---
 
 ### Step 4: Build Cover & Assemble Interior PDF
+
 ```powershell
 # 1. Composite full-wrap KDP cover (front, back, spine, logo, barcode box)
 curiokraft-book cover build
@@ -195,18 +225,22 @@ curiokraft-book assemble interior
 ---
 
 ### Step 5: Run Preflight Certification
+
 ```powershell
 curiokraft-book preflight run
 ```
+
 * Executes the 18-point diagnostic.
 * Confirms zero margin violations and barcode clearance.
 
 ---
 
 ### Step 6: Generate KDP Submission Metadata & 1-Click Helper
+
 ```powershell
 curiokraft-book kdp generate
 ```
+
 * Synthesizes full KDP metadata package, Category Modal trees, and 4-agent audit trail.
 * Opens `output/kdp/kdp_submission_helper.html` for 1-click clipboard pasting.
 * **Upload files and publish on Amazon KDP!**
@@ -216,6 +250,7 @@ curiokraft-book kdp generate
 ## 🧪 Track 3: Offline Developer / Test Mode (Zero Cost Bézier Mock)
 
 For local development, testing scripts, and CI/CD without calling any AI APIs:
+
 ```powershell
 # Generate 3 mock vector pages:
 curiokraft-book sample generate --count 3 --source mock

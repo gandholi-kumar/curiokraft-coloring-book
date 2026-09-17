@@ -12,6 +12,7 @@ from curiokraft_book.constants import (
     COLOR_TOLERANCE,
     MAX_GRAY_CLUSTER_SIZE_PX,
     WHITE_THRESHOLD,
+    get_stroke_hierarchy_config,
 )
 
 
@@ -38,10 +39,12 @@ def validate_black_and_white(
     white_threshold: int = WHITE_THRESHOLD,
     max_gray_cluster_size_px: int = MAX_GRAY_CLUSTER_SIZE_PX,
     color_tolerance: int = COLOR_TOLERANCE,
+    allow_intentional_gray_lines: bool = False,
 ) -> GrayscaleValidationResult:
     """Analyze image to verify binary black-and-white purity and detect prohibited gray shading.
 
-    Differentiates valid anti-aliasing on 1-2px vector edges from intentional gray shading or fills.
+    Differentiates valid anti-aliasing on 1-2px vector edges or intentional lighter background
+    strokes (configured via stroke_hierarchy in book_config.yaml) from prohibited gray shading washes.
 
     Args:
         image_path: Path to the image file.
@@ -50,6 +53,8 @@ def validate_black_and_white(
         max_gray_cluster_size_px: Maximum contiguous gray pixel cluster permitted before flagging
                                    as intentional shading (default: 60 px).
         color_tolerance: Max permitted variance between R, G, B channels before flagging color (default: 6).
+        allow_intentional_gray_lines: If True, permits lighter charcoal line art for background scenery.
+                                      If None, dynamically reads configuration from book_config.yaml.
 
     Returns:
         GrayscaleValidationResult with detailed cluster metrics and violation reports.
@@ -127,21 +132,28 @@ def validate_black_and_white(
             w = int(stats[i, cv2.CC_STAT_WIDTH])
             h = int(stats[i, cv2.CC_STAT_HEIGHT])
             large_clusters.append((cluster_area, (x, y, w, h)))
-
     is_pure_bw = True
-    if gray_cluster_count > 0:
-        is_pure_bw = False
-        violations.append(
-            f"Intentional Gray Shading Detected: Found {gray_cluster_count} gray pixel clusters exceeding the "
-            f"{max_gray_cluster_size_px}px threshold (Largest cluster: {max_cluster_size}px)."
-        )
+    if not allow_intentional_gray_lines:
+        if gray_cluster_count > 0:
+            is_pure_bw = False
+            violations.append(
+                f"Intentional Gray Shading Detected: Found {gray_cluster_count} gray pixel clusters exceeding the "
+                f"{max_gray_cluster_size_px}px threshold (Largest cluster: {max_cluster_size}px)."
+            )
 
-    # Global non-binary pixel threshold (if gray pixels exceed 4% of total canvas)
-    if non_binary_pct > 4.0:
-        is_pure_bw = False
-        violations.append(
-            f"Excessive Grayscale Content: {non_binary_pct}% of canvas consists of gray transition pixels (Threshold: <= 4.0%)."
-        )
+        # Global non-binary pixel threshold (if gray pixels exceed 4% of total canvas)
+        if non_binary_pct > 4.0:
+            is_pure_bw = False
+            violations.append(
+                f"Excessive Grayscale Content: {non_binary_pct}% of canvas consists of gray transition pixels (Threshold: <= 4.0%)."
+            )
+    else:
+        # In intentional tone / as-is mode, guard against full grayscale photo washes (> 25% of canvas)
+        if non_binary_pct > 25.0:
+            is_pure_bw = False
+            violations.append(
+                f"Excessive Grayscale Wash: {non_binary_pct}% of canvas consists of gray pixels (Max permitted for line art: <= 25.0%)."
+            )
 
     passed = not has_color and is_pure_bw
 

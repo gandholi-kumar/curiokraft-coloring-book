@@ -93,6 +93,11 @@ living_keywords:
   - snail
   - octopus
   - crab
+  - mudskipper
+  - nautilus
+  - mollusk
+  - cephalopod
+  - crustacean
   - deer
   - fox
   - squirrel
@@ -700,6 +705,27 @@ animal_locomotion_matrix:
       - lobster
       - seal
       - walrus
+      - tang
+      - idol
+      - ray
+      - eel
+      - squid
+      - jellyfish
+      - urchin
+      - seahorse
+      - anemone
+      - starfish
+      - clam
+      - nautilus
+      - krill
+      - otter
+      - coral
+      - manatee
+      - dugong
+      - narwhal
+      - beluga
+      - porpoise
+      - orca
     negative_tokens:
       - "legs"
       - "feet"
@@ -1188,4 +1214,444 @@ vehicle_design_profiles:
     negative_tokens:
       - "four wheels"
       - "car body"
+
+# ---------------------------------------------------------------------------
+# UNIVERSAL PROMPT STANDARDS & BASE NEGATIVES
+# Centralized so Python debate engine never hardcodes static token lists.
+# ---------------------------------------------------------------------------
+prompt_standards:
+  common_coloring_negatives:
+    - "shading"
+    - "shadows"
+    - "gradients"
+    - "gray"
+    - "grayscale"
+    - "color"
+    - "textures"
+    - "3d"
+    - "photorealistic"
+    - "intricate patterns"
+    - "airbrush"
+    - "stippling"
+    - "cross-hatching"
+    - "thin lines"
+    - "borders"
+    - "frames"
+    - "separator lines"
+    - "text"
+    - "letters"
+    - "words"
+    - "alphabet"
+    - "typography"
+    - "watermarks"
+    - "labels"
+    - "writing"
+    - "scary expression"
+    - "widescreen"
+    - "16:9"
+    - "landscape orientation"
+    - "horizontal cropping"
+    - "cut off edges"
+  isolated_object_negatives:
+    - "multiple objects"
+    - "background scenery"
+    - "floor"
+    - "ground"
+    - "sky"
+    - "horizon"
+
+# ---------------------------------------------------------------------------
+# DYNAMIC ENVIRONMENT / HABITAT TEMPLATES
+# Maps composition types (e.g. integrated_aquatic_scene, integrated_land_scene)
+# or visual_style.background to their respective habitat elements and rules.
+# Zero Python code modification required when adding new biomes or series.
+# ---------------------------------------------------------------------------
+environment_templates:
+  aquatic:
+    composition_patterns:
+      - "integrated_aquatic_scene"
+      - "aquatic"
+      - "ocean"
+      - "marine"
+      - "underwater"
+    background_patterns:
+      - "aquatic_environment"
+    habitat_name: "natural ocean and underwater marine habitat"
+    habitat_elements: "rising air bubbles, fluid gentle water currents, swaying kelp fronds, and colorable coral reef formations on the sea bed"
+    subject_action: "swimming in its natural ocean habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background marine elements (bubbles, water currents, kelp, coral) with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background marine elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "diver"
+      - "boat"
+      - "trash"
+      - "murky water"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "murky water"
+      - "diver"
+      - "boat"
+      - "trash"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural swimming locomotion."
+      - "Ensure AI integrates a cohesive vector line art background (water, bubbles, kelp, coral) matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+  land:
+    composition_patterns:
+      - "integrated_land_scene"
+      - "land"
+      - "savanna"
+      - "safari"
+      - "forest"
+      - "woodland"
+      - "jungle"
+      - "terrestrial"
+    background_patterns:
+      - "land_environment"
+      - "savanna_environment"
+      - "forest_environment"
+    habitat_name: "natural savanna meadow or woodland land habitat"
+    habitat_elements: "swaying grasses, wildflowers, gentle rolling ground contours, distant stylized trees, and foliage"
+    subject_action: "standing or resting naturally in its natural land habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background landscape elements (grasses, trees, foliage) with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background landscape elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "cars"
+      - "pavement"
+      - "buildings"
+      - "trash"
+      - "cages"
+      - "zoo bars"
+      - "fences"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "cars"
+      - "pavement"
+      - "buildings"
+      - "trash"
+      - "cages"
+      - "zoo bars"
+      - "fences"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural terrestrial locomotion."
+      - "Ensure AI integrates a cohesive vector line art landscape (grass, trees, foliage) matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+  air:
+    composition_patterns:
+      - "integrated_air_scene"
+      - "air"
+      - "sky"
+      - "avian"
+      - "flight"
+    background_patterns:
+      - "air_environment"
+      - "sky_environment"
+    habitat_name: "natural open sky and canopy habitat"
+    habitat_elements: "soft stylized puffy clouds, open sky currents, gentle sun rays, and leafy treetop branch perches"
+    subject_action: "gliding or perching naturally in its natural open sky canopy habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background sky and branch elements with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background sky and branch elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "cages"
+      - "airplanes"
+      - "smoke"
+      - "smog"
+      - "power lines"
+      - "indoor ceiling"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "cages"
+      - "airplanes"
+      - "smoke"
+      - "smog"
+      - "power lines"
+      - "indoor ceiling"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural flight/perch posture."
+      - "Ensure AI integrates cohesive vector line art sky/branch elements matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+# ---------------------------------------------------------------------------
+# DYNAMIC PUBLICATION COVER THEMES
+# Drives Front and Back Cover Master Artwork across CurioKraft publication series.
+# Enables zero-code expansion for Ocean, Land, Sky, Geometric Patterns, and Toddler.
+# ---------------------------------------------------------------------------
+cover_themes:
+  ocean:
+    theme_id: "ocean"
+    display_name: "Ocean Expeditions & Marine Habitats"
+    pattern_matchers:
+      - "aquatic"
+      - "ocean"
+      - "marine"
+      - "underwater"
+      - "sea"
+    palette:
+      primary_bg: "deep royal oceanic navy (#0F2B48) softly transitioning into sunlit radiant turquoise (#00A896)"
+      accents: "bioluminescent cyan (#00F0FF), vibrant coral orange (#FF6B6B), and warm gold (#FFAA00)"
+      card_bg: "#FFFFFF"
+      card_border: "#1B3B5F"
+    baseline_spec:
+      height_percentage: 20
+      style: "fluid, continuous rolling underwater ocean current swells and silhouettes of coral reef seabed"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "rising effervescent air bubbles, crepuscular sunbeams filtering down through crystal-clear water, tiny floating sea stars, and subtle bioluminescent sparkles"
+    hero_action: "swimming dynamically and gliding gracefully through crystal-clear sunlit coral waters with natural marine locomotion"
+    hero_prohibitions:
+      - "legs"
+      - "standing"
+      - "sitting"
+      - "sitting on ground"
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+    title_styling: "vibrant 3D golden-amber and sunshine yellow display lettering (#FFD13B to #FFAA00) with sculpted wave bevels, clean white die-cut contour outline, and deep navy drop-shadow for maximum contrast against the turquoise sea"
+    framing: "full-bleed borderless edge-to-edge illustration across all four borders, strictly zero decorative corner frames, zero margin lines"
+    back_cover:
+      headline: "UNLOCK THE WONDERS OF THE DEEP BLUE OCEAN!"
+      headline_styling: "artistic sculpted 3D nautical display lettering with luminous golden-coral gradients and deep ocean drop-shadow"
+      description: "Spark your child's curiosity for marine life and ocean wonders! As young artists bring each majestic creature to life, they build fine motor dexterity, cultivate calming screen-free mindfulness, and gain creative confidence exploring the breathtaking beauty of our living seas."
+      parent_benefit_pills:
+        - "★ 50+ Majestic Sea Creatures & Natural Habitats"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Authentic Marine Anatomy & Educational Species Names"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  land:
+    theme_id: "land"
+    display_name: "Wild Savanna & Terrestrial Kingdoms"
+    pattern_matchers:
+      - "land"
+      - "savanna"
+      - "safari"
+      - "forest"
+      - "jungle"
+      - "woodland"
+      - "terrestrial"
+    palette:
+      primary_bg: "warm sunlit savanna amber (#F9A825) blending into deep canopy green (#2E7D32)"
+      accents: "terracotta earth (#D84315), meadow gold (#FBC02D), and sky azure (#4FC3F7)"
+      card_bg: "#FFFFFF"
+      card_border: "#2C3E50"
+    baseline_spec:
+      height_percentage: 20
+      style: "gentle, continuous rolling savanna meadow grasses, wildflowers, and distant stylized acacia trees"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "floating flower petals, gentle drifting dandelion seeds, warm golden sunlight motes, and fluttering foliage leaves"
+    hero_action: "standing proudly or bounding gracefully across rolling meadow grasses with natural four-legged terrestrial posture"
+    hero_prohibitions:
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+      - "cages"
+      - "zoo bars"
+    title_styling: "bold, adventurous expedition display lettering with natural sculpted earth tones"
+    back_cover:
+      headline: "EXPLORE THE WONDERS OF THE WILD KINGDOM!"
+      description: "Journey into the heart of the wild across magnificent terrestrial habitats! Discover and color 50+ incredible wild animals living naturally in their open-air homes."
+      parent_benefit_pills:
+        - "★ 50+ Wild Animals in Authentic Natural Habitats"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Accurate Wildlife Anatomy & First Animal Facts"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  sky:
+    theme_id: "sky"
+    display_name: "Open Sky & Avian Expeditions"
+    pattern_matchers:
+      - "sky"
+      - "air"
+      - "avian"
+      - "flight"
+      - "birds"
+    palette:
+      primary_bg: "radiant sky azure (#0288D1) softly transitioning into sunburst gold (#FFD54F) and horizon lavender (#E1BEE7)"
+      accents: "cloud white (#FFFFFF), sunny yellow (#FFEE58), and coral pink (#FF8A80)"
+      card_bg: "#FFFFFF"
+      card_border: "#1A365D"
+    baseline_spec:
+      height_percentage: 20
+      style: "soft, continuous rolling treetop canopy branches and gentle stylized cloud banks"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "swirling breeze wind currents, drifting soft bird feathers, warm radiant sunbeams, and twinkling sky sparkles"
+    hero_action: "soaring gracefully with wide outstretched wings or perching naturally on a leafy branch"
+    hero_prohibitions:
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+      - "cages"
+    title_styling: "sweeping aerodynamic display lettering with soaring wing accents and sunlit reflections"
+    back_cover:
+      headline: "SOAR INTO THE WONDERS OF THE OPEN SKY!"
+      description: "Take flight into the heavens across magnificent aerial habitats! Discover and color 50+ fascinating winged creatures gliding and perching in their natural sky canopies."
+      parent_benefit_pills:
+        - "★ 50+ Magnificent Winged Creatures & Sky Canopies"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Authentic Avian Anatomy & First Sky Facts"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  geometric_mandala:
+    theme_id: "geometric_mandala"
+    display_name: "Hypnotic Mandalas & Geometric Patterns"
+    pattern_matchers:
+      - "geometric"
+      - "pattern"
+      - "mandala"
+      - "shapes"
+      - "tessellation"
+    palette:
+      primary_bg: "rich jewel-toned midnight indigo (#1A1B4B) blending into electric teal (#00F5D4)"
+      accents: "shimmering gold (#FFD166), vivid magenta (#F72585), and electric purple (#7209B7)"
+      card_bg: "#FFFFFF"
+      card_border: "#2B2D42"
+    baseline_spec:
+      height_percentage: 20
+      style: "continuous ornamental geometric wave band with symmetrical rhythmic tessellation motifs"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "delicate floating geometric starbursts, kaleidoscopic dust, and harmonized symmetric sparkles"
+    hero_action: "intricate focal mandala emblem with radiating circular petals and geometric harmony"
+    hero_prohibitions:
+      - "faces"
+      - "eyes"
+      - "characters"
+      - "animals"
+      - "text"
+    title_styling: "sophisticated modern display lettering with sharp geometric vertices and metallic jewel accents"
+    back_cover:
+      headline: "DISCOVER THE CALM OF MINDFUL GEOMETRIC COLORING!"
+      description: "Unwind and focus your mind with 50+ mesmerizing geometric line art designs, intricate wave patterns, and soothing concentric circles."
+      parent_benefit_pills:
+        - "★ 50+ Intricate Mandalas, Waves & Tessellations"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Enhances Spatial Reasoning, Focus & Mindfulness"
+        - "★ Designed for All Ages: Kids, Teens & Adults"
+
+  toddler:
+    theme_id: "toddler"
+    display_name: "Preschool First Words & Early Learning"
+    pattern_matchers:
+      - "toddler"
+      - "preschool"
+      - "first_words"
+      - "vol1"
+      - "tiny_hands"
+    palette:
+      primary_bg: "cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6)"
+      accents: "pastel turquoise (#48CAE4), mint green (#A8DADC), sunny lemon yellow (#FFE494), and coral candy red (#FF6B6B)"
+      card_bg: "#FFFFFF"
+      card_border: "#2C1810"
+    baseline_spec:
+      height_percentage: 20
+      style: "smooth, gentle rolling wave in pastel turquoise and mint"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "celebratory toddler star dust, floating 4-point and 5-point twinkling stars in golden yellow, soft pastel floating hearts in pink and lilac, and colorful confetti dots"
+    hero_action: "an adorable chubby baby animal waving cheerfully with friendly round eyes and rosy cheeks"
+    hero_prohibitions:
+      - "sharp teeth"
+      - "scary expressions"
+      - "dark shadows"
+    title_styling: "joyful upward arch in large chunky 3D puffy inflated candy bubble letters with high-gloss specular reflections"
+    back_cover:
+      headline: "DISCOVER, COLOR & LEARN!"
+      description: "Packed with 100+ adorable preschool illustrations and everyday first words, perfect for building fine motor skills, early vocabulary, and creative confidence!"
+      parent_benefit_pills:
+        - "★ 100+ Brand-New Simple Drawings"
+        - "★ Chunky Outlines for Little Hands"
+        - "★ 110 Full Pages of Double-Sided Coloring"
+        - "★ Perfect for Ages 1 to 4"
+
+# ---------------------------------------------------------------------------
+# UNIVERSAL PAGE ARCHETYPES
+# Decouples page prompt generation from Python conditionals.
+# Enables instant creation of new book formats (Mandalas, Dots, Tracing, Habitats).
+# ---------------------------------------------------------------------------
+page_archetypes:
+  integrated_habitat:
+    archetype_id: "integrated_habitat"
+    description: "Living subject seamlessly embedded in natural environment with stroke hierarchy (4pt subject silhouette, 2pt habitat elements)."
+    entity_policy: "always_living"
+    requires_living_eyes: true
+    requires_background_environment: true
+    margin_reserve: "20% empty white margin at top for title typography"
+
+  single_centered_subject:
+    archetype_id: "single_centered_subject"
+    description: "Single isolated subject centered on pure white canvas, 5pt contour, zero scenery."
+    entity_policy: "semantic_domain"
+    requires_living_eyes: false
+    requires_background_environment: false
+
+  geometric_pattern:
+    archetype_id: "geometric_pattern"
+    description: "Pure abstract geometric coloring line art (waves, concentric circles, mandalas, tessellations)."
+    entity_policy: "strictly_abstract"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "faces"
+      - "eyes"
+      - "mouth"
+      - "head"
+      - "body"
+      - "animals"
+      - "characters"
+      - "people"
+      - "text"
+      - "letters"
+      - "numbers"
+      - "words"
+
+  connect_the_dots:
+    archetype_id: "connect_the_dots"
+    description: "Numbered guide dots (1, 2, 3...) connected by faint dotted guideline contours forming a hidden shape."
+    entity_policy: "activity_puzzle"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "solid line art"
+      - "colored lines"
+      - "shading"
+      - "pre-drawn dark outline"
+      - "text paragraphs"
+
+  tracing_handwriting:
+    archetype_id: "tracing_handwriting"
+    description: "Primary 3-line ruling guidelines with hollow letterforms containing centered directional dotted stroke tracing paths."
+    entity_policy: "educational_handwriting"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "solid filled letters"
+      - "black letters"
+      - "solid black typography"
+      - "shading"
+      - "curved wavy lines"
+
+  multi_card_spread:
+    archetype_id: "multi_card_spread"
+    description: "Uniform grid of N flashcard containers with bubble glyph on left and line art on right."
+    entity_policy: "spread_grid"
+    requires_living_eyes: false
+    requires_background_environment: false
+
 

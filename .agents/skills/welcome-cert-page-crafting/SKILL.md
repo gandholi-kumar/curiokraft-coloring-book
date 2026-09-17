@@ -63,15 +63,89 @@ Generate these as **isolated black-and-white line-art illustrations, transparent
 
 | Asset | Filename | Rules |
 |---|---|---|
-| Mascot | tiny_mascot.png | Cute bear/bunny/sun/puppy character. B/W outline only. Transparent BG. **Generate ONCE - reuse on BOTH pages.** |
-| Achievement Badge | super_colorist_badge.png | Sun + ribbon + stars composition. B/W outline. Transparent BG. **STRICTLY NO TEXT, NO LETTERS, NO NUMBERS inside the badge.** Python will write "SUPER COLORIST". |
-| Welcome Scene | welcome_scene.png | Friendly colorable scene: balloons, stars, crayons, rainbow. B/W thick outlines. Transparent BG. Must be colorable by a child. |
-| Celebration Scene | celebration_scene.png | Festive: confetti, sparkles, stars. Denser and more celebratory than welcome scene. B/W outline. Transparent BG. |
-| Stars Cluster | stars.png | 3-5 outlined stars. Transparent BG. |
-| Sparkles | sparkles.png | Small sparkle/confetti elements. Transparent BG. |
-| Crayons | crayons.png | Cute crayon cluster. B/W outline. Transparent BG. For Welcome page footer area. |
+| Perimeter Frame | frame.png | Full-perimeter living vignette framing a wide open 70% central area for typography, cards, and mascot. Outer 15–20% margin coverage. Crisp B/W line art. |
+| Mascot | tiny_mascot.png | Cute theme-aligned character (e.g. Sammy the Sea Turtle for Ocean). B/W outline only. Solid white body. **Generate ONCE - reuse on BOTH pages.** |
+| Achievement Badge | super_colorist_badge.png | Thematic award ribbon/seal. B/W outline. **STRICTLY NO TEXT, NO LETTERS, NO NUMBERS inside the badge.** |
+| Welcome Scene | welcome_scene.png | Optional secondary scene if no perimeter frame is used. |
+| Celebration Scene | celebration_scene.png | Festive decoration for certificate page. |
+| Stars Cluster | stars.png | 3-5 outlined stars. |
+| Sparkles | sparkles.png | Small sparkle/confetti elements. |
+| Crayons | crayons.png | Cute crayon cluster. |
 
 CRITICAL MASCOT RULE: Do NOT regenerate the mascot for the Certificate with a "different pose". AI cannot maintain character consistency across generations. Generate once, place on both pages.
+
+---
+
+## Top 10 Bestselling Genre Research Protocol & Multi-Agent Frame Deliberation
+
+To ensure CurioKraft books compete with world-class commercial bestsellers, the Multi-Agent Debate Engine follows a strict **Genre Research Protocol** prior to synthesizing perimeter frames:
+
+### 1. Benchmark Analysis of Top 10 Bestsellers by Genre
+
+| Genre / Series | Top 10 Bestseller Benchmarks | Proven Design Elements | Frame Boundary Rules |
+| :--- | :--- | :--- | :--- |
+| **Ocean / Aquatic** | *Lost Ocean* (Johanna Basford), *Island Paradise* (Millie Marotta), *DK Eyewitness Ocean*, *Usborne Under the Sea* | Rich coral reef bottom anchor; vertical kelp fronds, sea fans, and rising bubble streams climbing outer 15% margins. | 70% center completely open. Base reef anchors bottom; bubbles cluster at top. |
+| **Land / Safari** | *Wild Savannah* (Millie Marotta), *National Geographic Wild*, *World of Flowers* | Earthy textured foundation; acacia branches, sand dunes, river rocks, and tall savannah grasses framing side margins. | Grounded horizon at bottom; climbing botanical/rocky flanks; airy canopy at top. |
+| **Air / Sky** | *Birds of the World* (Charley Harper), *Sibley Birds Coloring*, *DK Flight* | Airy, weightless perimeter; cumulus clouds clustering along bottom and top corners; soaring feather flourishes and wind swirls. | Lightest visual weight; clouds frame corners and top; descending raindrop/breeze trails. |
+| **Origami Arts** | *Origami Tessellations* (Eric Gjerde), *Japanese Patterns* (Tuttle), *Geometric Origami* | Crisp mathematical angles, creased paper facets, interlocking polygonal folds framing a pristine center. | Modular geometric folded tabs along margins; sharp 45° and 60° beveled facets. |
+| **Mandala Arts** | *Stress Relieving Mandala Designs*, *The Mandala Colouring Book* (Jim Gogarty) | Sacred radial symmetry, lotus petal scallops, intricate lace arches framing an ornamental central plaque. | Symmetrical outer quadrant arches; interlocking petal scallops framing central open zone. |
+
+### 2. Multi-Agent Specialist Roles & Opinions for Perimeter Frames
+
+When synthesizing perimeter frame prompts, three specialist agents must reach consensus:
+1. **Art Director Agent**:
+   - *Mandate*: Aesthetic composition, genre authenticity, and hierarchy.
+   - *Requirement*: The perimeter frame must occupy only the outer **15% to 20%** margin perimeter. The central **70% of the canvas MUST be 100% pure empty white negative space** to house the headline, logbook card, mascot, and guide box.
+2. **Technical Preflight Specialist Agent**:
+   - *Mandate*: Amazon KDP print safety and zero reproduction defects.
+   - *Requirement*: Strictly enforce KDP safe margin bounds (Spine Gutter $\ge 0.50$ in, Outside $\ge 0.375$ in, Top $\ge 0.40$ in, Bottom $\ge 0.375$ in). Demand pure binary black & white vector line art (0/255) with zero gray wash, zero shading, and strictly NO text, fake boxes, or measurement arrows.
+3. **Target Audience Specialist Agent**:
+   - *Mandate*: Developmental appropriateness and coloring engagement.
+   - *Requirement*: Stroke hierarchy must be 3–5 pt primary contours and 2 pt secondary details with wide, colorable closed shapes so children or hobbyists can actively color in the perimeter frame!
+
+---
+
+## Master AI Prompt Templates for Perimeter Frames
+
+### 1. Ocean / Aquatic Perimeter Frame (`aquatic_frame.png`)
+```text
+Ultra-clean 2D coloring book line art of an elaborate full-perimeter underwater marine life border vignette framing a wide open, completely empty white central area. Along the bottom border: lush detailed coral reef branches, sea anemones, textured sea sponges, small starfish, and scallop shells resting on ocean sand. Along the left and right vertical borders: gracefully swaying sea kelp ribbons, delicate sea fans, and ascending streams of tiny round sea bubbles climbing upward. Along the top border: gentle water surface wave ripples and floating bubble clusters. The entire center of the page (70% area) is completely empty solid white blank paper with NO illustrations and NO text. Thick clean black vector outlines, 4pt primary stroke, 2pt secondary details, completely closed shapes ready for coloring. Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. Strictly NO text, NO letters, NO numbers, NO rectangular border lines, NO color fills, zero shading, zero gradients, zero shadows. Pure black and white line art only.
+```
+
+### 2. Land / Safari Perimeter Frame (`land_frame.png`)
+```text
+Ultra-clean 2D coloring book line art of an elaborate full-perimeter terrestrial safari landscape border vignette framing a wide open, completely empty white central area. Along the bottom border: textured sand dunes, smooth river pebbles and stones, small fallen leaves, and lush tufts of wild savannah grasses. Along the left and right vertical borders: climbing botanical vines, wild acacia branches, and tall bamboo stalks. Along the top border: arched canopy tree leaves and hanging jungle foliage. The entire center of the page (70% area) is completely empty solid white blank paper with NO illustrations and NO text. Thick clean black vector outlines, 4pt primary stroke, 2pt secondary details, completely closed shapes ready for coloring. Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. Strictly NO text, NO letters, NO numbers, NO rectangular boxes, zero shading, zero gradients. Pure black and white line art only.
+```
+
+### 3. Air / Sky Perimeter Frame (`air_frame.png`)
+```text
+Ultra-clean 2D coloring book line art of an elaborate full-perimeter open sky and cloud border vignette framing a wide open, completely empty white central area. Along the bottom border: billowing cumulus cloud banks and soft stylized mountain peak silhouettes. Along the left and right vertical borders: swirling wind ribbons, gentle diagonal rain drop streams, and soaring feather flourishes. Along the top border: puffy cloud clusters and gentle sunburst outline rays. The entire center of the page (70% area) is completely empty solid white blank paper with NO illustrations and NO text. Thick clean black vector outlines, 4pt primary stroke, 2pt secondary details, completely closed shapes ready for coloring. Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. Strictly NO text, NO letters, NO numbers, NO rectangular boxes, zero shading, zero gradients. Pure black and white line art only.
+```
+
+### 4. Origami Arts Perimeter Frame (`origami_frame.png`)
+```text
+Ultra-clean 2D coloring book line art of an elaborate full-perimeter Japanese origami folded paper border vignette framing a wide open, completely empty white central area. Along all outer borders: interlocking geometric folded paper facets, modular origami paper crane silhouettes, beveled 45-degree and 60-degree paper fold creases, and decorative paper tessellations. The entire center of the page (70% area) is completely empty solid white blank paper with NO illustrations and NO text. Sharp clean black vector outlines, 3.5pt primary stroke, 2pt fold crease details, closed coloring facets. Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. Strictly NO text, NO letters, NO numbers, zero shading, zero gradients. Pure black and white line art only.
+```
+
+### 5. Mandala Arts Perimeter Frame (`mandala_frame.png`)
+```text
+Ultra-clean 2D coloring book line art of an elaborate full-perimeter sacred mandala and lotus petal border vignette framing a wide open, completely empty white central area. Along all outer borders: ornate symmetrical lace arches, sacred geometric circular filigree, radiating lotus petal scallops, and decorative corner quadrant mandalas. The entire center of the page (70% area) is completely empty solid white blank paper with NO illustrations and NO text. Crisp clean black vector outlines, 3.5pt stroke, bold open coloring segments. Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. Strictly NO text, NO letters, NO numbers, zero shading, zero gradients. Pure black and white line art only.
+```
+
+---
+
+## Universal Dual-Mode Container Architecture (Cards & Frames)
+
+To prevent hardcoded style restrictions across diverse series, all milestone page containers operate on a **Dual-Mode System**:
+1. **Mode 1: Artist Asset Container (`mode: "asset"`)**:
+   - An artist or volume designer can drop a custom-drawn `card_frame.png` or `frame.png` into `assets/special_assets/{volume}/`.
+   - The engine automatically loads, scales, and composites the asset, rendering dynamic typography directly inside its designated safe zone.
+2. **Mode 2: Parametric Geometry Engine (`mode: "parametric"`)**:
+   - When procedurally generating cards, the geometry is configured in `book_config.yaml` using pure mathematical primitives:
+     - `geometry: "sinusoidal"`: Fluid ocean waves, sand dunes, gentle swells.
+     - `geometry: "scalloped"`: Mandala petal arches, cloud puffs, floral scallops.
+     - `geometry: "polygonal"`: Origami creased facets, crystalline chamfers, beveled tabs.
+     - `geometry: "rounded"`: Classic modern rounded rectangle fallback.
 
 ---
 

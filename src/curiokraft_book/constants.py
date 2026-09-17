@@ -44,6 +44,21 @@ _i_cfg = _b_cfg.get("interior", {})
 _aud_cfg = _b_cfg.get("target_audience", {})
 _sp_cfg = _b_cfg.get("special_pages", {})
 _m_cfg = _b_cfg.get("mascot", {})
+_milestone_cfg = _b_cfg.get("milestone_theme", {}) if isinstance(_b_cfg, dict) else {}
+_vs_cfg = _b_cfg.get("visual_style", {}) if isinstance(_b_cfg, dict) else {}
+
+DEFAULT_USE_GENERATED_IMAGE_AS_IS = bool(
+    _vs_cfg.get("use_generated_image_as_is", _vs_cfg.get("use_default_image", True))
+)
+_stroke_cfg = _vs_cfg.get("stroke_hierarchy", {}) if isinstance(_vs_cfg, dict) else {}
+DEFAULT_STROKE_HIERARCHY_ENABLED = bool(
+    _stroke_cfg.get("enabled", not DEFAULT_USE_GENERATED_IMAGE_AS_IS)
+)
+DEFAULT_PRIMARY_OBJECT_PT = float(_stroke_cfg.get("primary_object_pt", 4.0))
+DEFAULT_SECONDARY_DETAILS_PT = float(_stroke_cfg.get("secondary_details_pt", 2.5))
+DEFAULT_BACKGROUND_HABITAT_PT = float(_stroke_cfg.get("background_habitat_pt", 1.5))
+DEFAULT_BACKGROUND_STROKE_TONE = int(_stroke_cfg.get("background_stroke_tone", 110))
+DEFAULT_PRESERVE_NATURAL_TONE = bool(_stroke_cfg.get("preserve_natural_tone", True))
 
 DEFAULT_BOOK_VOLUME = str(_b_cfg.get("volume", "vol1")).lower()
 DEFAULT_PAGES_MANIFEST = Path(str(_b_cfg.get("manifest", "manifest/pages.json")))
@@ -82,10 +97,23 @@ DEFAULT_WELCOME_PAGE_ENABLED = (
     if isinstance(_sp_cfg, dict)
     else True
 )
+DEFAULT_WATERMARK_MIN_LUM = (
+    float(_sp_cfg.get("welcome_page", {}).get("watermark_min_lum", 175.0))
+    if isinstance(_sp_cfg, dict)
+    else 175.0
+)
 DEFAULT_CERTIFICATE_PAGE_ENABLED = (
     bool(_sp_cfg.get("certificate_page", {}).get("enabled", True))
     if isinstance(_sp_cfg, dict)
     else True
+)
+DEFAULT_CERTIFICATE_PAGE_NUMBER = int(
+    _sp_cfg.get("certificate_page", {}).get(
+        "page_number",
+        109 if str(_i_cfg.get("layout", "single_sided")).lower() in ["single_sided", "single"] else 110,
+    )
+    if isinstance(_sp_cfg, dict)
+    else 109
 )
 DEFAULT_MASCOT_ENABLED = bool(_m_cfg.get("enabled", True)) if isinstance(_m_cfg, dict) else False
 DEFAULT_MASCOT_NAME = _m_cfg.get("name") if isinstance(_m_cfg, dict) else None
@@ -97,6 +125,7 @@ DEFAULT_MASCOT_DROP_PATH = (
     if isinstance(_m_cfg, dict)
     else Path("inbox/special_assets/tiny_mascot.png")
 )
+DEFAULT_MILESTONE_THEME: dict[str, Any] = _milestone_cfg if isinstance(_milestone_cfg, dict) else {}
 
 DEFAULT_INTERIOR_PDF = Path("output/interior/TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf")
 DEFAULT_COVER_OUTPUT_PNG = Path("output/cover/TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png")
@@ -145,11 +174,16 @@ DEFAULT_COVER_HEIGHT_IN = 11.250
 DEFAULT_SPINE_WIDTH_IN = 0.248
 
 # Safety Margins (inches)
+_safe_margins = _i_cfg.get("safe_margins_in", {})
 SAFE_MARGIN_IN = 0.50
-KDP_MIN_GUTTER_IN = 0.375
-KDP_MIN_OUTSIDE_IN = 0.250
+SAFE_GUTTER_IN = float(_safe_margins.get("inside_gutter", 0.50))
+SAFE_OUTSIDE_IN = float(_safe_margins.get("outside", 0.375))
+SAFE_TOP_IN = float(_safe_margins.get("top", 0.40))
+SAFE_BOTTOM_IN = float(_safe_margins.get("bottom", 0.375))
+KDP_MIN_GUTTER_IN = float(_i_cfg.get("kdp_minimum_margins_in", {}).get("inside_gutter", 0.375))
+KDP_MIN_OUTSIDE_IN = float(_i_cfg.get("kdp_minimum_margins_in", {}).get("outside", 0.250))
 HEADER_RESERVATION_IN = 1.2
-TARGET_COVERAGE_RATIO = 0.72
+TARGET_COVERAGE_RATIO = float(_i_cfg.get("target_coverage_ratio", 0.72))
 
 # Back Cover Fixed Exclusion Zones (pixels @ 300 DPI)
 BARCODE_BOX_X1 = 1845
@@ -183,7 +217,7 @@ WHITE_THRESHOLD = 235
 INK_THRESHOLD = 240
 COLOR_TOLERANCE = 6
 MAX_GRAY_CLUSTER_SIZE_PX = 60
-BINARIZE_THRESHOLD_VALUE = 200
+BINARIZE_THRESHOLD_VALUE = 215
 BACKGROUND_TRANSPARENCY_THRESHOLD = 245
 SIMILARITY_SCORE_THRESHOLD = 0.85
 MAX_RETRY_ATTEMPTS = 3
@@ -290,3 +324,56 @@ def _build_fallback_config() -> dict[str, Any]:
             },
         }
     }
+
+
+def get_stroke_hierarchy_config(config_path: Path | str = DEFAULT_BOOK_CONFIG) -> dict[str, Any]:
+    """Retrieve the latest stroke hierarchy configuration dynamically."""
+    cfg = load_book_config(config_path).get("book", {})
+    vs = cfg.get("visual_style", {}) if isinstance(cfg, dict) else {}
+    use_as_is = bool(vs.get("use_generated_image_as_is", vs.get("use_default_image", True)))
+    stroke = vs.get("stroke_hierarchy", {}) if isinstance(vs, dict) else {}
+    return {
+        "use_generated_image_as_is": use_as_is,
+        "enabled": bool(stroke.get("enabled", not use_as_is)),
+        "primary_object_pt": float(stroke.get("primary_object_pt", 4.0)),
+        "secondary_details_pt": float(stroke.get("secondary_details_pt", 2.5)),
+        "background_habitat_pt": float(stroke.get("background_habitat_pt", 1.5)),
+        "background_stroke_tone": int(stroke.get("background_stroke_tone", 110)),
+        "preserve_natural_tone": bool(stroke.get("preserve_natural_tone", True)),
+    }
+
+
+def get_certificate_page_number(config_path: Path | str = DEFAULT_BOOK_CONFIG) -> int:
+    """Resolve whether the completion certificate belongs on Page 109 (single-sided) or Page 110 (double-sided)."""
+    cfg = load_book_config(config_path).get("book", {})
+    sp = cfg.get("special_pages", {}) if isinstance(cfg, dict) else {}
+    cert_cfg = sp.get("certificate_page", {}) if isinstance(sp, dict) else {}
+
+    # 1. Explicit configured page number takes highest priority
+    if "page_number" in cert_cfg:
+        return int(cert_cfg["page_number"])
+
+    # 2. Check layout mode (single_sided vs double_sided)
+    interior_cfg = cfg.get("interior", {}) if isinstance(cfg, dict) else {}
+    layout = str(interior_cfg.get("layout", "")).lower().strip()
+    page_count = int(interior_cfg.get("page_count", 110))
+
+    if layout in ["double_sided", "double"]:
+        return page_count
+
+    # 3. Check active manifest
+    manifest_p = Path(str(cfg.get("manifest", DEFAULT_PAGES_MANIFEST)))
+    if manifest_p.exists():
+        try:
+            import json
+
+            with open(manifest_p, encoding="utf-8") as fh:
+                m_data = json.load(fh)
+            for p in m_data.get("pages", []):
+                if p.get("type") == "certificate_page" or "certificate" in str(p.get("canonical_object", "")).lower():
+                    return int(p["page_number"])
+        except Exception:
+            pass
+
+    # Default to single-sided odd recto page (page_count - 1 e.g. 109)
+    return (page_count - 1) if (page_count % 2 == 0) else page_count

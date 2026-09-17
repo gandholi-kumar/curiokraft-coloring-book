@@ -88,10 +88,11 @@ class PipelineStateManager:
             except Exception:
                 pass
 
-        # Populate any missing pages from manifest
+        # Populate missing pages or sync authoritative metadata from manifest
         if self.manifest_path.exists():
             with open(self.manifest_path, encoding="utf-8") as f:
                 manifest_data = json.load(f)
+            changed = False
             for p in manifest_data.get("pages", []):
                 p_id = p["page_id"]
                 if p_id not in self.pages:
@@ -103,7 +104,26 @@ class PipelineStateManager:
                         section=p.get("section", "General"),
                         status=PageStatus.PLANNED,
                     )
-            self.save()
+                    changed = True
+                else:
+                    # Sync metadata if manifest has updated canonical_object or display_label
+                    rec = self.pages[p_id]
+                    sync_dict = rec.model_dump()
+                    rec_changed = False
+                    if p.get("canonical_object") and rec.canonical_object != p["canonical_object"]:
+                        sync_dict["canonical_object"] = p["canonical_object"]
+                        rec_changed = True
+                    if p.get("display_label") and rec.display_label != p["display_label"]:
+                        sync_dict["display_label"] = p["display_label"]
+                        rec_changed = True
+                    if p.get("section") and rec.section != p["section"]:
+                        sync_dict["section"] = p["section"]
+                        rec_changed = True
+                    if rec_changed:
+                        self.pages[p_id] = PageStateRecord(**sync_dict)
+                        changed = True
+            if changed or not self.state_file.exists():
+                self.save()
 
     def get_page(self, page_id: str) -> PageStateRecord | None:
         return self.pages.get(page_id)

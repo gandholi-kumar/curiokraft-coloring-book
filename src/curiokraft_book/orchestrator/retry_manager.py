@@ -5,6 +5,15 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from curiokraft_book.constants import (
+    HEADER_RESERVATION_IN,
+    SAFE_BOTTOM_IN,
+    SAFE_GUTTER_IN,
+    SAFE_MARGIN_IN,
+    SAFE_OUTSIDE_IN,
+    TARGET_COVERAGE_RATIO,
+    get_stroke_hierarchy_config,
+)
 from curiokraft_book.rescue.binarizer import rescue_binarize
 from curiokraft_book.rescue.margin_fitter import fit_to_safe_margins
 from curiokraft_book.validators.dimensions import validate_dimensions
@@ -31,7 +40,11 @@ class RetryManager:
         self.max_retries = max_retries
 
     def attempt_programmatic_rescue(
-        self, raw_image_path: str | Path, output_rescued_path: str | Path, is_spread: bool = False
+        self,
+        raw_image_path: str | Path,
+        output_rescued_path: str | Path,
+        is_spread: bool = False,
+        is_left_page: bool = False,
     ) -> tuple[bool, str, list[str]]:
         """Attempt deterministic code-level rescue on raw image before wasting an API call.
 
@@ -41,6 +54,7 @@ class RetryManager:
             raw_image_path: Path to the raw generated image.
             output_rescued_path: Destination path for the rescued image.
             is_spread: Whether the page is a spread (bypasses top header reservation).
+            is_left_page: True if even verso page where gutter is on the right.
 
         Returns:
             Tuple of (passed: bool, message: str, remaining_violations: list[str]).
@@ -50,31 +64,37 @@ class RetryManager:
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(
-            f"Executing deterministic rescue pipeline on: {raw_p.name} (spread={is_spread})"
+            f"Executing deterministic rescue pipeline on: {raw_p.name} (spread={is_spread}, is_left={is_left_page})"
         )
 
-        # Step 1: Adaptive Binarization (cleans light gray, antialiasing, compression noise)
-        bin_res = rescue_binarize(raw_p, output_path=out_p, use_otsu=True)
+        # Step 1: Ingestion Stroke Pipeline (as-is mode or stroke hierarchy mode)
+        h_cfg = get_stroke_hierarchy_config()
+        use_as_is = h_cfg.get("use_generated_image_as_is", True)
+        bin_res = rescue_binarize(raw_p, output_path=out_p, use_as_is=use_as_is, stroke_hierarchy=h_cfg)
         if not bin_res.success:
             return False, "Failed to apply adaptive binarization.", ["RESCUE_BINARIZE_FAILED"]
 
-        # Step 2: Auto-Margin Centering and Scaling to 0.50in boundary
-        header_res = 0.0 if is_spread else 1.20
-        coverage = 1.0 if is_spread else 0.72
+        # Step 2: Auto-Margin Centering and Scaling to safe margin boundary
+        header_res = 0.0 if is_spread else HEADER_RESERVATION_IN
+        coverage = 1.0 if is_spread else TARGET_COVERAGE_RATIO
         fit_res = fit_to_safe_margins(
             out_p,
             output_path=out_p,
-            safe_margin_in=0.50,
+            safe_margin_in=SAFE_MARGIN_IN,
             header_reservation_in=header_res,
             target_coverage_ratio=coverage,
             is_spread=is_spread,
+            is_left_page=is_left_page,
+            inside_gutter_in=SAFE_GUTTER_IN,
+            outside_margin_in=SAFE_OUTSIDE_IN,
+            bottom_margin_in=SAFE_BOTTOM_IN,
         )
         if not fit_res.success:
             return False, "Failed to fit artwork to safe margins.", ["RESCUE_MARGIN_FIT_FAILED"]
 
         # Step 3: Run Deterministic Validators to confirm rescue
         dim_res = validate_dimensions(out_p)
-        margin_res = validate_margins(out_p)
+        margin_res = validate_margins(out_p, is_left_page=is_left_page)
         gray_res = validate_black_and_white(out_p)
 
         all_violations = dim_res.violations + margin_res.violations + gray_res.violations

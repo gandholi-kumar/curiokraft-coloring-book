@@ -18,10 +18,14 @@ from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
 from curiokraft_book.compositor.typography import composite_typography
 from curiokraft_book.constants import (
+    CANVAS_DPI,
+    CANVAS_HEIGHT_PX,
+    CANVAS_WIDTH_PX,
     DEFAULT_BOOK_CONFIG,
     DEFAULT_BOOK_TITLE,
     DEFAULT_BOOK_VOLUME,
     DEFAULT_CERTIFICATE_PAGE_ENABLED,
+    DEFAULT_CERTIFICATE_PAGE_NUMBER,
     DEFAULT_DEBATE_LOG_FILE,
     DEFAULT_IMPRINT,
     DEFAULT_INBOX_DIR,
@@ -35,6 +39,7 @@ from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_SPECIAL_ASSETS_DIR,
     DEFAULT_WELCOME_PAGE_ENABLED,
+    get_certificate_page_number,
 )
 from curiokraft_book.logging_config import build_formatter, setup_logging
 from curiokraft_book.orchestrator.debate_engine import DebateEngine
@@ -757,7 +762,8 @@ def generate_special_pages(
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     p001_path = out_dir / "page_001.png"
-    p110_path = out_dir / "page_110.png"
+    cert_num = get_certificate_page_number()
+    cert_path = out_dir / f"page_{cert_num:03d}.png"
 
     console.print(f"[dim]• Reading modular assets from:[/dim] [cyan]{asset_dir}[/cyan]")
     from curiokraft_book.compositor.special_pages import _find_asset
@@ -780,14 +786,59 @@ def generate_special_pages(
         )
 
     if DEFAULT_CERTIFICATE_PAGE_ENABLED:
-        render_certificate_page(output_path=str(p110_path), asset_dir=asset_dir, show_guides=guides)
+        render_certificate_page(output_path=str(cert_path), asset_dir=asset_dir, show_guides=guides)
         console.print(
-            f"[bold green][PASS] Page 110 (Completion Certificate):[/bold green] {p110_path}"
+            f"[bold green][PASS] Page {cert_num:03d} (Completion Certificate):[/bold green] {cert_path}"
         )
+        if cert_num == 109:
+            from PIL import Image
+
+            p110_path = out_dir / "page_110.png"
+            blank_canvas = Image.new("L", (CANVAS_WIDTH_PX, CANVAS_HEIGHT_PX), 255)
+            blank_canvas.save(p110_path, dpi=(CANVAS_DPI, CANVAS_DPI))
+            console.print(
+                f"[dim]• Page 110 preserved as protective bleed guard (blank white): {p110_path}[/dim]"
+            )
     else:
         console.print(
-            "[dim]• Page 110 (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]"
+            f"[dim]• Page {cert_num:03d} (Completion Certificate) is disabled in book_config.yaml (special_pages.certificate_page.enabled: false)[/dim]"
         )
+
+    # Sync pipeline state manager for milestone pages
+    try:
+        from curiokraft_book.orchestrator.state_manager import PageStatus, PipelineStateManager
+
+        state_mgr = PipelineStateManager()
+        if p001_path.exists() and state_mgr.get_page("P001"):
+            state_mgr.update_page(
+                "P001",
+                status=PageStatus.APPROVED,
+                composite_image_path=str(p001_path),
+                qa_passed=True,
+                qa_score=100.0,
+                violations=[],
+            )
+        cert_pid = f"P{cert_num:03d}"
+        if cert_path.exists() and state_mgr.get_page(cert_pid):
+            state_mgr.update_page(
+                cert_pid,
+                status=PageStatus.APPROVED,
+                composite_image_path=str(cert_path),
+                qa_passed=True,
+                qa_score=100.0,
+                violations=[],
+            )
+        if cert_num == 109 and (out_dir / "page_110.png").exists() and state_mgr.get_page("P110"):
+            state_mgr.update_page(
+                "P110",
+                status=PageStatus.APPROVED,
+                composite_image_path=str(out_dir / "page_110.png"),
+                qa_passed=True,
+                qa_score=100.0,
+                violations=[],
+            )
+    except Exception as e:
+        logger.debug(f"Special pages pipeline state sync notice: {e}")
 
     if auto_archive:
         archived = archive_processed_special_assets(volume=DEFAULT_BOOK_VOLUME)
@@ -945,6 +996,9 @@ def assemble_interior():
                 elif p_type == "certificate_page":
                     if DEFAULT_CERTIFICATE_PAGE_ENABLED:
                         render_certificate_page(output_path=p_file)
+                elif p_type in ["blank_page", "bleed_guard", "blank"]:
+                    img = Image.new("L", (2550, 3300), 255)
+                    img.save(p_file, dpi=(300, 300))
                 else:
                     img = Image.new("L", (2550, 3300), 255)
                     draw = ImageDraw.Draw(img)
@@ -1076,9 +1130,21 @@ def show_prompt(
         console.print(f"[red]Page {page_id} not found in manifest.[/red]")
         sys.exit(1)
 
-    from curiokraft_book.orchestrator.debate_engine import get_custom_alphabet_spread_prompt
+    from curiokraft_book.orchestrator.debate_engine import (
+        generate_certificate_page_prompt,
+        generate_welcome_page_prompt,
+        get_custom_alphabet_spread_prompt,
+    )
 
-    custom = get_custom_alphabet_spread_prompt(target, all_manifest_pages=data.get("pages", []))
+    p_type = target.get("type", target.get("page_type", "coloring_page"))
+    canon = target.get("canonical_object", "")
+    custom = None
+    if p_type == "welcome_page" or "welcome" in canon.lower():
+        custom = generate_welcome_page_prompt()
+    elif p_type == "certificate_page" or "certificate" in canon.lower():
+        custom = generate_certificate_page_prompt()
+    elif p_type == "alphabet_spread" or canon in ["a_to_m", "n_to_z"]:
+        custom = get_custom_alphabet_spread_prompt(target, all_manifest_pages=data.get("pages", []))
     if custom is not None:
         pos_prompt, neg_prompt = custom
     else:
@@ -1290,24 +1356,147 @@ def export_prompts(
         lines.append("---")
         lines.append("")
 
+    # Volume Perimeter Frame Prompt (for Milestone Pages: Page 001 Welcome & Page 110 Certificate)
+    import yaml
+    from curiokraft_book.orchestrator.debate_engine import generate_perimeter_frame_prompt
+
+    b_cfg = {}
+    if Path(DEFAULT_BOOK_CONFIG).exists():
+        try:
+            with open(DEFAULT_BOOK_CONFIG, encoding="utf-8") as f:
+                b_cfg = (yaml.safe_load(f) or {}).get("book", {})
+        except Exception:
+            b_cfg = {}
+    vol = str(b_cfg.get("volume", DEFAULT_BOOK_VOLUME)).lower()
+    theme_name = str(b_cfg.get("theme", {}).get("name", "")).lower()
+    frame_drop_target = f"inbox/special_assets/{vol}/{vol}_frame.png"
+    f_pos, f_neg = generate_perimeter_frame_prompt(
+        theme_name=theme_name,
+        volume_name=vol,
+        book_config_path=str(DEFAULT_BOOK_CONFIG),
+        manifest_path=manifest,
+    )
+    prompt_items.append(
+        PromptItem(
+            id="FRAME_PERIMETER",
+            page_number=None,
+            label=f"{vol.upper()} PERIMETER FRAME",
+            type="special_asset",
+            section="Special Assets",
+            drop_target=frame_drop_target,
+            preset_name="CurioKraft - Interior Coloring Pages",
+            aspect_ratio="3:4",
+            output_format="Images only",
+            temperature=0.9,
+            top_p=0.95,
+            positive_prompt=f_pos,
+            negative_prompt=f_neg,
+        )
+    )
+
+    lines.append(f"## 🖼️ VOLUME PERIMETER FRAME: {vol.upper()}")
+    lines.append(f"- **Drop Target:** `{frame_drop_target}`")
+    lines.append(
+        "- **Role:** Thematic living perimeter illustration frame for Milestone Pages (Page 001 Welcome & Completion Certificate)"
+    )
+    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
+    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI, solid white background)")
+    lines.append("- **Positive Prompt (Copy & Paste):**")
+    lines.append(f"  ```text\n  {f_pos}\n  ```")
+    lines.append("- **Negative Prompt:**")
+    lines.append(f"  ```text\n  {f_neg}\n  ```")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
     console.print(f"[cyan]Synthesizing prompts for {len(target_pages)} pages...[/cyan]")
     for p in target_pages:
         num = p["page_number"]
         p_id = p["page_id"]
         p_type = p.get("type", "interior_page")
 
-        # Skip programmatic special pages only if they are enabled in book_config.yaml
-        if p_type == "welcome_page" and DEFAULT_WELCOME_PAGE_ENABLED:
-            continue
-        if p_type == "certificate_page" and DEFAULT_CERTIFICATE_PAGE_ENABLED:
+        # Blank verso pages do not require AI generation
+        if p_type in ["blank_page", "bleed_guard", "blank"]:
             continue
 
         canon = p["canonical_object"]
         label = p.get("display_label", canon.upper())
+
+        # Milestone whole-page AI prompt generators using Skill Sets 1 & 2
+        if p_type == "welcome_page":
+            from curiokraft_book.orchestrator.debate_engine import generate_welcome_page_prompt
+
+            w_pos, w_neg = generate_welcome_page_prompt()
+            prompt_items.append(
+                PromptItem(
+                    id=p_id,
+                    page_number=num,
+                    label=label,
+                    type="welcome_page",
+                    section=p.get("section", "Front Matter"),
+                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
+                    preset_name="CurioKraft - Interior Coloring Pages",
+                    aspect_ratio="3:4",
+                    output_format="Images only",
+                    temperature=0.9,
+                    top_p=0.95,
+                    positive_prompt=w_pos,
+                    negative_prompt=w_neg,
+                )
+            )
+            lines.append(f"## Page {num:03d} ({p_id}): {label} [WELCOME PAGE]")
+            lines.append(
+                f"- **Drop Target:** `inbox/raw_pages/raw_p{num:03d}.png` (or `inbox/raw_pages/raw_welcome.png`)"
+            )
+            lines.append("- **Positive Prompt (Copy & Paste):**")
+            lines.append(f"  ```text\n  {w_pos}\n  ```")
+            lines.append("- **Negative Prompt:**")
+            lines.append(f"  ```text\n  {w_neg}\n  ```")
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+            continue
+
+        if p_type == "certificate_page":
+            from curiokraft_book.orchestrator.debate_engine import generate_certificate_page_prompt
+
+            c_pos, c_neg = generate_certificate_page_prompt()
+            prompt_items.append(
+                PromptItem(
+                    id=p_id,
+                    page_number=num,
+                    label=label,
+                    type="certificate_page",
+                    section=p.get("section", "Back Matter"),
+                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
+                    preset_name="CurioKraft - Interior Coloring Pages",
+                    aspect_ratio="3:4",
+                    output_format="Images only",
+                    temperature=0.9,
+                    top_p=0.95,
+                    positive_prompt=c_pos,
+                    negative_prompt=c_neg,
+                )
+            )
+            lines.append(f"## Page {num:03d} ({p_id}): {label} [COMPLETION CERTIFICATE]")
+            lines.append(
+                f"- **Drop Target:** `inbox/raw_pages/raw_p{num:03d}.png` (or `inbox/raw_pages/raw_certificate.png`)"
+            )
+            lines.append("- **Positive Prompt (Copy & Paste):**")
+            lines.append(f"  ```text\n  {c_pos}\n  ```")
+            lines.append("- **Negative Prompt:**")
+            lines.append(f"  ```text\n  {c_neg}\n  ```")
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+            continue
+
         save_name = f"raw_p{num:03d}_{canon}.png"
 
-        # Use custom hand-crafted alphabet spread prompts if available (P002, P003)
-        custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
+        # Use custom hand-crafted alphabet spread prompts if available (P002, P003 in Vol 1)
+        custom = None
+        if p_type == "alphabet_spread" or canon in ["a_to_m", "n_to_z"]:
+            custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
         if custom is not None:
             pos_prompt, neg_prompt = custom
             prompt_source = "📖 Custom Template (config/A-Z.md + Manifest Cards)"

@@ -1,0 +1,1052 @@
+{
+    "manifest_version": "1.0",
+    "pages": [
+        {
+            "page_id": "P001",
+            "page_number": 1,
+            "section": "Front Matter",
+            "canonical_object": "welcome_belongs_to",
+            "display_label": "OCEAN EXPLORER LOGBOOK",
+            "type": "welcome_page",
+            "composition": "title_and_nameplate",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P002",
+            "page_number": 2,
+            "section": "Front Matter",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P003",
+            "page_number": 3,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "clownfish",
+            "display_label": "CLOWNFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P004",
+            "page_number": 4,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P005",
+            "page_number": 5,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blue_tang",
+            "display_label": "BLUE TANG",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P006",
+            "page_number": 6,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P007",
+            "page_number": 7,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "moorish_idol",
+            "display_label": "MOORISH IDOL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P008",
+            "page_number": 8,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P009",
+            "page_number": 9,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "parrotfish",
+            "display_label": "PARROTFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P010",
+            "page_number": 10,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P011",
+            "page_number": 11,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "lionfish",
+            "display_label": "LIONFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P012",
+            "page_number": 12,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P013",
+            "page_number": 13,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "seahorse",
+            "display_label": "SEAHORSE",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P014",
+            "page_number": 14,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P015",
+            "page_number": 15,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "pufferfish",
+            "display_label": "PUFFERFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P016",
+            "page_number": 16,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P017",
+            "page_number": 17,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "mandarinfish",
+            "display_label": "MANDARINFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P018",
+            "page_number": 18,
+            "section": "Sunlit Coral Reefs & Tropical Shallows",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P019",
+            "page_number": 19,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blue_whale",
+            "display_label": "BLUE WHALE",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P020",
+            "page_number": 20,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P021",
+            "page_number": 21,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "humpback_whale",
+            "display_label": "HUMPBACK WHALE",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P022",
+            "page_number": 22,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P023",
+            "page_number": 23,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "orca",
+            "display_label": "ORCA",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P024",
+            "page_number": 24,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P025",
+            "page_number": 25,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "bottlenose_dolphin",
+            "display_label": "BOTTLENOSE DOLPHIN",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P026",
+            "page_number": 26,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P027",
+            "page_number": 27,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "whale_shark",
+            "display_label": "WHALE SHARK",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P028",
+            "page_number": 28,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P029",
+            "page_number": 29,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "great_white_shark",
+            "display_label": "GREAT WHITE SHARK",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P030",
+            "page_number": 30,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P031",
+            "page_number": 31,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "manta_ray",
+            "display_label": "MANTA RAY",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P032",
+            "page_number": 32,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P033",
+            "page_number": 33,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "hammerhead_shark",
+            "display_label": "HAMMERHEAD SHARK",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P034",
+            "page_number": 34,
+            "section": "Open Ocean & Pelagic Giants",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P035",
+            "page_number": 35,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "sea_otter",
+            "display_label": "SEA OTTER",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P036",
+            "page_number": 36,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P037",
+            "page_number": 37,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "harbor_seal",
+            "display_label": "HARBOR SEAL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P038",
+            "page_number": 38,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P039",
+            "page_number": 39,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "hermit_crab",
+            "display_label": "HERMIT CRAB",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P040",
+            "page_number": 40,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P041",
+            "page_number": 41,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "sally_lightfoot_crab",
+            "display_label": "SALLY LIGHTFOOT CRAB",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P042",
+            "page_number": 42,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P043",
+            "page_number": 43,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "ochre_starfish",
+            "display_label": "OCHRE STARFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P044",
+            "page_number": 44,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P045",
+            "page_number": 45,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "mudskipper",
+            "display_label": "MUDSKIPPER",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P046",
+            "page_number": 46,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P047",
+            "page_number": 47,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "brown_pelican",
+            "display_label": "BROWN PELICAN",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P048",
+            "page_number": 48,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P049",
+            "page_number": 49,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "sea_urchin",
+            "display_label": "SEA URCHIN",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P050",
+            "page_number": 50,
+            "section": "Coastal Shores, Tide Pools & Mangroves",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P051",
+            "page_number": 51,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "giant_squid",
+            "display_label": "GIANT SQUID",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P052",
+            "page_number": 52,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P053",
+            "page_number": 53,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "anglerfish",
+            "display_label": "ANGLERFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P054",
+            "page_number": 54,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P055",
+            "page_number": 55,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "dumbo_octopus",
+            "display_label": "DUMBO OCTOPUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P056",
+            "page_number": 56,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P057",
+            "page_number": 57,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "gulper_eel",
+            "display_label": "GULPER EEL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P058",
+            "page_number": 58,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P059",
+            "page_number": 59,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "vampire_squid",
+            "display_label": "VAMPIRE SQUID",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P060",
+            "page_number": 60,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P061",
+            "page_number": 61,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "viperfish",
+            "display_label": "VIPERFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P062",
+            "page_number": 62,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P063",
+            "page_number": 63,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "oarfish",
+            "display_label": "OARFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P064",
+            "page_number": 64,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P065",
+            "page_number": 65,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "coelacanth",
+            "display_label": "COELACANTH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P066",
+            "page_number": 66,
+            "section": "Mysteries of the Deep Sea & Abyssal Trenches",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P067",
+            "page_number": 67,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "river_otter",
+            "display_label": "RIVER OTTER",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P068",
+            "page_number": 68,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P069",
+            "page_number": 69,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "beaver",
+            "display_label": "BEAVER",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P070",
+            "page_number": 70,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P071",
+            "page_number": 71,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "hippopotamus",
+            "display_label": "HIPPOPOTAMUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P072",
+            "page_number": 72,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P073",
+            "page_number": 73,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "platypus",
+            "display_label": "PLATYPUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P074",
+            "page_number": 74,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P075",
+            "page_number": 75,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "axolotl",
+            "display_label": "AXOLOTL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P076",
+            "page_number": 76,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P077",
+            "page_number": 77,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "amazon_pink_dolphin",
+            "display_label": "AMAZON PINK DOLPHIN",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P078",
+            "page_number": 78,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P079",
+            "page_number": 79,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "koi_fish",
+            "display_label": "KOI FISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P080",
+            "page_number": 80,
+            "section": "Freshwater Rivers, Lakes & Wetlands",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P081",
+            "page_number": 81,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "narwhal",
+            "display_label": "NARWHAL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P082",
+            "page_number": 82,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P083",
+            "page_number": 83,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "beluga_whale",
+            "display_label": "BELUGA WHALE",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P084",
+            "page_number": 84,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P085",
+            "page_number": 85,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "emperor_penguin",
+            "display_label": "EMPEROR PENGUIN",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P086",
+            "page_number": 86,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P087",
+            "page_number": 87,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "leopard_seal",
+            "display_label": "LEOPARD SEAL",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P088",
+            "page_number": 88,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P089",
+            "page_number": 89,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "walrus",
+            "display_label": "WALRUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P090",
+            "page_number": 90,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P091",
+            "page_number": 91,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "bowhead_whale",
+            "display_label": "BOWHEAD WHALE",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P092",
+            "page_number": 92,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P093",
+            "page_number": 93,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "arctic_char",
+            "display_label": "ARCTIC CHAR",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P094",
+            "page_number": 94,
+            "section": "Polar Seas & Icy Waters",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P095",
+            "page_number": 95,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "common_octopus",
+            "display_label": "COMMON OCTOPUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P096",
+            "page_number": 96,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P097",
+            "page_number": 97,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blue_ringed_octopus",
+            "display_label": "BLUE-RINGED OCTOPUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P098",
+            "page_number": 98,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P099",
+            "page_number": 99,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "chambered_nautilus",
+            "display_label": "CHAMBERED NAUTILUS",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P100",
+            "page_number": 100,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P101",
+            "page_number": 101,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "spiny_lobster",
+            "display_label": "SPINY LOBSTER",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P102",
+            "page_number": 102,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P103",
+            "page_number": 103,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "peacock_mantis_shrimp",
+            "display_label": "PEACOCK MANTIS SHRIMP",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P104",
+            "page_number": 104,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P105",
+            "page_number": 105,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "leafy_sea_dragon",
+            "display_label": "LEAFY SEA DRAGON",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P106",
+            "page_number": 106,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P107",
+            "page_number": 107,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "moon_jellyfish",
+            "display_label": "MOON JELLYFISH",
+            "composition": "integrated_aquatic_scene",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P108",
+            "page_number": 108,
+            "section": "Cephalopods, Crustaceans & Marine Oddities",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P109",
+            "page_number": 109,
+            "section": "Back Matter",
+            "canonical_object": "completion_certificate",
+            "display_label": "MASTER MARINE COLORIST AWARD",
+            "type": "certificate_page",
+            "composition": "certificate_award_medal",
+            "difficulty": 1
+        },
+        {
+            "page_id": "P110",
+            "page_number": 110,
+            "section": "Back Matter",
+            "canonical_object": "blank_verso",
+            "display_label": "PROTECTIVE BLEED GUARD",
+            "type": "blank_page",
+            "composition": "blank",
+            "difficulty": 1
+        }
+    ]
+}
