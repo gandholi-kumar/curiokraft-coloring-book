@@ -12,7 +12,6 @@ from curiokraft_book.constants import (
     COLOR_TOLERANCE,
     MAX_GRAY_CLUSTER_SIZE_PX,
     WHITE_THRESHOLD,
-    get_stroke_hierarchy_config,
 )
 
 

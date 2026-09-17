@@ -25,7 +25,6 @@ from curiokraft_book.constants import (
     DEFAULT_BOOK_TITLE,
     DEFAULT_BOOK_VOLUME,
     DEFAULT_CERTIFICATE_PAGE_ENABLED,
-    DEFAULT_CERTIFICATE_PAGE_NUMBER,
     DEFAULT_DEBATE_LOG_FILE,
     DEFAULT_IMPRINT,
     DEFAULT_INBOX_DIR,
@@ -83,6 +82,8 @@ failure_handler = logging.FileHandler(logs_dir / "failures.log", encoding="utf-8
 failure_handler.setLevel(logging.WARNING)
 failure_handler.setFormatter(build_formatter(redact_secrets=True))
 failure_logger.addHandler(failure_handler)
+
+logger = logging.getLogger("curiokraft.cli")
 
 console = Console(force_terminal=True, legacy_windows=False)
 
@@ -1358,6 +1359,7 @@ def export_prompts(
 
     # Volume Perimeter Frame Prompt (for Milestone Pages: Page 001 Welcome & Page 110 Certificate)
     import yaml
+
     from curiokraft_book.orchestrator.debate_engine import generate_perimeter_frame_prompt
 
     b_cfg = {}

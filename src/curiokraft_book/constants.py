@@ -110,7 +110,9 @@ DEFAULT_CERTIFICATE_PAGE_ENABLED = (
 DEFAULT_CERTIFICATE_PAGE_NUMBER = int(
     _sp_cfg.get("certificate_page", {}).get(
         "page_number",
-        109 if str(_i_cfg.get("layout", "single_sided")).lower() in ["single_sided", "single"] else 110,
+        109
+        if str(_i_cfg.get("layout", "single_sided")).lower() in ["single_sided", "single"]
+        else 110,
     )
     if isinstance(_sp_cfg, dict)
     else 109
@@ -370,9 +372,13 @@ def get_certificate_page_number(config_path: Path | str = DEFAULT_BOOK_CONFIG) -
             with open(manifest_p, encoding="utf-8") as fh:
                 m_data = json.load(fh)
             for p in m_data.get("pages", []):
-                if p.get("type") == "certificate_page" or "certificate" in str(p.get("canonical_object", "")).lower():
+                if (
+                    p.get("type") == "certificate_page"
+                    or "certificate" in str(p.get("canonical_object", "")).lower()
+                ):
                     return int(p["page_number"])
-        except Exception:
+        except (json.JSONDecodeError, OSError, KeyError, ValueError):
+            # Manifest is unreadable or malformed; fall back to mathematical page number calculation below
             pass
 
     # Default to single-sided odd recto page (page_count - 1 e.g. 109)

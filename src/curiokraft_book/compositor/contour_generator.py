@@ -54,8 +54,8 @@ class ContourShapeGenerator:
         if cycles_y > 0:
             for y in range(y1, y2 + 1, step_px):
                 dy = y - y1
-                x = x2 + (amplitude * 0.6) * math.sin(omega_y * dy)
-                points.append((float(x), float(y)))
+                px = float(x2) + (amplitude * 0.6) * math.sin(omega_y * dy)
+                points.append((float(px), float(y)))
         else:
             points.append((float(x2), float(y2)))
 
@@ -71,8 +71,8 @@ class ContourShapeGenerator:
         if cycles_y > 0:
             for y in range(y2, y1 - 1, -step_px):
                 dy = y - y1
-                x = x1 - (amplitude * 0.6) * math.sin(omega_y * dy)
-                points.append((float(x), float(y)))
+                px = float(x1) - (amplitude * 0.6) * math.sin(omega_y * dy)
+                points.append((float(px), float(y)))
         else:
             points.append((float(x1), float(y1)))
 
@@ -247,22 +247,21 @@ def draw_themed_card(
     and Custom Artist Asset Mode (asset_path).
     """
     # 1. Custom Artist Asset Mode
-    if style.lower() == "asset" or (asset_path and Path(asset_path).is_file()):
-        if asset_path and Path(asset_path).is_file():
-            try:
-                asset_img = Image.open(asset_path).convert("RGBA")
-                card_w = bbox[2] - bbox[0]
-                card_h = bbox[3] - bbox[1]
-                resized_asset = asset_img.resize((card_w, card_h), Image.Resampling.LANCZOS)
+    if asset_path and Path(asset_path).is_file():
+        try:
+            asset_img = Image.open(asset_path).convert("RGBA")
+            card_w = bbox[2] - bbox[0]
+            card_h = bbox[3] - bbox[1]
+            resized_asset = asset_img.resize((card_w, card_h), Image.Resampling.LANCZOS)
 
-                # Composite asset over target
-                if target_img.mode != "RGBA":
-                    target_img = target_img.convert("RGBA")
-                target_img.alpha_composite(resized_asset, dest=(bbox[0], bbox[1]))
-                return target_img
-            except Exception:
-                # Fall through to parametric geometry if asset load fails
-                pass
+            # Composite asset over target
+            if target_img.mode != "RGBA":
+                target_img = target_img.convert("RGBA")
+            target_img.alpha_composite(resized_asset, dest=(bbox[0], bbox[1]))
+            return target_img
+        except Exception:
+            # Fall through to parametric geometry if asset load fails
+            pass
 
     # 2. Parametric Geometry Mode
     contour = ContourShapeGenerator.get_contour_points(bbox, style=style, params=params)

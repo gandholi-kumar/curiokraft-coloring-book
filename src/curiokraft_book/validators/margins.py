@@ -80,10 +80,7 @@ def validate_margins(
         import re
 
         p_match = re.search(r"(?:page_|p)(\d+)", path.stem.lower())
-        if p_match:
-            is_left_page = (int(p_match.group(1)) % 2 == 0)
-        else:
-            is_left_page = False
+        is_left_page = (int(p_match.group(1)) % 2 == 0) if p_match else False
     if not path.exists():
         empty_metrics = MarginMetrics(
             left_margin_in=0,

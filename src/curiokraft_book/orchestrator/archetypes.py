@@ -11,11 +11,9 @@ for future publications:
   - Single Centered Subjects (Isolated First Words, Classic Objects)
 """
 
-from abc import ABC, abstractmethod
-import json
 import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
-import re
 from typing import Any
 
 import yaml
@@ -124,7 +122,7 @@ class IntegratedHabitatStrategy(PageArchetypeStrategy):
         active_template = None
 
         # Check composition patterns
-        for key, tmpl in env_templates.items():
+        for _key, tmpl in env_templates.items():
             comp_patterns = [p.lower() for p in tmpl.get("composition_patterns", [])]
             bg_patterns = [p.lower() for p in tmpl.get("background_patterns", [])]
             if any(p in composition.lower() for p in comp_patterns) or any(
@@ -138,9 +136,7 @@ class IntegratedHabitatStrategy(PageArchetypeStrategy):
             active_template = env_templates.get("aquatic", {})
 
         habitat_name = active_template.get("habitat_name", "natural habitat")
-        habitat_elements = active_template.get(
-            "habitat_elements", "natural environmental elements"
-        )
+        habitat_elements = active_template.get("habitat_elements", "natural environmental elements")
         subject_action = active_template.get("subject_action", "living naturally in its habitat")
         line_weight = active_template.get(
             "line_weight",
@@ -206,7 +202,9 @@ class SingleCenteredStrategy(PageArchetypeStrategy):
                 is_living = True
 
         if is_living:
-            subject_desc = f"a cute friendly baby {label} with sweet smiling round eyes and rosy cheeks"
+            subject_desc = (
+                f"a cute friendly baby {label} with sweet smiling round eyes and rosy cheeks"
+            )
         else:
             subject_desc = (
                 f"an authentic simplified physical {label} with clean silhouette, "
@@ -405,16 +403,28 @@ class MultiCardSpreadStrategy(PageArchetypeStrategy):
     """Archetype for educational flashcard spreads (A-Z alphabet worksheets, 0-10 counting grids)."""
 
     archetype_id = "multi_card_spread"
+    _prompt_builder: Any = None
+
+    @classmethod
+    def set_prompt_builder(cls, builder: Any) -> None:
+        cls._prompt_builder = staticmethod(builder) if builder is not None else None
 
     def build_prompt(
         self,
         page_record: dict[str, Any],
         book_config: dict[str, Any],
     ) -> tuple[str, str]:
-        # Delegate to curriculum spread builder
-        from curiokraft_book.orchestrator.debate_engine import generate_dynamic_spread_prompt
+        # Delegate to curriculum spread builder if injected
+        builder = MultiCardSpreadStrategy._prompt_builder
+        if builder is not None:
+            return builder(page_record)
+        try:
+            import importlib
 
-        return generate_dynamic_spread_prompt(page_record)
+            de = importlib.import_module("curiokraft_book.orchestrator.debate_engine")
+            return de.generate_dynamic_spread_prompt(page_record)
+        except Exception:
+            return (f"Educational flashcard spread for {page_record.get('display_label', '')}", "")
 
 
 # =============================================================================
@@ -520,14 +530,20 @@ class CoverThemeRegistry:
 
         # Direct toddler manifest check for full backward compatibility
         if (
-            norm_manifest_path in ["data/pages.json", "manifest/pages.json", "manifest/pages_vol2.json"]
+            norm_manifest_path
+            in ["data/pages.json", "manifest/pages.json", "manifest/pages_vol2.json"]
             or "pages.json" in norm_manifest_path
         ) and "aquatic" not in norm_manifest_path:
             return themes.get("toddler", {})
 
         # If caller passed a standalone/test manifest that does not match the config's manifest,
         # don't contaminate the theme search context with book_config's volume/title
-        if cfg_manifest and norm_manifest_path and norm_manifest_path not in cfg_manifest and cfg_manifest not in norm_manifest_path:
+        if (
+            cfg_manifest
+            and norm_manifest_path
+            and norm_manifest_path not in cfg_manifest
+            and cfg_manifest not in norm_manifest_path
+        ):
             search_context = norm_manifest_path
         else:
             bg_style = str(b_cfg.get("visual_style", {}).get("background", "")).lower()
@@ -536,7 +552,7 @@ class CoverThemeRegistry:
             search_context = f"{bg_style} {volume} {title} {norm_manifest_path}"
 
         # 1. Match theme pattern_matchers
-        for theme_key, theme_data in themes.items():
+        for _theme_key, theme_data in themes.items():
             matchers = [m.lower() for m in theme_data.get("pattern_matchers", [])]
             if any(m in search_context for m in matchers):
                 return theme_data

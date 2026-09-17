@@ -11,10 +11,7 @@ from curiokraft_book.constants import (
     CANVAS_HEIGHT_PX,
     CANVAS_WIDTH_PX,
     HEADER_RESERVATION_IN,
-    SAFE_BOTTOM_IN,
-    SAFE_GUTTER_IN,
     SAFE_MARGIN_IN,
-    SAFE_OUTSIDE_IN,
     SAFE_TOP_IN,
     TARGET_COVERAGE_RATIO,
 )
@@ -126,7 +123,6 @@ def fit_to_safe_margins(
         left_margin_px = spread_m_px
         right_margin_px = spread_m_px
         bottom_margin_px = spread_m_px
-        default_max_upscale = 3.5
     elif inside_gutter_in is not None or outside_margin_in is not None:
         gutter_in = inside_gutter_in if inside_gutter_in is not None else safe_margin_in
         outside_in = outside_margin_in if outside_margin_in is not None else safe_margin_in

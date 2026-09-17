@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-from curiokraft_book.compositor.contour_generator import ContourShapeGenerator, draw_themed_card
+from curiokraft_book.compositor.contour_generator import draw_themed_card
 from curiokraft_book.compositor.fonts import get_typography_font
 from curiokraft_book.constants import (
     CANVAS_DPI,
@@ -406,6 +406,8 @@ def _load_contoured_mascot(mascot_path: Path | str) -> tuple[Image.Image, Image.
         import cv2
 
         bgr = cv2.imread(str(p))
+        if bgr is None:
+            return None
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -587,7 +589,9 @@ def render_welcome_page(
     cards_cfg = m_theme.get("cards", {})
 
     frame_enabled = bool(frame_cfg.get("enabled", True))
-    card_style = contour_style or cards_cfg.get("contour_style", "sinusoidal" if is_aquatic else "rounded")
+    card_style = contour_style or cards_cfg.get(
+        "contour_style", "sinusoidal" if is_aquatic else "rounded"
+    )
     card_params = contour_params or cards_cfg.get("contour_params", {})
     card_fill = tuple(cards_cfg.get("fill_color", [255, 255, 255, 245]))
     card_border = tuple(cards_cfg.get("border_color", [20, 24, 33, 255]))
@@ -599,7 +603,9 @@ def render_welcome_page(
 
     frame_img = None
     if frame_enabled:
-        frame_img = _load_volume_perimeter_frame(frame_image_path, asset_dir=a_dir, canvas_size=(canvas_w, canvas_h))
+        frame_img = _load_volume_perimeter_frame(
+            frame_image_path, asset_dir=a_dir, canvas_size=(canvas_w, canvas_h)
+        )
 
     if is_aquatic:
         if frame_img:
@@ -677,7 +683,6 @@ def render_welcome_page(
                 mx = (canvas_w - target_mw) // 2
                 my = 1010
                 img.paste(m_resized, (mx, my), mask=mask_resized)
-                draw = ImageDraw.Draw(img)
 
         # 6. Explorer Guide Tip Contoured Card
         # 6. Explorer Guide Tip Contoured Card
@@ -735,7 +740,11 @@ def render_welcome_page(
             canvas_w=canvas_w,
         )
 
-        draw.line([(tip_l + 60, tip_top + 245), (tip_r - 60, tip_top + 245)], fill=t["light_gray"], width=2)
+        draw.line(
+            [(tip_l + 60, tip_top + 245), (tip_r - 60, tip_top + 245)],
+            fill=t["light_gray"],
+            width=2,
+        )
         _centered_text(
             draw,
             tip_top + 280,
@@ -793,7 +802,12 @@ def render_welcome_page(
         # Right Column: Balloon, crayons, rainbow & stars from welcome scene
         if right_wel:
             _paste_asset(
-                img, right_wel, x=canvas_w - 220 - 560, y=interaction_top + 10, max_w=560, max_h=1480
+                img,
+                right_wel,
+                x=canvas_w - 220 - 560,
+                y=interaction_top + 10,
+                max_w=560,
+                max_h=1480,
             )
 
         # Floating sparkle accents around Mascot's ears and waving paw
@@ -880,7 +894,11 @@ def render_certificate_page(
     cert_num = get_certificate_page_number()
     t = {**BOOK_THEME, "canvas_w": canvas_w, "canvas_h": canvas_h, "dpi": dpi}
     a_dir = Path(asset_dir)
-    out_p = Path(output_path) if output_path is not None else DEFAULT_INTERIOR_MASTERS_DIR / f"page_{cert_num:03d}.png"
+    out_p = (
+        Path(output_path)
+        if output_path is not None
+        else DEFAULT_INTERIOR_MASTERS_DIR / f"page_{cert_num:03d}.png"
+    )
     out_p.parent.mkdir(parents=True, exist_ok=True)
 
     # Check for direct full-page Certificate artwork in inbox/raw_pages
@@ -930,7 +948,9 @@ def render_certificate_page(
     cards_cfg = m_theme.get("cards", {})
 
     frame_enabled = bool(frame_cfg.get("enabled", True))
-    card_style = contour_style or cards_cfg.get("contour_style", "sinusoidal" if is_aquatic else "rounded")
+    card_style = contour_style or cards_cfg.get(
+        "contour_style", "sinusoidal" if is_aquatic else "rounded"
+    )
     card_params = contour_params or cards_cfg.get("contour_params", {})
     card_fill = tuple(cards_cfg.get("fill_color", [255, 255, 255, 245]))
     card_border = tuple(cards_cfg.get("border_color", [20, 24, 33, 255]))
@@ -942,7 +962,9 @@ def render_certificate_page(
 
     frame_img = None
     if frame_enabled:
-        frame_img = _load_volume_perimeter_frame(frame_image_path, asset_dir=a_dir, canvas_size=(canvas_w, canvas_h))
+        frame_img = _load_volume_perimeter_frame(
+            frame_image_path, asset_dir=a_dir, canvas_size=(canvas_w, canvas_h)
+        )
 
     if is_aquatic:
         if frame_img:
@@ -1018,7 +1040,6 @@ def render_certificate_page(
                 mx = (canvas_w - target_mw) // 2
                 my = 920
                 img.paste(m_resized, (mx, my), mask=mask_resized)
-                draw = ImageDraw.Draw(img)
 
         # 5. Attestation & Signature Plaque Contoured Wave Card
         att_top = 2170
@@ -1071,13 +1092,23 @@ def render_certificate_page(
             canvas_w=canvas_w,
         )
 
-        draw.line([(att_l + 60, att_top + 195), (att_r - 60, att_top + 195)], fill=t["light_gray"], width=2)
+        draw.line(
+            [(att_l + 60, att_top + 195), (att_r - 60, att_top + 195)],
+            fill=t["light_gray"],
+            width=2,
+        )
 
         # Integrated Signatures
         sig_y = att_top + 295
         f_sig = _font(36)
         draw.line([(att_l + 60, sig_y), (att_l + 700, sig_y)], fill=0, width=4)
-        draw.text((att_l + 380, sig_y + 36), "Expedition Naturalist", font=f_sig, fill=t["dark_gray"], anchor="mm")
+        draw.text(
+            (att_l + 380, sig_y + 36),
+            "Expedition Naturalist",
+            font=f_sig,
+            fill=t["dark_gray"],
+            anchor="mm",
+        )
         draw.line([(att_r - 700, sig_y), (att_r - 60, sig_y)], fill=0, width=4)
         draw.text(
             (att_r - 380, sig_y + 36),
@@ -1087,7 +1118,11 @@ def render_certificate_page(
             anchor="mm",
         )
 
-        draw.line([(att_l + 60, att_top + 360), (att_r - 60, att_top + 360)], fill=t["light_gray"], width=2)
+        draw.line(
+            [(att_l + 60, att_top + 360), (att_r - 60, att_top + 360)],
+            fill=t["light_gray"],
+            width=2,
+        )
         _centered_text(
             draw,
             att_top + 395,
@@ -1131,7 +1166,12 @@ def render_certificate_page(
         # 4. Achievement & Emotional Payoff Zone
         ach_y = name_box_bottom + 50
         _centered_text(
-            draw, ach_y, f"for completing the {title} adventure!", _font(48), fill=0, canvas_w=canvas_w
+            draw,
+            ach_y,
+            f"for completing the {title} adventure!",
+            _font(48),
+            fill=0,
+            canvas_w=canvas_w,
         )
         _centered_text(
             draw,

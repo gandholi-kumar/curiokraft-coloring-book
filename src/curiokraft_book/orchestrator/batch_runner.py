@@ -173,7 +173,9 @@ class InteriorBatchRunner:
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
-                raw_image_path=str(raw_img_path) if raw_img_path.exists() else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
+                raw_image_path=str(raw_img_path)
+                if raw_img_path.exists()
+                else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -190,7 +192,11 @@ class InteriorBatchRunner:
             # Also check direct semantic raw naming in inbox/raw_pages
             if not found_inbox or not found_inbox.exists():
                 inbox_raw = Path("inbox/raw_pages")
-                for cand in [inbox_raw / "raw_certificate.png", inbox_raw / f"raw_p{page_num:03d}.png", inbox_raw / f"raw_p{cert_num:03d}.png"]:
+                for cand in [
+                    inbox_raw / "raw_certificate.png",
+                    inbox_raw / f"raw_p{page_num:03d}.png",
+                    inbox_raw / f"raw_p{cert_num:03d}.png",
+                ]:
                     if cand.exists():
                         found_inbox = cand
                         break
@@ -209,7 +215,9 @@ class InteriorBatchRunner:
             self.state_mgr.update_page(
                 page_id,
                 status=PageStatus.APPROVED,
-                raw_image_path=str(raw_img_path) if raw_img_path.exists() else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
+                raw_image_path=str(raw_img_path)
+                if raw_img_path.exists()
+                else (str(found_inbox) if found_inbox and found_inbox.exists() else None),
                 composite_image_path=str(final_master_path),
                 qa_passed=True,
                 qa_score=100.0,
@@ -316,7 +324,7 @@ class InteriorBatchRunner:
                 canvas_300.paste(resized, (pos_x, pos_y))
             else:
                 # Standard coloring page: expand to fill 90-93% printable zone
-                is_left_page = (page_num % 2 == 0)
+                is_left_page = page_num % 2 == 0
                 gutter_px = int(SAFE_GUTTER_IN * 300)
                 outside_px = int(SAFE_OUTSIDE_IN * 300)
                 bottom_px = int(SAFE_BOTTOM_IN * 300)
@@ -337,7 +345,7 @@ class InteriorBatchRunner:
         )
 
         # 3. Deterministic Code-Level Rescue & Safe Margin Fit
-        is_left_page = (page_num % 2 == 0)
+        is_left_page = page_num % 2 == 0
         rescued_img_path = self.output_masters_dir / f"temp_rescued_{page_num:03d}.png"
         rescue_ok, msg, violations = self.retry_manager.attempt_programmatic_rescue(
             raw_img_path, rescued_img_path, is_spread=is_spread, is_left_page=is_left_page
@@ -371,7 +379,9 @@ class InteriorBatchRunner:
         margin_check = validate_margins(final_master_path, is_left_page=is_left_page)
         h_cfg = get_stroke_hierarchy_config()
         allow_gray = bool(h_cfg.get("use_generated_image_as_is") or h_cfg.get("enabled"))
-        bw_check = validate_black_and_white(final_master_path, allow_intentional_gray_lines=allow_gray)
+        bw_check = validate_black_and_white(
+            final_master_path, allow_intentional_gray_lines=allow_gray
+        )
 
         all_passed = dim_check.passed and margin_check.passed and bw_check.passed
 

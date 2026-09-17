@@ -12,7 +12,6 @@ from curiokraft_book.constants import (
     BINARIZE_THRESHOLD_VALUE,
     DEFAULT_BACKGROUND_STROKE_TONE,
     DEFAULT_PRESERVE_NATURAL_TONE,
-    DEFAULT_USE_GENERATED_IMAGE_AS_IS,
     get_stroke_hierarchy_config,
 )
 
@@ -85,9 +84,15 @@ def rescue_binarize(
         )
 
     # Determine mode from parameter or config
-    hierarchy_cfg = stroke_hierarchy if stroke_hierarchy is not None else get_stroke_hierarchy_config()
+    hierarchy_cfg = (
+        stroke_hierarchy if stroke_hierarchy is not None else get_stroke_hierarchy_config()
+    )
     if use_as_is is None:
-        use_as_is = bool(hierarchy_cfg.get("use_generated_image_as_is", False)) if stroke_hierarchy is not None else False
+        use_as_is = (
+            bool(hierarchy_cfg.get("use_generated_image_as_is", False))
+            if stroke_hierarchy is not None
+            else False
+        )
 
     # Measure non-binary pixels before cleanup (15 < pixel < 240)
     initial_gray_mask = (gray_arr > 15) & (gray_arr < 240)

@@ -165,3 +165,80 @@ def test_kdp_form_privacy_protection():
     assert "inbox/kdp_forms/*.html" in gi_text, "inbox/kdp_forms/*.html must be ignored"
     assert "inbox/kdp_forms/*.htm" in gi_text, "inbox/kdp_forms/*.htm must be ignored"
     assert "!inbox/kdp_forms/README.md" in gi_text, "README.md must be kept tracked"
+
+
+def test_special_pages_borders_and_helpers(tmp_path: Path):
+    from curiokraft_book.compositor.special_pages import (
+        BOOK_THEME,
+        _draw_border_certificate,
+        _draw_border_welcome,
+        _draw_star,
+        _load_contoured_mascot,
+    )
+
+    canvas = Image.new("L", (2550, 3300), 255)
+    draw = ImageDraw.Draw(canvas)
+
+    _draw_star(draw, 200, 200, 30, fill=0)
+    _draw_border_welcome(draw, {**BOOK_THEME, "canvas_w": 2550, "canvas_h": 3300}, is_aquatic=False)
+    _draw_border_certificate(draw, {**BOOK_THEME, "canvas_w": 2550, "canvas_h": 3300})
+
+    # Test mascot contouring
+    mascot_img = tmp_path / "mascot.png"
+    m_canvas = Image.new("RGB", (300, 300), (255, 255, 255))
+    m_draw = ImageDraw.Draw(m_canvas)
+    m_draw.ellipse([50, 50, 250, 250], fill=(50, 50, 50))
+    m_canvas.save(mascot_img)
+
+    contoured = _load_contoured_mascot(mascot_img)
+    assert contoured is not None
+    m_gray, m_mask = contoured
+    assert m_gray.mode == "L"
+    assert m_mask.mode == "L"
+
+
+def test_special_pages_render_programmatic(sandbox_cwd, tmp_path: Path):
+    from curiokraft_book.compositor.special_pages import (
+        render_certificate_page,
+        render_welcome_page,
+    )
+
+    p1 = tmp_path / "page_001.png"
+    p109 = tmp_path / "page_109.png"
+
+    res1 = render_welcome_page(output_path=p1)
+    assert res1.exists()
+
+    res2 = render_certificate_page(output_path=p109)
+    assert res2.exists()
+
+
+def test_special_pages_render_toddler(sandbox_cwd, tmp_path: Path, monkeypatch):
+    from curiokraft_book.compositor.special_pages import (
+        render_certificate_page,
+        render_welcome_page,
+    )
+
+    monkeypatch.setattr("curiokraft_book.compositor.special_pages.DEFAULT_BOOK_VOLUME", "vol_1")
+    p1 = tmp_path / "page_001_toddler.png"
+    p109 = tmp_path / "page_109_toddler.png"
+
+    res1 = render_welcome_page(output_path=p1, title="Toddler First Animals")
+    assert res1.exists()
+
+    res2 = render_certificate_page(output_path=p109, title="Toddler First Animals")
+    assert res2.exists()
+
+
+def test_special_pages_ingest_raw_full_page(tmp_path: Path):
+    from curiokraft_book.compositor.special_pages import _ingest_raw_full_page
+
+    raw = tmp_path / "raw_artwork.png"
+    img = Image.new("RGBA", (1000, 1200), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([100, 100, 900, 1100], outline=0, width=10)
+    img.save(raw)
+
+    result = _ingest_raw_full_page(raw, canvas_w=1275, canvas_h=1650, dpi=150)
+    assert result.size == (1275, 1650)
+    assert result.mode == "L"

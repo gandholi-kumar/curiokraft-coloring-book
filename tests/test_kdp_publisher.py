@@ -160,7 +160,10 @@ def test_kdp_dashboard_generation(tmp_path: Path):
 
     # Validate JSON
     data = json.loads(saved["json"].read_text(encoding="utf-8"))
-    assert data["details"]["book_title"] in ["TINY HANDS COLOR & LEARN", "OCEAN EXPEDITIONS & AQUATIC BEINGS"]
+    assert data["details"]["book_title"] in [
+        "TINY HANDS COLOR & LEARN",
+        "OCEAN EXPEDITIONS & AQUATIC BEINGS",
+    ]
     assert len(data["details"]["keywords"]) == 7
     assert data["details"]["language"] == "English"
     assert data["details"]["combined_title_length"] > 0

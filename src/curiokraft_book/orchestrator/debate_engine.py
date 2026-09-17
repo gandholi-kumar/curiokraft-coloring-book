@@ -22,6 +22,7 @@ from curiokraft_book.constants import (
     DEFAULT_AGENTS_CONFIG,
     DEFAULT_BOOK_CONFIG,
     DEFAULT_BOOK_TITLE,
+    DEFAULT_BOOK_VOLUME,
     DEFAULT_CURRICULUM_CONFIG,
     DEFAULT_DEBATE_LOG_FILE,
     DEFAULT_OBJECTS_REGISTRY,
@@ -29,8 +30,8 @@ from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_TAXONOMY_CONFIG,
 )
+from curiokraft_book.orchestrator.archetypes import CoverThemeRegistry, MultiCardSpreadStrategy
 from curiokraft_book.orchestrator.llm_client import LLMClient
-from curiokraft_book.orchestrator.archetypes import ArchetypeRegistry, CoverThemeRegistry
 
 logger = logging.getLogger("curiokraft.debate_engine")
 
@@ -453,10 +454,32 @@ def classify_living_taxonomy(canonical: str, section: str, composition: str = ""
     # Check habitat section keywords
     sec_lower = section.lower()
     habitat_indicators = {
-        "reef", "reefs", "ocean", "sea", "shallows", "pelagic", "tidepools", "tidepool",
-        "abyss", "polar", "river", "savanna", "forest", "canopy", "jungle", "fauna",
-        "creature", "creatures", "animal", "animals", "bird", "birds", "insect", "insects",
-        "wildlife", "safari"
+        "reef",
+        "reefs",
+        "ocean",
+        "sea",
+        "shallows",
+        "pelagic",
+        "tidepools",
+        "tidepool",
+        "abyss",
+        "polar",
+        "river",
+        "savanna",
+        "forest",
+        "canopy",
+        "jungle",
+        "fauna",
+        "creature",
+        "creatures",
+        "animal",
+        "animals",
+        "bird",
+        "birds",
+        "insect",
+        "insects",
+        "wildlife",
+        "safari",
     }
     if any(h in sec_lower for h in habitat_indicators):
         return True
@@ -464,15 +487,64 @@ def classify_living_taxonomy(canonical: str, section: str, composition: str = ""
     # Check biological suffixes and species roots
     canon_tokens = set(canonical.lower().replace("_", " ").split())
     bio_roots = {
-        "fish", "shark", "whale", "tang", "idol", "ray", "eel", "crab", "shrimp", "lobster",
-        "octopus", "squid", "jellyfish", "coral", "anemone", "starfish", "urchin", "clam",
-        "seahorse", "turtle", "seal", "otter", "walrus", "penguin", "dolphin", "orca",
-        "bear", "dog", "cat", "fox", "wolf", "deer", "lion", "tiger", "monkey", "elephant",
-        "rabbit", "bunny", "beetle", "butterfly", "moth", "bird", "finch", "hawk", "eagle",
-        "owl", "sparrow", "heron", "pelican", "frog", "toad", "dinosaur", "dragon"
+        "fish",
+        "shark",
+        "whale",
+        "tang",
+        "idol",
+        "ray",
+        "eel",
+        "crab",
+        "shrimp",
+        "lobster",
+        "octopus",
+        "squid",
+        "jellyfish",
+        "coral",
+        "anemone",
+        "starfish",
+        "urchin",
+        "clam",
+        "seahorse",
+        "turtle",
+        "seal",
+        "otter",
+        "walrus",
+        "penguin",
+        "dolphin",
+        "orca",
+        "bear",
+        "dog",
+        "cat",
+        "fox",
+        "wolf",
+        "deer",
+        "lion",
+        "tiger",
+        "monkey",
+        "elephant",
+        "rabbit",
+        "bunny",
+        "beetle",
+        "butterfly",
+        "moth",
+        "bird",
+        "finch",
+        "hawk",
+        "eagle",
+        "owl",
+        "sparrow",
+        "heron",
+        "pelican",
+        "frog",
+        "toad",
+        "dinosaur",
+        "dragon",
     }
     compound_suffixes = {"fish", "shark", "bird", "fly", "worm"}
-    if canon_tokens & bio_roots or any(any(token.endswith(s) for s in compound_suffixes) for token in canon_tokens):
+    if canon_tokens & bio_roots or any(
+        any(token.endswith(s) for s in compound_suffixes) for token in canon_tokens
+    ):
         return True
 
     living_keywords = set(tax.get("living_keywords", []))
@@ -602,7 +674,8 @@ def resolve_animal_anatomy_profile(
             sec_lower = section.lower()
             comp_lower = composition.lower()
             if comp_lower.startswith("integrated_aquatic") or any(
-                h in sec_lower for h in ["reef", "ocean", "marine", "sea", "pelagic", "tidepool", "abyss"]
+                h in sec_lower
+                for h in ["reef", "ocean", "marine", "sea", "pelagic", "tidepool", "abyss"]
             ):
                 cls_key = "aquatic"
             elif comp_lower.startswith("integrated_air") or any(
@@ -819,7 +892,7 @@ def resolve_environment_template(composition: str, background_style: str) -> dic
         return None
 
     env_templates = _TAXONOMY.get("environment_templates", {})
-    for env_key, tmpl in env_templates.items():
+    for _env_key, tmpl in env_templates.items():
         comp_patterns = [p.lower() for p in tmpl.get("composition_patterns", [])]
         bg_patterns = [p.lower() for p in tmpl.get("background_patterns", [])]
 
@@ -837,17 +910,49 @@ def get_base_negative_tokens(is_isolated: bool = False) -> list[str]:
     common = list(standards.get("common_coloring_negatives", []))
     if not common:
         common = [
-            "shading", "shadows", "gradients", "gray", "grayscale", "color",
-            "textures", "3d", "photorealistic", "intricate patterns", "airbrush",
-            "stippling", "cross-hatching", "thin lines", "borders", "frames",
-            "separator lines", "text", "letters", "words", "alphabet", "typography",
-            "watermarks", "labels", "writing", "scary expression", "widescreen",
-            "16:9", "landscape orientation", "horizontal cropping", "cut off edges",
+            "shading",
+            "shadows",
+            "gradients",
+            "gray",
+            "grayscale",
+            "color",
+            "textures",
+            "3d",
+            "photorealistic",
+            "intricate patterns",
+            "airbrush",
+            "stippling",
+            "cross-hatching",
+            "thin lines",
+            "borders",
+            "frames",
+            "separator lines",
+            "text",
+            "letters",
+            "words",
+            "alphabet",
+            "typography",
+            "watermarks",
+            "labels",
+            "writing",
+            "scary expression",
+            "widescreen",
+            "16:9",
+            "landscape orientation",
+            "horizontal cropping",
+            "cut off edges",
         ]
     if is_isolated:
         isolated = list(standards.get("isolated_object_negatives", []))
         if not isolated:
-            isolated = ["multiple objects", "background scenery", "floor", "ground", "sky", "horizon"]
+            isolated = [
+                "multiple objects",
+                "background scenery",
+                "floor",
+                "ground",
+                "sky",
+                "horizon",
+            ]
         return common + isolated
     return common
 
@@ -1177,6 +1282,9 @@ def generate_dynamic_spread_prompt(
     return pos, neg
 
 
+MultiCardSpreadStrategy.set_prompt_builder(generate_dynamic_spread_prompt)
+
+
 # =============================================================================
 # DebateEngine
 # =============================================================================
@@ -1217,7 +1325,7 @@ class DebateEngine:
         b_cfg = _safe_load_yaml(book_config_path).get("book", {})
         theme = CoverThemeRegistry.resolve(b_cfg, manifest_path)
         theme_id = theme.get("theme_id", "toddler")
-        is_toddler_theme = (theme_id == "toddler")
+        is_toddler_theme = theme_id == "toddler"
 
         # Dynamic page count from manifest
         page_count = 110
@@ -1265,19 +1373,28 @@ class DebateEngine:
 
         # Extract theme-specific visual tokens
         palette = theme.get("palette", {})
-        primary_bg = palette.get("primary_bg", "cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6)")
+        primary_bg = palette.get(
+            "primary_bg", "cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6)"
+        )
         baseline_spec = theme.get("baseline_spec", {})
-        baseline_style = baseline_spec.get("style", "smooth, gentle rolling wave in pastel turquoise and mint")
-        atmosphere = theme.get("atmosphere", "subtle celebratory toddler star dust and magical confetti")
+        baseline_style = baseline_spec.get(
+            "style", "smooth, gentle rolling wave in pastel turquoise and mint"
+        )
+        atmosphere = theme.get(
+            "atmosphere", "subtle celebratory toddler star dust and magical confetti"
+        )
 
-        if cover_type == "back_cover":
+        if cover_type in ["back_cover", "back"]:
             # Back cover: flashcard preview + feature pills
             cards = extract_cover_showcase_cards(manifest_path, count=3)
             cards_desc_list = [c["description"] for c in cards]
             cards_summary = "; ".join(cards_desc_list)
 
             theme_back = theme.get("back_cover", {})
-            headline_style = theme_back.get("headline_styling", "artistic sculpted 3D display lettering with luminous golden-coral gradients and deep ocean drop shadow")
+            headline_style = theme_back.get(
+                "headline_styling",
+                "artistic sculpted 3D display lettering with luminous golden-coral gradients and deep ocean drop shadow",
+            )
             if is_toddler_theme:
                 headline = "DISCOVER, COLOR & LEARN!"
                 description = (
@@ -1295,7 +1412,7 @@ class DebateEngine:
                 headline = theme_back.get("headline", "UNLOCK THE WONDERS OF THE DEEP BLUE OCEAN!")
                 description = theme_back.get(
                     "description",
-                    "Spark your child's curiosity for marine life and ocean wonders! As young artists bring each majestic creature to life, they build fine motor dexterity, cultivate calming screen-free mindfulness, and gain creative confidence exploring the breathtaking beauty of our living seas."
+                    "Spark your child's curiosity for marine life and ocean wonders! As young artists bring each majestic creature to life, they build fine motor dexterity, cultivate calming screen-free mindfulness, and gain creative confidence exploring the breathtaking beauty of our living seas.",
                 )
                 parent_pills = theme_back.get(
                     "parent_benefit_pills",
@@ -1405,7 +1522,9 @@ class DebateEngine:
                 "jagged lines, distorted cards, cut-off cards, horizontal landscape, 16:9, cut off edges",
             ]
             if is_toddler_theme:
-                neg_parts.append(", single-sided, single-sided pages, single sided, blank backs, anti-bleed blank backs")
+                neg_parts.append(
+                    ", single-sided, single-sided pages, single sided, blank backs, anti-bleed blank backs"
+                )
             else:
                 neg_parts.append(", double-sided, double-sided pages, double sided")
 
@@ -1451,7 +1570,8 @@ class DebateEngine:
                         "border on left edge",
                         "black drop shadows",
                         "barcode on front",
-                    ] + list(theme.get("hero_prohibitions", [])),
+                    ]
+                    + list(theme.get("hero_prohibitions", [])),
                 },
                 "AGT-004-MARKET": {
                     "commercial_appeal": f"Instant visual delight with majestic title lettering and captivating natural {title} theme.",
@@ -1726,29 +1846,33 @@ class DebateEngine:
                 }
             }
         elif is_living:
-            prof = resolve_animal_anatomy_profile(canonical, section=section, composition=composition)
+            prof = resolve_animal_anatomy_profile(
+                canonical, section=section, composition=composition
+            )
             if env_template is not None:
                 hab_name = env_template.get("habitat_name", "natural habitat")
                 sub_action = env_template.get("subject_action", f"in its natural {hab_name}")
                 line_weight_spec = env_template.get(
                     "line_weight",
-                    "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background habitat elements with distinct outline separation for effortless coloring."
+                    "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background habitat elements with distinct outline separation for effortless coloring.",
                 )
                 margin_res = env_template.get(
                     "margin_reserve",
-                    "Leave generous 20% empty white margin space at the top of the canvas for typography."
+                    "Leave generous 20% empty white margin space at the top of the canvas for typography.",
                 )
                 prohibited_market = list(env_template.get("prohibited_market", []))
                 critic_raw = env_template.get("critic_findings", [])
-                critic_findings = [
-                    f.format(readable_name=readable_name) for f in critic_raw
-                ] if critic_raw else [
-                    f"Verify strict {prof['class']} anatomy: ensure authentic living {readable_name} proportions.",
-                    "Ensure AI integrates a cohesive vector line art background matching the subject style.",
-                    "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill.",
-                    "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing.",
-                    "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin).",
-                ]
+                critic_findings = (
+                    [f.format(readable_name=readable_name) for f in critic_raw]
+                    if critic_raw
+                    else [
+                        f"Verify strict {prof['class']} anatomy: ensure authentic living {readable_name} proportions.",
+                        "Ensure AI integrates a cohesive vector line art background matching the subject style.",
+                        "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill.",
+                        "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing.",
+                        "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin).",
+                    ]
+                )
 
                 r1_outputs = {
                     "AGT-002-DESIGN": {
@@ -1774,7 +1898,8 @@ class DebateEngine:
                             "human-like standing",
                             "scary/creepy expressions",
                             "sharp fangs/claws",
-                        ] + prohibited_market,
+                        ]
+                        + prohibited_market,
                     },
                     "AGT-005-EDU": {
                         "pedagogical_hook": f"Living species identification and habitat discovery of {readable_name} for ages {age_min}-{age_max}.",
@@ -1968,29 +2093,69 @@ class DebateEngine:
                 subject_instruction = f"{object_desc}".strip().rstrip(".") + "."
 
             if is_living:
-                prof = resolve_animal_anatomy_profile(canonical, section=section, composition=composition)
+                prof = resolve_animal_anatomy_profile(
+                    canonical, section=section, composition=composition
+                )
                 if env_template is not None:
                     hab_name = env_template.get("habitat_name", "natural habitat")
-                    hab_elements = env_template.get("habitat_elements", "natural environmental elements")
+                    hab_elements = env_template.get(
+                        "habitat_elements", "natural environmental elements"
+                    )
                     sub_action = env_template.get("subject_action", f"in its natural {hab_name}")
                     stroke_hier_raw = env_template.get(
                         "stroke_hierarchy",
-                        "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background habitat elements, with distinct outline separation around the creature for effortless coloring fill."
+                        "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background habitat elements, with distinct outline separation around the creature for effortless coloring fill.",
                     )
                     stroke_hier = stroke_hier_raw.format(readable_name=readable_name)
                     margin_res = env_template.get(
                         "margin_reserve",
-                        "Leave generous 20% empty white margin space at the top of the canvas for typography."
+                        "Leave generous 20% empty white margin space at the top of the canvas for typography.",
                     )
 
-                    color_words = {"blue", "red", "orange", "pink", "green", "yellow", "purple", "brown", "gold", "golden"}
+                    color_words = {
+                        "blue",
+                        "red",
+                        "orange",
+                        "pink",
+                        "green",
+                        "yellow",
+                        "purple",
+                        "brown",
+                        "gold",
+                        "golden",
+                    }
                     canon_words = set(canonical.lower().replace("_", " ").split())
-                    has_color_term = bool(canon_words & color_words) or canonical.lower() in ["oarfish", "koi_fish"]
+                    has_color_term = bool(canon_words & color_words) or canonical.lower() in [
+                        "oarfish",
+                        "koi_fish",
+                    ]
                     color_hardening = ""
                     color_negatives: list[str] = []
                     if has_color_term:
                         color_hardening = "Strictly uncolored hollow black vector outlines with empty white interior body and empty white uncolored crest for coloring, strictly zero color fills, zero red, zero pink, zero body coloring, zero colored skin, zero colored crest. "
-                        color_negatives = ["blue", "blue skin", "blue body", "blue fill", "blue color", "red", "red crest", "red fins", "pink", "pink crest", "pink fins", "red hair", "red crest fin", "reddish", "orange", "color fills", "colored body", "colored creature", "colored in", "tinted", "color wash"]
+                        color_negatives = [
+                            "blue",
+                            "blue skin",
+                            "blue body",
+                            "blue fill",
+                            "blue color",
+                            "red",
+                            "red crest",
+                            "red fins",
+                            "pink",
+                            "pink crest",
+                            "pink fins",
+                            "red hair",
+                            "red crest fin",
+                            "reddish",
+                            "orange",
+                            "color fills",
+                            "colored body",
+                            "colored creature",
+                            "colored in",
+                            "tinted",
+                            "color wash",
+                        ]
 
                     positive_prompt = (
                         f"Clean 2D educational coloring book line art vector illustration of an authentic living {readable_name} {sub_action} for ages {age_min}-{age_max}. "
@@ -2004,7 +2169,11 @@ class DebateEngine:
                         f"Pure stark white background (#FFFFFF), strictly NO color fills, zero shading, zero grayscale, zero gradients, zero shadows, zero photorealistic textures, zero airbrushing. "
                         f"Strictly NO text, NO letters, NO words."
                     )
-                    base_neg = get_base_negative_tokens(is_isolated=False) + list(env_template.get("negative_tokens", [])) + color_negatives
+                    base_neg = (
+                        get_base_negative_tokens(is_isolated=False)
+                        + list(env_template.get("negative_tokens", []))
+                        + color_negatives
+                    )
                 else:
                     positive_prompt = (
                         f"Ultra-clean 2D preschool toddler coloring book line art vector illustration of a cute friendly baby {readable_name}. "
@@ -2040,8 +2209,14 @@ class DebateEngine:
                     "no background elements, strictly NO text, NO letters, NO words."
                 )
                 inanimate_face_negatives = [
-                    "face", "eyes", "mouth", "smile", "facial features",
-                    "anthropomorphic", "cartoon character face", "human features",
+                    "face",
+                    "eyes",
+                    "mouth",
+                    "smile",
+                    "facial features",
+                    "anthropomorphic",
+                    "cartoon character face",
+                    "human features",
                 ]
                 base_neg = inanimate_face_negatives + get_base_negative_tokens(is_isolated=True)
                 unfiltered_neg = _join_negative([veh_prof["negative_tokens"], base_neg, cat_neg])
@@ -2060,8 +2235,14 @@ class DebateEngine:
                     "no background elements, strictly NO text, NO letters, NO words."
                 )
                 inanimate_face_negatives = [
-                    "face", "eyes", "mouth", "smile", "facial features",
-                    "anthropomorphic", "cartoon character face", "human features",
+                    "face",
+                    "eyes",
+                    "mouth",
+                    "smile",
+                    "facial features",
+                    "anthropomorphic",
+                    "cartoon character face",
+                    "human features",
                 ]
                 base_neg = inanimate_face_negatives + get_base_negative_tokens(is_isolated=True)
                 negative_prompt = _join_negative([base_neg, cat_neg])
@@ -2122,9 +2303,8 @@ class DebateEngine:
         cfg_manifest = str(b_cfg.get("manifest", "")).lower().replace("\\", "/")
 
         is_legacy_toddler = (
-            ("pages.json" in norm_manifest or "pages_vol2" in norm_manifest)
-            and "aquatic" not in norm_manifest
-        )
+            "pages.json" in norm_manifest or "pages_vol2" in norm_manifest
+        ) and "aquatic" not in norm_manifest
 
         if is_legacy_toddler and "aquatic" in cfg_manifest:
             title = "TINY HANDS COLOR & LEARN"
@@ -2366,7 +2546,9 @@ class DebateEngine:
             )
         elif theme in ["origami", "papercraft"]:
             genre_name = "Origami & Papercraft Geometry"
-            top_10 = "Origami Tessellations (Eric Gjerde), Japanese Patterns (Tuttle), Geometric Origami"
+            top_10 = (
+                "Origami Tessellations (Eric Gjerde), Japanese Patterns (Tuttle), Geometric Origami"
+            )
             proven_elements = "Crisp mathematical angles, creased paper facets, interlocking polygonal folds framing a pristine center."
             pos = (
                 "Ultra-clean 2D coloring book line art of an elaborate full-perimeter Japanese origami folded paper border vignette framing a wide open, completely empty white central area. "
@@ -2663,8 +2845,18 @@ def extract_cover_showcase_cards(
             is_food = bool(
                 (canon_tokens | sec_tokens)
                 & {
-                    "fruit", "food", "vegetable", "sweet", "drink",
-                    "apple", "cherry", "banana", "strawberry", "grape", "orange", "carrot",
+                    "fruit",
+                    "food",
+                    "vegetable",
+                    "sweet",
+                    "drink",
+                    "apple",
+                    "cherry",
+                    "banana",
+                    "strawberry",
+                    "grape",
+                    "orange",
+                    "carrot",
                 }
             )
             is_veh = is_vehicle_object(canon, sec)
@@ -2707,7 +2899,9 @@ def extract_cover_showcase_cards(
         canon = str(p.get("canonical_object", word.lower()))
         desc = p.get("positive_description") or p.get("description")
         if not desc:
-            is_living = classify_living_taxonomy(canon, p.get("section", ""), p.get("composition", ""))
+            is_living = classify_living_taxonomy(
+                canon, p.get("section", ""), p.get("composition", "")
+            )
             desc = generate_dynamic_visual_spec(canon, p.get("section", ""), is_living)
         # Format clean card outline spec
         card_desc = f"hollow bubble-letter coloring title '{word}' across the top, {desc.strip().rstrip('.')}"
@@ -2755,7 +2949,8 @@ def extract_front_cover_ensemble(
     theme_id = theme.get("theme_id", "toddler")
 
     interior_pages = [
-        p for p in pages
+        p
+        for p in pages
         if p.get("page_number", 0) >= 2
         and p.get("composition") != "blank"
         and p.get("canonical_object", "") not in ["blank_verso", "blank", ""]
@@ -2780,9 +2975,13 @@ def extract_front_cover_ensemble(
                 seen_canons.add(canon)
                 lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
                 if len(dynamic_companions) == 0:
-                    dynamic_companions.append(f"a playful {lbl} swimming near colorful sea anemone fronds")
+                    dynamic_companions.append(
+                        f"a playful {lbl} swimming near colorful sea anemone fronds"
+                    )
                 elif len(dynamic_companions) == 1:
-                    dynamic_companions.append(f"a gentle {lbl} swimming near vibrant coral formations")
+                    dynamic_companions.append(
+                        f"a gentle {lbl} swimming near vibrant coral formations"
+                    )
                 else:
                     dynamic_companions.append(f"a cheerful {lbl} gliding through sunlit waters")
         if not dynamic_companions:
@@ -2808,14 +3007,17 @@ def extract_front_cover_ensemble(
                 lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
                 dynamic_companions.append(f"a cheerful {lbl} resting in wildflowers")
         if not dynamic_companions:
-            dynamic_companions = ["a gentle fawn in wildflowers", "a playful bunny hopping on grass"]
-        dynamic_companions.append("fluttering colorful butterflies and gentle drifting dandelion seeds")
+            dynamic_companions = [
+                "a gentle fawn in wildflowers",
+                "a playful bunny hopping on grass",
+            ]
+        dynamic_companions.append(
+            "fluttering colorful butterflies and gentle drifting dandelion seeds"
+        )
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "sky":
-        hero_char = (
-            f"an adorable vibrant {mascot_clean} soaring gracefully with wide outstretched wings through sunny blue skies"
-        )
+        hero_char = f"an adorable vibrant {mascot_clean} soaring gracefully with wide outstretched wings through sunny blue skies"
         dynamic_companions = [
             "a friendly little robin perching on a leafy branch",
             "a tiny hummingbird gliding by",
@@ -2824,9 +3026,7 @@ def extract_front_cover_ensemble(
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "geometric_mandala":
-        hero_char = (
-            "an intricate focal mandala emblem with radiating circular petals, concentric waves, and kaleidoscopic symmetry"
-        )
+        hero_char = "an intricate focal mandala emblem with radiating circular petals, concentric waves, and kaleidoscopic symmetry"
         dynamic_companions = [
             "hypnotic wave ribbons",
             "symmetrical geometric starbursts",
@@ -2837,8 +3037,18 @@ def extract_front_cover_ensemble(
     else:
         # Classic Toddler Vol 1 backward-compatible ensemble
         mascot_priorities = [
-            "elephant", "panda", "teddy_bear", "bear", "puppy", "dog", "kitten", "cat",
-            "lion", "bunny", "rabbit", "monkey"
+            "elephant",
+            "panda",
+            "teddy_bear",
+            "bear",
+            "puppy",
+            "dog",
+            "kitten",
+            "cat",
+            "lion",
+            "bunny",
+            "rabbit",
+            "monkey",
         ]
         found_hero = None
         for mascot in mascot_priorities:
@@ -2871,7 +3081,7 @@ def extract_front_cover_ensemble(
             or "an adorable chubby cartoon baby mascot with sweet smiling round eyes, sitting joyfully while holding a bright wax crayon"
         )
 
-        dynamic_companions: list[str] = []
+        dynamic_companions = []
         for p in interior_pages:
             canon = str(p.get("canonical_object", "")).lower()
             sec = str(p.get("section", "")).lower()
@@ -2888,9 +3098,9 @@ def extract_front_cover_ensemble(
                 dynamic_companions.append(
                     f"a cute happy smiling cartoon {lbl} with cheerful sunny face and soft petals"
                 )
-            elif ("vehicle" in sec or canon in ["car", "airplane", "bus", "train", "truck"]) and len(
-                dynamic_companions
-            ) < 3:
+            elif (
+                "vehicle" in sec or canon in ["car", "airplane", "bus", "train", "truck"]
+            ) and len(dynamic_companions) < 3:
                 dynamic_companions.append(
                     f"a cheerful chunky preschool toy {lbl} with round cartoon headlights and friendly smiling details"
                 )
@@ -2963,7 +3173,11 @@ def auto_pick_volume_mascot(
         cfg_name = m_cfg.get("name")
         if cfg_name and str(cfg_name).strip():
             candidate = str(cfg_name).strip().lower()
-            if not manifest_objects or candidate in manifest_objects or (cfg_manifest and cfg_manifest in norm_manifest_path):
+            if (
+                not manifest_objects
+                or candidate in manifest_objects
+                or (cfg_manifest and cfg_manifest in norm_manifest_path)
+            ):
                 return candidate
 
     pages = m_data.get("pages", [])
@@ -3057,7 +3271,13 @@ def generate_welcome_page_prompt(
     title = str(b_cfg.get("title", DEFAULT_BOOK_TITLE)).lower()
 
     if habitat is None:
-        if "aquatic" in vol or "ocean" in vol or "ocean" in title or "aquatic" in title or "sea" in vol:
+        if (
+            "aquatic" in vol
+            or "ocean" in vol
+            or "ocean" in title
+            or "aquatic" in title
+            or "sea" in vol
+        ):
             hab_name = "OCEAN"
             vignette = "natural ocean framing with curved sea kelp, playful bubbles, gentle coral formations, and sea anemones arching along outer edges"
             mascot_desc = "friendly, wide-eyed baby sea otter or dolphin centered with a welcoming wave gesture"
@@ -3068,10 +3288,14 @@ def generate_welcome_page_prompt(
         else:
             hab_name = "WILDLIFE"
             vignette = "branching tree boughs, rounded stones, leafy vines, and woodland foliage arching along outer edges"
-            mascot_desc = "friendly, wide-eyed baby bear cub centered with a welcoming paw wave gesture"
+            mascot_desc = (
+                "friendly, wide-eyed baby bear cub centered with a welcoming paw wave gesture"
+            )
     else:
         hab_name = habitat.upper()
-        vignette = f"thematic natural {habitat.lower()} framing vignette arching along outer borders"
+        vignette = (
+            f"thematic natural {habitat.lower()} framing vignette arching along outer borders"
+        )
         mascot_desc = f"friendly, wide-eyed baby animal native to {habitat.lower()} centered with a welcoming wave gesture"
 
     positive_prompt = (
@@ -3108,7 +3332,13 @@ def generate_certificate_page_prompt(
     title = str(b_cfg.get("title", DEFAULT_BOOK_TITLE)).lower()
 
     if habitat is None:
-        if "aquatic" in vol or "ocean" in vol or "ocean" in title or "aquatic" in title or "sea" in vol:
+        if (
+            "aquatic" in vol
+            or "ocean" in vol
+            or "ocean" in title
+            or "aquatic" in title
+            or "sea" in vol
+        ):
             hab_name = "OCEAN"
             proclamation_realm = "deep sea and coral reef wonders"
             mascot_desc = "celebratory baby sea otter or dolphin in active victory pose holding an explorer pennant"
@@ -3152,4 +3382,3 @@ def generate_certificate_page_prompt(
     )
 
     return positive_prompt, negative_prompt
-

@@ -70,7 +70,9 @@ class RetryManager:
         # Step 1: Ingestion Stroke Pipeline (as-is mode or stroke hierarchy mode)
         h_cfg = get_stroke_hierarchy_config()
         use_as_is = h_cfg.get("use_generated_image_as_is", True)
-        bin_res = rescue_binarize(raw_p, output_path=out_p, use_as_is=use_as_is, stroke_hierarchy=h_cfg)
+        bin_res = rescue_binarize(
+            raw_p, output_path=out_p, use_as_is=use_as_is, stroke_hierarchy=h_cfg
+        )
         if not bin_res.success:
             return False, "Failed to apply adaptive binarization.", ["RESCUE_BINARIZE_FAILED"]
 
