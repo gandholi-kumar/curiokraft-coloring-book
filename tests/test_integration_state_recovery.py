@@ -122,6 +122,43 @@ def test_corrupt_state_file_falls_back_to_the_manifest(tmp_path: Path):
     assert json.loads(state_file.read_text(encoding="utf-8"))["total_pages"] == 3
 
 
+def test_corrupt_state_file_is_logged_but_does_not_crash(tmp_path: Path):
+    """Corrupt state file should be logged as error but system should continue with manifest-based initialization."""
+    state_file = tmp_path / "pipeline_state.json"
+    # Create clearly corrupt JSON
+    state_file.write_text('{"invalid": json content}', encoding="utf-8")
+    manifest = _manifest(tmp_path)
+
+    # Capture log output
+    import logging
+    from io import StringIO
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger('curiokraft_book.orchestrator.state_manager')
+    logger.addHandler(handler)
+    logger.setLevel(logging.ERROR)
+
+    try:
+        mgr = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+
+        # Should have logged the corruption error
+        log_output = log_stream.getvalue()
+        assert "Corrupt pipeline state file" in log_output
+        assert str(state_file) in log_output
+
+        # Should still initialize pages from manifest
+        assert sorted(mgr.pages) == ["P005", "P006", "P007"]
+        assert all(p.status == PageStatus.PLANNED for p in mgr.pages.values())
+
+        # On next save, should create valid state file
+        mgr.save()
+        recovered_data = json.loads(state_file.read_text(encoding="utf-8"))
+        assert recovered_data["total_pages"] == 3
+        assert "pages" in recovered_data
+    finally:
+        logger.removeHandler(handler)
+
+
 def test_update_page_rejects_unknown_page_ids(tmp_path: Path):
     mgr = PipelineStateManager(
         state_file_path=tmp_path / "state.json", manifest_path=_manifest(tmp_path)

@@ -1,6 +1,7 @@
 """Pipeline state machine and persistent progress tracker for all 110 pages."""
 
 import json
+import logging
 from enum import Enum
 from pathlib import Path
 
@@ -67,6 +68,8 @@ class PageStateRecord(BaseModel):
 class PipelineStateManager:
     """Manages the lifecycle state of all 110 pages with atomic JSON persistence."""
 
+    logger = logging.getLogger(__name__)
+
     def __init__(
         self,
         state_file_path: str | Path = DEFAULT_PIPELINE_STATE_FILE,
@@ -85,8 +88,17 @@ class PipelineStateManager:
                     data = json.load(f)
                 for page_id, rec in data.get("pages", {}).items():
                     self.pages[page_id] = PageStateRecord(**rec)
-            except Exception:
-                pass
+            except json.JSONDecodeError as e:
+                # Corrupt file - raise alert but don't silently lose data
+                self.logger.error(f"Corrupt pipeline state file {self.state_file}: {e}")
+                self.logger.error(
+                    "Pipeline state may be incomplete - manual intervention may be required"
+                )
+                # Still initialize from manifest so system can continue, but mark as recovered
+            except Exception as e:
+                self.logger.error(f"Failed to load pipeline state {self.state_file}: {e}")
+                # Re-raise unexpected errors - don't silently continue
+                raise
 
         # Populate missing pages or sync authoritative metadata from manifest
         if self.manifest_path.exists():
@@ -158,5 +170,8 @@ class PipelineStateManager:
             "summary": self.get_summary(),
             "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
         }
-        with open(self.state_file, "w", encoding="utf-8") as f:
+        # Atomic write: temp file + rename
+        temp_file = self.state_file.with_suffix('.tmp')
+        with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=2)
+        temp_file.replace(self.state_file)  # Atomic on POSIX, replace on Windows
