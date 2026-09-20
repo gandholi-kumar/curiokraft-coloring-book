@@ -66,7 +66,7 @@ class PageStateRecord(BaseModel):
 
 
 class PipelineStateManager:
-    """Manages the lifecycle state of all 110 pages with atomic JSON persistence."""
+    """Manages the lifecycle state of all 110 pages with atomic DB and JSON persistence."""
 
     logger = logging.getLogger(__name__)
 
@@ -74,10 +74,23 @@ class PipelineStateManager:
         self,
         state_file_path: str | Path = DEFAULT_PIPELINE_STATE_FILE,
         manifest_path: str | Path = DEFAULT_PAGES_MANIFEST,
+        book_slug: str | None = None,
     ):
         self.state_file = Path(state_file_path)
         self.manifest_path = Path(manifest_path)
         self.pages: dict[str, PageStateRecord] = {}
+
+        # Lazy-import data store for dual-write persistence
+        self.data_store = None
+        try:
+            from curiokraft_book.data.hybrid_store import get_data_store
+
+            # Only attach global store if using default production paths or explicit book_slug
+            if Path(state_file_path) == Path(DEFAULT_PIPELINE_STATE_FILE) or book_slug:
+                self.data_store = get_data_store(book_slug=book_slug)
+        except Exception as e:
+            self.logger.debug(f"HybridDataStore notice: {e}")
+
         self._load_or_initialize()
 
     def _load_or_initialize(self) -> None:
@@ -94,10 +107,8 @@ class PipelineStateManager:
                 self.logger.error(
                     "Pipeline state may be incomplete - manual intervention may be required"
                 )
-                # Still initialize from manifest so system can continue, but mark as recovered
             except Exception as e:
                 self.logger.error(f"Failed to load pipeline state {self.state_file}: {e}")
-                # Re-raise unexpected errors - don't silently continue
                 raise
 
         # Populate missing pages or sync authoritative metadata from manifest
@@ -118,7 +129,6 @@ class PipelineStateManager:
                     )
                     changed = True
                 else:
-                    # Sync metadata if manifest has updated canonical_object or display_label
                     rec = self.pages[p_id]
                     sync_dict = rec.model_dump()
                     rec_changed = False
@@ -150,6 +160,17 @@ class PipelineStateManager:
         update_data.update(kwargs)
         self.pages[page_id] = PageStateRecord(**update_data)
         self.save()
+
+        # Dual-write to DataStore if configured
+        if self.data_store:
+            try:
+                store_kwargs = dict(kwargs)
+                if "status" in store_kwargs and isinstance(store_kwargs["status"], PageStatus):
+                    store_kwargs["status"] = store_kwargs["status"].value
+                self.data_store.update_page(page_id, **store_kwargs)
+            except Exception as e:
+                self.logger.debug(f"DataStore dual-write notice: {e}")
+
         return self.pages[page_id]
 
     def get_pages_by_status(self, status: PageStatus) -> list[PageStateRecord]:
@@ -163,15 +184,15 @@ class PipelineStateManager:
         return summary
 
     def save(self) -> None:
-        """Persist state atomically to disk."""
+        """Persist state atomically to disk JSON."""
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         serializable = {
             "total_pages": len(self.pages),
             "summary": self.get_summary(),
             "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
         }
-        # Atomic write: temp file + rename
-        temp_file = self.state_file.with_suffix('.tmp')
+        temp_file = self.state_file.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=2)
-        temp_file.replace(self.state_file)  # Atomic on POSIX, replace on Windows
+        temp_file.replace(self.state_file)
+

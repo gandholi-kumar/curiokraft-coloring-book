@@ -108,6 +108,7 @@ class InteriorBatchRunner:
         inbox_dir: str | Path = DEFAULT_INBOX_DIR,
         image_generator: ImageGenerator | None = None,
         llm_client: LLMClient | None = None,
+        book_slug: str | None = None,
     ):
         self.manifest_path = Path(manifest_path)
         self.output_masters_dir = Path(output_masters_dir)
@@ -115,7 +116,7 @@ class InteriorBatchRunner:
         self.inbox_dir = Path(inbox_dir)
         self.image_generator = image_generator or ImageGenerator()
         self.debate_engine = DebateEngine(llm_client)
-        self.state_mgr = PipelineStateManager(manifest_path=self.manifest_path)
+        self.state_mgr = PipelineStateManager(manifest_path=self.manifest_path, book_slug=book_slug)
         self.retry_manager = RetryManager()
         self.inbox_provider = DiskInboxProvider(
             inbox_dir=self.inbox_dir, raw_dir=self.raw_generated_dir
@@ -293,16 +294,27 @@ class InteriorBatchRunner:
                 logger.info(f"Using existing raw illustration from {raw_img_jpg}")
                 raw_canvas = Image.open(raw_img_jpg).convert("L")
             else:
-                raw_canvas = self.image_generator.generate(
-                    positive_prompt=debate_res.positive_prompt,
-                    negative_prompt=debate_res.negative_prompt,
-                    canonical_label=canonical,
-                    section=section,
-                    source_mode=source_mode,
-                    page_id=page_id,
-                    page_number=page_num,
-                    force_fresh=force_fresh,
-                )
+                # Check DB for cross-book asset reuse before calling external AI generator
+                reused_asset = None
+                if self.state_mgr.data_store and not force_fresh:
+                    reused_asset = self.state_mgr.data_store.find_raw_asset_by_canonical(canonical)
+
+                if reused_asset and reused_asset.exists():
+                    logger.info(
+                        f"Reusing existing illustration from database for canonical object '{canonical}': {reused_asset}"
+                    )
+                    raw_canvas = Image.open(reused_asset).convert("L")
+                else:
+                    raw_canvas = self.image_generator.generate(
+                        positive_prompt=debate_res.positive_prompt,
+                        negative_prompt=debate_res.negative_prompt,
+                        canonical_label=canonical,
+                        section=section,
+                        source_mode=source_mode,
+                        page_id=page_id,
+                        page_number=page_num,
+                        force_fresh=force_fresh,
+                    )
 
         page_type = page_data.get("type", "")
         composition = page_data.get("composition", "")
@@ -343,6 +355,13 @@ class InteriorBatchRunner:
         self.state_mgr.update_page(
             page_id, status=PageStatus.GENERATED, raw_image_path=str(raw_img_path)
         )
+        if self.state_mgr.data_store:
+            try:
+                self.state_mgr.data_store.register_media_asset(
+                    raw_img_path, asset_type="raw_image", page_id=page_id
+                )
+            except Exception as e:
+                logger.debug(f"Auto-index raw asset notice: {e}")
 
         # 3. Deterministic Code-Level Rescue & Safe Margin Fit
         is_left_page = page_num % 2 == 0
@@ -393,6 +412,13 @@ class InteriorBatchRunner:
             qa_score=100.0 if all_passed else 70.0,
             violations=dim_check.violations + margin_check.violations + bw_check.violations,
         )
+        if self.state_mgr.data_store and all_passed:
+            try:
+                self.state_mgr.data_store.register_media_asset(
+                    final_master_path, asset_type="composite_master", page_id=page_id
+                )
+            except Exception as e:
+                logger.debug(f"Auto-index composite master notice: {e}")
 
         return final_master_path
 

@@ -13,6 +13,7 @@ first. It separates **Track 1** (free Google AI Studio web workflow) from **Trac
 
 | Document | Covers |
 |---|---|
+| [FIRST_TIME_USER_ONBOARDING_GUIDE.md](setup/FIRST_TIME_USER_ONBOARDING_GUIDE.md) | **First-Time User Guide.** Step-by-step from cloning, DB init, prompt export, image indexing, to PDF compilation. |
 | [ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md](setup/ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md) | Publisher assets, environment preparation, disaster recovery, PyPI packaging, and the 15-minute pre-publish checklist. |
 | [GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) | Exact AI Studio sidebar settings (aspect ratio `3:4`, output *Images only*, temperature `0.5`) and copy-paste System Instruction presets. |
 | [GITHUB_PROJECT_MAINTENANCE_GUIDE.md](setup/GITHUB_PROJECT_MAINTENANCE_GUIDE.md) | Maintaining the repository with free GitHub tooling as a solo maintainer. |
@@ -29,7 +30,8 @@ first. It separates **Track 1** (free Google AI Studio web workflow) from **Trac
 
 | Document | Covers |
 |---|---|
-| [ARCHITECTURE_DIAGRAMS.md](architecture/ARCHITECTURE_DIAGRAMS.md) | Five Mermaid diagrams: high-level architecture, prompt synthesis, page lifecycle, module map, data flow. |
+| [ARCHITECTURE_DIAGRAMS.md](architecture/ARCHITECTURE_DIAGRAMS.md) | Mermaid diagrams: high-level architecture, prompt synthesis, page lifecycle, module map, data flow, and outbox sync. |
+| [CENTRALIZED_DATABASE_AND_STORAGE_GUIDE.md](architecture/CENTRALIZED_DATABASE_AND_STORAGE_GUIDE.md) | Centralized database schema, Neon + Cloudflare R2, offline Docker/SQLite parity, CAS deduplication, and outbox sync. |
 | [ARCHITECTURE_REVIEW_AND_ANALYSIS.md](architecture/ARCHITECTURE_REVIEW_AND_ANALYSIS.md) | Full review across architecture, security, extensibility, design patterns, and SOLID adherence. |
 | [MULTI_AGENT_SYSTEM_AND_DEBATES.md](architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md) | The 10 specialist agents, their contracts, and the 4-round debate protocols. |
 | [MULTI_VOLUME_ARCHITECTURE_GUIDE.md](architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md) | Scaling to Volume 2/3 and themed editions with zero hardcoded state in application code. |

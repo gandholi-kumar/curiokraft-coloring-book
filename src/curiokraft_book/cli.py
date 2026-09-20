@@ -13,6 +13,7 @@ from rich.table import Table
 
 from curiokraft_book.agents.kdp_parser import inspect_kdp_inbox_forms
 from curiokraft_book.agents.kdp_publisher import KDPPublisherOrchestrator
+from curiokraft_book.cli_db import db_app
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
@@ -126,6 +127,7 @@ app.add_typer(prompt_app, name="prompt")
 app.add_typer(debate_app, name="debate")
 app.add_typer(blueprint_app, name="blueprint")
 app.add_typer(kdp_app, name="kdp")
+app.add_typer(db_app, name="db")
 
 
 def print_hint(step_name: str, next_cmd: str, description: str):
@@ -486,9 +488,11 @@ def audit_manifest():
 
 
 @manifest_app.command("status")
-def manifest_status():
+def manifest_status(
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
+):
     """[Stage 1: Quality] Display 110-page lifecycle status breakdown from state manager."""
-    state_mgr = PipelineStateManager()
+    state_mgr = PipelineStateManager(book_slug=slug)
     summary = state_mgr.get_summary()
 
     table = Table(title="110-Page Pipeline Lifecycle Status")
@@ -497,6 +501,31 @@ def manifest_status():
 
     for status, count in summary.items():
         table.add_row(status, str(count))
+
+    console.print(table)
+
+
+@manifest_app.command("details")
+def manifest_details(
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
+):
+    """[Stage 1: Quality] Display detailed page-by-page pipeline state."""
+    state_mgr = PipelineStateManager(book_slug=slug)
+    table = Table(title="Page-by-Page Pipeline State Details")
+    table.add_column("Page ID", style="cyan")
+    table.add_column("Page #", style="yellow")
+    table.add_column("Status", style="green")
+    table.add_column("Attempts", style="magenta")
+    table.add_column("Last Updated", style="blue")
+
+    for _page_id, record in sorted(state_mgr.pages.items(), key=lambda x: int(x[1].page_number)):
+        table.add_row(
+            record.page_id,
+            str(record.page_number),
+            record.status.value,
+            str(record.attempts),
+            record.last_updated or "-",
+        )
 
     console.print(table)
 
@@ -656,6 +685,9 @@ def generate_full_book(
     workers: int = typer.Option(
         4, "--workers", "-w", help="Number of parallel workers (default: 4, recommended: 2-8)"
     ),
+    slug: str | None = typer.Option(
+        None, "--slug", help="Target book slug in database (e.g. curiokraft-aquatic_vol1)"
+    ),
 ):
     """[Stage 3: Production] Execute full 110-page interior batch generation & QA."""
     mode_label = f"PARALLEL ({workers} workers)" if parallel else "SEQUENTIAL"
@@ -669,7 +701,7 @@ def generate_full_book(
     from curiokraft_book.agents.book_qa import run_book_qa_audit
     from curiokraft_book.orchestrator.batch_runner import InteriorBatchRunner
 
-    runner = InteriorBatchRunner()
+    runner = InteriorBatchRunner(book_slug=slug)
 
     with Progress(
         SpinnerColumn(),
@@ -1569,6 +1601,31 @@ def export_prompts(
     console.print(
         f"[bold green][PASS] Synchronized complete agent debate audit to:[/] [cyan]{debate_log_path}[/cyan]"
     )
+
+    # Persist prompt items to Relational Database
+    try:
+        from curiokraft_book.data.base import PromptRecord
+        from curiokraft_book.data.hybrid_store import get_data_store
+
+        store = get_data_store()
+        for item in prompt_items:
+            rec = PromptRecord(
+                book_id=store.active_book.id,
+                page_id=item.id,
+                prompt_type=item.type,
+                positive_prompt=item.positive_prompt,
+                negative_prompt=item.negative_prompt,
+                aspect_ratio=item.aspect_ratio,
+                preset_name=item.preset_name,
+                temperature=item.temperature,
+                top_p=item.top_p,
+            )
+            store.prompts.save_prompt(rec)
+        console.print(
+            f"[bold green][PASS] Persisted {len(prompt_items)} prompts to database `prompts` table.[/bold green]"
+        )
+    except Exception as e:
+        logger.debug(f"Notice saving prompts to DB: {e}")
 
 
 @debate_app.command("show")

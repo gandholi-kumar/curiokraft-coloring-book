@@ -7,6 +7,7 @@ The CurioKraft Coloring Book Engine is an enterprise-grade publication pipeline 
 
 ### Key Features
 - **10 Specialized Agents**: Book Director, Design, KDP, Market, Education, Red-Team Critic, Judge, Prompt Engineer, Vision QA, and Book QA.
+- **Centralized Database & Object Storage**: ACID-compliant relational persistence (PostgreSQL/SQLite) with S3/R2 storage, Content-Addressable Storage (CAS) SHA-256 deduplication, intelligent cross-book asset reuse, and bi-directional cloud synchronization.
 - **Manifest-Driven Multi-Volume Scaling**: 100% manifest/config-driven with zero hardcoded state in application code. Volume 2, 3, or themed editions require zero code changes.
 - **Decoupled Taxonomy & Curriculum**: `config/curriculum.yaml` (volume-agnostic spread styling, hollow bubble mandates, object purity) + `config/taxonomy.yaml` (category visual templates, living vs inanimate taxonomy).
 - **Deterministic Python Validation**: Bounding boxes, margins, 300 DPI, binary black-and-white, zero intentional gray detection, and duplicate prevention.
@@ -76,35 +77,46 @@ export GEMINI_API_KEY="AIzaSy..."
 
 ---
 
-## Quick Start CLI Manual
+## Quick Start CLI Manual (Sequential Execution Flow)
 
 ```powershell
-# 0. Initialize Workspace on Fresh Installation or Check Health
+# 0. Initialize Workspace & Centralized Database Foundation
 curiokraft-book init
+curiokraft-book db init
+curiokraft-book db migrate-from-fs    # Ingest existing YAML config & pipeline_state.json
 curiokraft-book doctor
+curiokraft-book db status
 
-# 1. Semantic Object Registry & Manifest Audit
+# 1. Semantic Object Registry, Manifest Audit & Asset Indexing
 curiokraft-book manifest audit
-curiokraft-book manifest status
+curiokraft-book manifest status --slug curiokraft-vol1
+curiokraft-book db sync-assets --dir inbox/raw_pages --type raw_image
 
-# 2. Run Automated Unit Tests on Deterministic Validators
+# 2. Run Automated Unit Tests on Deterministic Validators & Data Layer
 curiokraft-book test validators
+python -m pytest tests/test_data_layer.py
 
 # 3. Generate 1 to 5 Configurable Sample Pages for Gate 2 Review
 curiokraft-book sample generate --count 3
 curiokraft-book sample generate --pages P001,P005,P047
 
-# 4. Produce Full 110-Page Interior Production Batch
-curiokraft-book generate book
+# 4. Produce Full 110-Page Interior Production Batch (with Automatic DB Asset Reuse)
+curiokraft-book generate book --slug curiokraft-vol1
 
 # 5. Programmatically Composite KDP Paperback Cover (17.498 x 11.250 in)
 curiokraft-book cover build
+curiokraft-book cover validate
 
-# 6. Assemble 110-Page Interior PDF (8.5 x 11.0 in, No Bleed)
+# 6. Assemble 110-Page Interior PDF (8.5 x 11.0 in, No Bleed, Lossless FlateDecode)
 curiokraft-book assemble interior
 
 # 7. Run Full 18-Point Deterministic KDP Preflight Diagnostic & Certificate
 curiokraft-book preflight run
+
+# 8. Generate Publishing Metadata & Synchronize Cloud Outbox (Neon + Cloudflare R2)
+curiokraft-book kdp generate
+curiokraft-book db sync
+curiokraft-book db export-to-fs
 ```
 
 ---
@@ -138,11 +150,20 @@ coloring-book/
 │
 ├── src/curiokraft_book/                     # 🐍 Main Python Package Root
 │   ├── cli.py                               # Global CLI entrypoint (Typer/Rich)
+│   ├── cli_db.py                            # Centralized Database & Sync CLI suite
+│   ├── data/                                # 🗄️ Relational Data & Object Storage Layer
+│   │   ├── base.py                          # Normalized Pydantic models & repository protocols
+│   │   ├── models.py                        # Declarative SQLAlchemy ORM models (Postgres/SQLite)
+│   │   ├── postgres_store.py                # SQL database manager & concrete repositories
+│   │   ├── object_storage.py                # S3/Cloudflare R2 & Local Disk CAS storage
+│   │   ├── hybrid_store.py                  # Dual-write coordinator & cross-book asset discovery
+│   │   └── sync_engine.py                   # Bi-directional outbox sync (local <-> cloud)
 │   ├── orchestrator/                        # Batch runner, 4-round debate engine, state manager, model client
 │   ├── compositor/                          # KDP cover, typography, special pages, interior PDF compiler
 │   ├── validators/                          # Deterministic 18-point KDP preflight, margins, grayscale, dimensions
 │   └── rescue/                              # Adaptive Otsu binarization & safe-margin fitter
 │
+├── docker-compose.yml                       # 🐳 Local Offline Dev Stack (PostgreSQL 16 + MinIO S3)
 ├── inbox/                                   # 📥 User Drop Inbox (Zero API Cost Workflow)
 │   ├── raw_pages/                           # Drop interior illustrations here (e.g. raw_p006.png)
 │   │   └── README.md                        # Inbox drop targets & naming conventions guide
@@ -176,12 +197,13 @@ coloring-book/
 ## Documentation & Publishing Guides
 
 * 🗂️ **[Full Documentation Index](docs/README.md)** — Every guide, grouped into setup, workflows, architecture, standards, and reference.
-* 🚀 **[Master Publishing Workflows Guide](docs/workflows/PUBLISHING_WORKFLOWS_GUIDE.md)** — **Start here!** Clear separation between **Track 1 (Free Google AI Studio Web Workflow)** and **Track 2 (Automated API Batch)**.
+* 🚀 **[Master Publishing Workflows Guide](docs/workflows/PUBLISHING_WORKFLOWS_GUIDE.md)** — **Start here!** Sequential execution flow across Track 1 (Free Web UI) and Track 2 (Automated API Batch).
+* 🗄️ **[Centralized Database & Object Storage Guide](docs/architecture/CENTRALIZED_DATABASE_AND_STORAGE_GUIDE.md)** — Relational schema, Neon + Cloudflare R2, offline Docker/SQLite parity, CAS deduplication, and outbox sync.
 * ⚙️ **[Google AI Studio Setup & Prompt Presets](docs/setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Browser configuration & prompt presets.
 * 📐 **[Amazon KDP Print Specifications](docs/reference/KDP_PRINT_SPECIFICATIONS.md)** — Exact geometry, spine calculations, and barcode safe zones.
 * 🏛️ **[Multi-Volume Architecture Guide](docs/architecture/MULTI_VOLUME_ARCHITECTURE_GUIDE.md)** — How to create Volume 2, Volume 3, and themed editions.
 * 🧠 **[Multi-Agent System & Debate Engine](docs/architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — 10 specialist agents, 4-round debates, and audit logs.
-* 🗺️ **[Architecture Diagrams](docs/architecture/ARCHITECTURE_DIAGRAMS.md)** — Mermaid diagrams of the pipeline, page lifecycle state machine, and module map.
+* 🗺️ **[Architecture Diagrams](docs/architecture/ARCHITECTURE_DIAGRAMS.md)** — Mermaid diagrams of the pipeline, page lifecycle state machine, module map, and outbox sync.
 * ⚡ **[Performance Profiling Guide](docs/workflows/PERFORMANCE.md)** — Profiling decorators, measured overhead, and how to profile a real run.
 * 📥 **[Image Inbox Naming Conventions](inbox/raw_pages/README.md)** — File naming rules and fallback candidates.
 

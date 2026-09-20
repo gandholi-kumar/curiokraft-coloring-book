@@ -15,7 +15,8 @@ syntax so they render inline on GitHub and stay diff-able in review.
 3. [Page Lifecycle State Machine](#page-lifecycle-state-machine)
 4. [Class and Module Map](#class-and-module-map)
 5. [Data Flow Pipeline](#data-flow-pipeline)
-6. [Known Deviations from Described Design](#known-deviations-from-described-design)
+6. [Centralized Database & Outbox Synchronization Flow](#centralized-database-and-outbox-synchronization-flow)
+7. [Known Deviations from Described Design](#known-deviations-from-described-design)
 
 ---
 
@@ -59,6 +60,13 @@ flowchart TD
         KdpParserM["kdp_parser.py<br/>offline HTML form parse"]
     end
 
+    subgraph DataLayer["Data Access & Storage Layer — data/"]
+        HybridStore["HybridDataStore<br/><code>hybrid_store.py</code>"]
+        SQLStore["SQLDatabaseManager & Repositories<br/><code>postgres_store.py</code>"]
+        ObjectStore["StorageBackend (S3/R2 & Local Disk)<br/><code>object_storage.py</code>"]
+        SyncWorker["SyncEngine<br/><code>sync_engine.py</code>"]
+    end
+
     CLI --> BatchRunner
     CLI --> CompositorM
     CLI --> ValidatorsM
@@ -66,6 +74,8 @@ flowchart TD
     CLI --> KdpPublisherM
     CLI --> KdpParserM
     CLI --> BlueprintRdr
+    CLI --> HybridStore
+    CLI --> SyncWorker
 
     BatchRunner --> DebateEngine
     BatchRunner --> ImageGen
@@ -74,6 +84,13 @@ flowchart TD
     BatchRunner --> RescueM
     BatchRunner --> ValidatorsM
     BatchRunner --> CompositorM
+    BatchRunner --> HybridStore
+    StateMgr --> HybridStore
+    HybridStore --> SQLStore
+    HybridStore --> ObjectStore
+    HybridStore -.->|"atomic mirror"| LegacyJSON["output/pipeline_state.json"]
+    SyncWorker --> SQLStore
+    SyncWorker --> ObjectStore
 
     DebateEngine -.->|"stores client,<br/>never invokes it"| LLMClientM
 
@@ -371,6 +388,80 @@ flowchart LR
 tokens (`RateLimiter`, token bucket, default 60 RPM) and state writes (a `threading.Lock`)
 while letting image generation and PIL work run concurrently. Pages complete in
 non-deterministic order; individual page failures do not abort the batch.
+
+---
+
+## Centralized Database & Outbox Synchronization Flow
+
+### 1. Cross-Book Asset Discovery & Reuse Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Publisher / CLI
+    participant BR as InteriorBatchRunner
+    participant SM as PipelineStateManager
+    participant HS as HybridDataStore
+    participant DB as SQL Database (SQLite / Postgres)
+    participant IG as ImageGenerator (AI API)
+    participant FS as Object Storage / Filesystem
+
+    User->>BR: generate book --slug curiokraft-vol2
+    BR->>SM: update_page(page_id, DEBATED)
+    SM->>HS: update_page()
+    HS->>DB: save_page() + record OutboxEvent
+    HS-->>FS: mirror pipeline_state.json
+
+    opt Cross-Book Asset Reuse Check
+        BR->>HS: find_raw_asset_by_canonical(canonical_object)
+        HS->>DB: find_by_canonical(canonical_object)
+        alt Illustration already approved in previous volume
+            DB-->>HS: Return PageRecord(raw_image_path)
+            HS-->>BR: Return existing Path
+            Note over BR: Reuses asset instantly! (0 API cost, 0s latency)
+        else Not found in any volume
+            DB-->>HS: Return None
+            HS-->>BR: Return None
+            BR->>IG: generate(prompt, canonical)
+            IG-->>BR: Return new PIL.Image
+        end
+    end
+
+    BR->>FS: save raw_image (300 DPI)
+    BR->>HS: register_media_asset(raw_image_path, "raw_image")
+    HS->>DB: save MediaAssetModel (SHA-256 CAS)
+```
+
+### 2. Bi-Directional Offline-to-Cloud Synchronization
+
+```mermaid
+flowchart LR
+    subgraph LocalDev["Local Offline Environment"]
+        LocalDB[("Local SQLite / Docker Postgres<br/>(output/curiokraft.db)")]
+        LocalOutbox["OutboxEventModel<br/>(status = pending)"]
+        LocalDisk["Local Disk / MinIO<br/>(300 DPI PNGs & PDFs)"]
+    end
+
+    subgraph SyncWorkerEngine["SyncEngine (curiokraft-book db sync)"]
+        PushWorker["1. Push Pending Outbox<br/>• Stream bytes to R2<br/>• Upsert rows to Postgres"]
+        PullWorker["2. Pull Remote Changes<br/>• Last-Write-Wins (LWW)<br/>• Protect approved pages"]
+    end
+
+    subgraph CloudEnv["Production Cloud Stack"]
+        NeonDB[("Neon Serverless PostgreSQL<br/>(ACID JSONB Models)")]
+        CloudflareR2[("Cloudflare R2 Object Storage<br/>($0 Egress Bandwidth)")]
+    end
+
+    LocalOutbox --> PushWorker
+    LocalDisk --> PushWorker
+    PushWorker -->|"Upsert SQL"| NeonDB
+    PushWorker -->|"Upload S3 ($0 egress)"| CloudflareR2
+
+    NeonDB --> PullWorker
+    CloudflareR2 --> PullWorker
+    PullWorker -->|"Update local DB"| LocalDB
+    PullWorker -->|"Sync missing binaries"| LocalDisk
+```
 
 ---
 
