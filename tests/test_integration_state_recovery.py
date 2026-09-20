@@ -176,3 +176,44 @@ def test_manager_without_a_manifest_starts_empty(tmp_path: Path):
     assert mgr.pages == {}
     assert mgr.get_page("P005") is None
     assert mgr.get_pages_by_status(PageStatus.PLANNED) == []
+
+
+def test_crash_during_write_leaves_the_previous_state_intact(tmp_path: Path, monkeypatch):
+    """A failure partway through save() must not damage the last good state file.
+
+    With a plain truncating write this fails: open(..., "w") empties the file
+    before json.dump raises, so the previous state is destroyed. The atomic
+    temp-file + replace pattern is what keeps the old state readable.
+    """
+    state_file = tmp_path / "pipeline_state.json"
+    manifest = _manifest(tmp_path)
+
+    mgr = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+    mgr.update_page("P005", status=PageStatus.APPROVED, qa_passed=True, qa_score=95.0)
+
+    before = state_file.read_text(encoding="utf-8")
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("simulated crash mid-write")
+
+    # Fail the real save() at the json.dump call, after the temp file is opened.
+    with monkeypatch.context() as m:
+        m.setattr(json, "dump", explode)
+        with pytest.raises(RuntimeError, match="simulated crash mid-write"):
+            mgr.update_page("P006", status=PageStatus.APPROVED)
+
+    # The published state file is byte-for-byte the pre-crash state, and still parses.
+    assert state_file.read_text(encoding="utf-8") == before
+    on_disk = json.loads(state_file.read_text(encoding="utf-8"))
+    assert on_disk["pages"]["P005"]["status"] == PageStatus.APPROVED.value
+
+    # A cold restart sees the pre-crash state; the lost write simply never landed.
+    recovered = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+    assert recovered.get_page("P005").status == PageStatus.APPROVED
+    assert recovered.get_page("P005").qa_score == 95.0
+    assert recovered.get_page("P006").status == PageStatus.PLANNED
+
+    # A later healthy write succeeds and leaves no orphaned temp file behind.
+    recovered.update_page("P006", status=PageStatus.APPROVED)
+    assert not state_file.with_suffix(".tmp").exists()
+    assert json.loads(state_file.read_text(encoding="utf-8"))["total_pages"] == 3
