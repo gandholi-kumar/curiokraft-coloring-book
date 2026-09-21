@@ -870,6 +870,18 @@ def generate_special_pages(
                 qa_score=100.0,
                 violations=[],
             )
+
+        # Auto-register special pages into Centralized Database & Object Storage
+        if state_mgr.data_store:
+            try:
+                if p001_path.exists():
+                    state_mgr.data_store.register_media_asset(p001_path, asset_type="composite_master", page_id="P001")
+                if cert_path.exists():
+                    state_mgr.data_store.register_media_asset(cert_path, asset_type="composite_master", page_id=cert_pid)
+                if cert_num == 109 and (out_dir / "page_110.png").exists():
+                    state_mgr.data_store.register_media_asset(out_dir / "page_110.png", asset_type="composite_master", page_id="P110")
+            except Exception as e:
+                logger.debug(f"Special pages media asset auto-register notice: {e}")
     except Exception as e:
         logger.debug(f"Special pages pipeline state sync notice: {e}")
 
@@ -903,6 +915,19 @@ def build_cover():
             else f"Mode: {res.spine_mode}"
         )
         console.print(f"  • Spine Styling: [bold cyan]{spine_desc}[/bold cyan]")
+
+        # Auto-register cover deliverables to Centralized Database & Object Storage
+        try:
+            from curiokraft_book.data.hybrid_store import get_data_store
+
+            store = get_data_store()
+            if res.output_png_path and Path(res.output_png_path).exists():
+                store.register_media_asset(res.output_png_path, asset_type="cover_asset")
+            if res.output_cmyk_pdf_path and Path(res.output_cmyk_pdf_path).exists():
+                store.register_media_asset(res.output_cmyk_pdf_path, asset_type="cover_asset")
+            console.print("[bold green][DB][/bold green] Auto-registered cover deliverables into database & storage.")
+        except Exception as e:
+            logger.debug(f"Cover auto-register DB notice: {e}")
 
         print_hint(
             "KDP Cover Master Assembly",
@@ -1047,6 +1072,17 @@ def assemble_interior():
         console.print(
             f"[bold green][PASS] Successfully compiled 110-page interior PDF:[/] {res.output_pdf_path}"
         )
+
+        # Auto-register compiled interior PDF into Centralized Database & Object Storage
+        try:
+            from curiokraft_book.data.hybrid_store import get_data_store
+
+            store = get_data_store()
+            store.register_media_asset(res.output_pdf_path, asset_type="interior_pdf")
+            console.print("[bold green][DB][/bold green] Auto-registered interior PDF into database & storage.")
+        except Exception as e:
+            logger.debug(f"Interior PDF auto-register DB notice: {e}")
+
         print_hint(
             "110-Page Interior PDF Compilation",
             "curiokraft-book preflight run",
@@ -1842,6 +1878,18 @@ def ingest_raw_images(
                 f"[bold green][PASS] Cover Rebuilt Successfully:[/] {c_res.output_png_path}"
             )
             found_count += 1
+
+            # Auto-register rebuilt cover deliverables to Centralized Database & Object Storage
+            try:
+                from curiokraft_book.data.hybrid_store import get_data_store
+
+                store = get_data_store()
+                if c_res.output_png_path and Path(c_res.output_png_path).exists():
+                    store.register_media_asset(c_res.output_png_path, asset_type="cover_asset")
+                if c_res.output_cmyk_pdf_path and Path(c_res.output_cmyk_pdf_path).exists():
+                    store.register_media_asset(c_res.output_cmyk_pdf_path, asset_type="cover_asset")
+            except Exception as e:
+                logger.debug(f"Cover ingest auto-register notice: {e}")
 
             # Archive covers from inbox to generated/cover/
             cover_gen_dir = Path("generated/cover")
