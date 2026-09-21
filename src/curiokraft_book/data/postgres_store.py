@@ -14,6 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 

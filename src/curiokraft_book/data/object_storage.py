@@ -14,6 +14,10 @@ import os
 import shutil
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from curiokraft_book.data.base import StorageBackend
 
 logger = logging.getLogger("curiokraft.storage")
@@ -132,7 +136,10 @@ class S3StorageBackend(StorageBackend):
         dest = Path(destination_path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         try:
-            self.s3_client.download_file(self.bucket_name, clean_key, str(dest))
+            resp = self.s3_client.get_object(Bucket=self.bucket_name, Key=clean_key)
+            with open(dest, "wb") as f:
+                for chunk in resp["Body"].iter_chunks(chunk_size=1024 * 1024):
+                    f.write(chunk)
             return True
         except Exception as e:
             logger.error(f"Failed downloading {clean_key} from {self.bucket_name}: {e}")

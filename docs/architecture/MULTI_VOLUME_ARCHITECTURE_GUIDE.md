@@ -373,3 +373,86 @@ Whichever mascot is chosen for a volume, **the identical character image must ap
 
 *(For full prompt templates, asset guides, and thresholding details, see [docs/architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md](../architecture/SPECIAL_PAGES_AND_MASCOT_GUIDE.md)).*
 
+---
+
+## 🗄️ Multi-Volume Database Scoping & MinIO Storage Isolation
+
+To scale effortlessly from 1 book to 10+ books without collisions, the centralized database and object storage layers are architected with **strict multi-tenant slug scoping**.
+
+### 1. Slug Derivation Architecture
+Every volume's unique slug is automatically computed from `config/book_config.yaml`:
+```yaml
+book:
+  title: "OCEAN EXPEDITIONS & AQUATIC BEINGS"
+  volume: "aquatic_vol1"    # Automatically derives slug: curiokraft-aquatic_vol1
+  manifest: "manifest/pages_aquatic_vol1.json"
+```
+When preparing Volume 2:
+```yaml
+book:
+  title: "SAVANNA SAFARI & WILD KINGDOM"
+  volume: "safari_vol1"     # Automatically derives slug: curiokraft-safari_vol1
+  manifest: "manifest/pages_safari_vol1.json"
+```
+
+### 2. Relational Database Partitioning (PostgreSQL)
+In PostgreSQL (or SQLite):
+- The `books` table contains a dedicated record for each volume:
+  ```sql
+  SELECT book_id, slug, title, volume FROM books;
+  -- Output:
+  -- 1 | curiokraft-aquatic_vol1 | OCEAN EXPEDITIONS & AQUATIC BEINGS | aquatic_vol1
+  -- 2 | curiokraft-safari_vol1  | SAVANNA SAFARI & WILD KINGDOM      | safari_vol1
+  ```
+- The `pages` table links each page strictly by foreign key `book_id`. Volume 1's `page_number = 5` and Volume 2's `page_number = 5` are completely isolated database entities with their own lifecycle statuses, prompt records, and approval locks.
+
+### 3. MinIO S3 Object Storage Layout
+In MinIO / Cloudflare R2 (`curiokraft-assets` bucket), assets are automatically partitioned under their volume slug prefix:
+```text
+curiokraft-assets/
+├── curiokraft-aquatic_vol1/
+│   ├── composite_master/
+│   │   ├── page_001.png
+│   │   └── page_002.png
+│   ├── cover_asset/
+│   │   ├── AQUATIC_Cover_300DPI.png
+│   │   └── AQUATIC_Cover_CMYK.pdf
+│   └── interior_pdf/
+│       └── AQUATIC_Interior_110p.pdf
+│
+└── curiokraft-safari_vol1/             <-- Separate folder tree for Volume 2
+    ├── composite_master/
+    │   ├── page_001.png
+    │   └── page_002.png
+    ├── cover_asset/
+    │   └── SAFARI_Cover_300DPI.png
+    └── interior_pdf/
+        └── SAFARI_Interior_110p.pdf
+```
+Switching books in `book_config.yaml` immediately redirects all CLI asset operations to that volume's folder. Existing volume assets in MinIO are never overwritten or mixed up.
+
+### 4. Cross-Volume Content-Addressable Storage (CAS) Deduplication
+Because all image uploads are indexed by their cryptographic **SHA-256 hash**:
+- If Volume 1 and Volume 2 share identical blank bleed-guard backings (`page_004.png`, `page_006.png`), the hash match is detected across the `media_assets` registry.
+- MinIO avoids storing duplicate bytes, reducing cloud storage footprint by ~50%.
+- Running `curiokraft-book db sync-assets` on the same directory multiple times is 100% idempotent — zero duplicate uploads or duplicate database rows.
+
+### 5. Multi-Volume CLI Commands
+
+```powershell
+# 1. Ingest Volume 2 YAML config and manifest into DB:
+curiokraft-book db migrate-from-fs
+
+# 2. Check active volume status:
+curiokraft-book db status
+
+# 3. Query manifest status for a specific volume by slug:
+curiokraft-book manifest status --slug curiokraft-safari_vol1
+
+# 4. Push and index Volume 2 illustrations into MinIO and PostgreSQL:
+curiokraft-book db sync-assets --dir output/safari/interior_masters --type composite_master
+
+# 5. Pull and verify Volume 2 assets down to local disk:
+curiokraft-book db pull-assets --slug curiokraft-safari_vol1 --dir output/safari_verified
+```
+

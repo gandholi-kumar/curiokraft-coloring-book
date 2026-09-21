@@ -16,9 +16,12 @@ from pathlib import Path
 
 import typer
 import yaml
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+load_dotenv()
 
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
@@ -175,6 +178,93 @@ def db_sync_assets(
             console.print(f"[red]Failed indexing {f.name}:[/] {e}")
 
     console.print(f"[bold green]Indexed {indexed} media assets with SHA-256 content hashes.[/bold green]")
+
+
+@db_app.command("pull-assets")
+def db_pull_assets(
+    directory: Path | None = typer.Option(
+        None, "--dir", "-d", help="Destination folder (default: standard output folders e.g. output/interior_masters/)"
+    ),
+    asset_type: str | None = typer.Option(
+        None, "--type", "-t", help="Filter by type (composite_master, interior_pdf, cover_asset, raw_image)"
+    ),
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
+    verify_hash: bool = typer.Option(
+        True, "--verify-hash/--no-verify-hash", help="Verify SHA-256 integrity against database records"
+    ),
+):
+    """Pull assets from database & MinIO down to local machine and verify file integrity."""
+    from curiokraft_book.data.object_storage import compute_sha256
+
+    store = get_data_store(book_slug=slug)
+    book = store.active_book
+    console.print(
+        Panel.fit(
+            f"[bold cyan]Pulling Assets for '{book.title}' ({book.slug}) from MinIO/DB[/bold cyan]"
+        )
+    )
+
+    all_assets = store.assets.list_assets_for_book(book.id)
+    if asset_type:
+        all_assets = [a for a in all_assets if a.asset_type.lower() == asset_type.lower()]
+
+    if not all_assets:
+        console.print(
+            f"[yellow]No assets found in database for book '{book.slug}' (filter: {asset_type or 'all'}).[/yellow]"
+        )
+        return
+
+    console.print(
+        f"[cyan]Found {len(all_assets)} asset records in database. Downloading & verifying...[/cyan]\n"
+    )
+
+    standard_dirs = {
+        "composite_master": Path("output/interior_masters"),
+        "interior_pdf": Path("output/interior"),
+        "cover_asset": Path("output/cover"),
+        "raw_image": Path("generated/raw_pages"),
+    }
+
+    pulled = 0
+    verified = 0
+    failed = 0
+
+    for asset in all_assets:
+        filename = Path(asset.storage_key).name
+        if directory:
+            dest_file = directory / filename
+        else:
+            folder = standard_dirs.get(asset.asset_type, Path("output/downloaded"))
+            dest_file = folder / filename
+
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        ok = store.storage.download_file(asset.storage_key, str(dest_file))
+        if not ok:
+            console.print(f"  [red][FAIL][/red] Failed to download {filename} from {asset.storage_key}")
+            failed += 1
+            continue
+
+        pulled += 1
+        if verify_hash:
+            local_hash = compute_sha256(dest_file)
+            if local_hash == asset.sha256_hash:
+                verified += 1
+                console.print(f"  [green][VERIFIED][/green] {filename} [dim]({dest_file.stat().st_size:,} bytes | SHA-256 match)[/dim]")
+            else:
+                console.print(f"  [yellow][MISMATCH][/yellow] {filename} hash does not match DB record!")
+        else:
+            console.print(f"  [green][OK][/green] Downloaded {filename} -> {dest_file}")
+
+    console.print(
+        Panel.fit(
+            f"[bold green]Asset Pull & Verification Complete![/bold green]\n\n"
+            f"- Downloaded: [bold cyan]{pulled}/{len(all_assets)}[/bold cyan]\n"
+            f"- Integrity Verified: [bold green]{verified}[/bold green]\n"
+            f"- Failures: [bold red]{failed}[/bold red]",
+            title="[bold green]MinIO/DB Pull Summary[/bold green]",
+            border_style="green",
+        )
+    )
 
 
 @db_app.command("sync")

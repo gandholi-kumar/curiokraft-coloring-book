@@ -305,15 +305,48 @@ curiokraft-book kdp generate
 
 ---
 
-## ☁️ Stage 5: Cloud Synchronization & Artifact Backup
+## ☁️ Stage 5: Cloud Synchronization, Asset Backup & Local Verification
 
-After production and preflight, synchronize local database records and image binaries to the cloud:
+After production and preflight, synchronize local database records and image binaries to the cloud, or verify remote assets on your local workstation:
 
+### 1. Ingest & Index Local Deliverables into Object Storage (MinIO / S3 / R2)
+Push your finalized interior masters, assembled interior PDF, and cover files into centralized storage with SHA-256 Content-Addressable deduplication:
 ```powershell
-# 1. Push pending outbox events to Neon PostgreSQL and binaries to Cloudflare R2
+# Index and upload all 110 composite master PNGs:
+curiokraft-book db sync-assets --dir output/interior_masters --type composite_master
+
+# Index and upload print-ready interior PDF:
+curiokraft-book db sync-assets --dir output/interior --type interior_pdf
+
+# Index and upload paperback cover master PNG and CMYK PDF:
+curiokraft-book db sync-assets --dir output/cover --type cover_asset
+```
+* **CAS Deduplication**: Each file is hashed via SHA-256 before upload. If the hash already exists in PostgreSQL/MinIO, upload is safely skipped. Running `db sync-assets` multiple times is completely idempotent.
+
+### 2. Pull & Verify Assets on Local Workstation (`db pull-assets`)
+To restore, audit, or verify assets stored in MinIO/PostgreSQL on a fresh machine (or without having local files), pull them down with automated cryptographic integrity checking:
+```powershell
+# Pull specific asset types to a verification directory:
+curiokraft-book db pull-assets --dir output/verified_assets --type interior_pdf
+curiokraft-book db pull-assets --dir output/verified_assets --type cover_asset
+curiokraft-book db pull-assets --dir output/verified_assets --type composite_master
+
+# Pull assets for a specific book volume:
+curiokraft-book db pull-assets --slug curiokraft-aquatic_vol1 --dir output/vol1_pull
+```
+* **Bit-for-Bit Integrity Verification**: For every downloaded file, the engine recomputes its local SHA-256 hash and compares it against the authoritative database record (`media_assets.sha256_hash`), certifying that no corruption occurred during transfer:
+  ```text
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf (82,319,410 bytes | SHA-256 match)
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png (13,954,329 bytes | SHA-256 match)
+  ```
+
+### 3. Bi-Directional Cloud Outbox Synchronization
+Synchronize relational database changes and prompt locks with your remote team:
+```powershell
+# Push pending outbox events to Neon PostgreSQL and binaries to Cloudflare R2
 curiokraft-book db sync
 
-# 2. (Optional) Export database state back to filesystem JSON for backup
+# (Optional) Export database state back to filesystem JSON for backup
 curiokraft-book db export-to-fs
 ```
 
@@ -355,6 +388,7 @@ curiokraft-book db export-to-fs
 | | `curiokraft-book manifest status [--slug]` | Display lifecycle status breakdown for book |
 | | `curiokraft-book manifest details [--slug]` | Display detailed page-by-page state table |
 | | `curiokraft-book db sync-assets` | Scan and index disk illustrations with SHA-256 CAS hashes |
+| | `curiokraft-book db pull-assets` | Download assets from MinIO/DB to local disk and verify SHA-256 integrity |
 | **Track 1 (Web UI)** | `curiokraft-book prompt export` | Export all 110 prompts + Cover prompts to markdown |
 | | `curiokraft-book prompt show -p P005` | Display single page prompt in terminal |
 | | `curiokraft-book cover prompt` | Display Front and Back cover artwork prompts |

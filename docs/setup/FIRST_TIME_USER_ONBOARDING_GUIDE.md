@@ -224,6 +224,14 @@ curiokraft-book db status
 
 # 3. If you have an existing workspace with manifest/pages.json or pipeline_state.json, migrate it:
 curiokraft-book db migrate-from-fs
+
+# 4. Push and index local master images into MinIO and PostgreSQL:
+curiokraft-book db sync-assets --dir output/interior_masters --type composite_master
+curiokraft-book db sync-assets --dir output/interior --type interior_pdf
+curiokraft-book db sync-assets --dir output/cover --type cover_asset
+
+# 5. Pull and verify assets from MinIO and PostgreSQL down to local machine:
+curiokraft-book db pull-assets --dir verification_download
 ```
 
 Expected output of `curiokraft-book db status`:
@@ -232,56 +240,138 @@ Expected output of `curiokraft-book db status`:
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Property                   ┃ Value                                           ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Database Engine            │ sqlite:///output/curiokraft.db                  │
-│ Storage Backend            │ LocalFileStorageBackend                         │
+│ Database Engine            │ postgresql+psycopg://postgres:***@localhost:5432│
+│ Storage Backend            │ S3StorageBackend (MinIO)                        │
 │ Active Book                │ OCEAN EXPEDITIONS & AQUATIC BEINGS              │
 │                            │ (curiokraft-aquatic_vol1)                       │
 │ Total Books                │ 1                                               │
 │ Total Pages in Active Book │ 110                                             │
-│   Pages [PLANNED]          │ 110                                             │
+│   Pages                    │ 110                                             │
 │ Total Prompts Stored       │ 0                                               │
-│ Total Media Assets Stored  │ 0                                               │
+│ Total Media Assets Stored  │ 59                                              │
 └────────────────────────────┴─────────────────────────────────────────────────┘
+```
+
+### Visualizing Database & Object Storage in Browser
+
+| Service | Browser URL | Credentials | What You Can Inspect |
+|:---|:---|:---|:---|
+| **pgAdmin 4** | [http://localhost:5050](http://localhost:5050) | `admin@example.com` / `admin` | Connect to host `postgres` (port `5432`). View `books`, `pages`, `media_assets`, and `sync_outbox` tables. |
+| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | `minioadmin` / `minioadminpassword` | Browse bucket `curiokraft-assets`, view high-res image previews, inspect SHA-256 metadata, and create share links. |
+
+### Pulling Assets for Verification (`db pull-assets`)
+To download files stored in MinIO and verify that their local bytes match the database records without pushing:
+```powershell
+# Pull interior PDF to verify locally:
+curiokraft-book db pull-assets --dir verify_folder --type interior_pdf
+
+# Pull cover artwork and PDF:
+curiokraft-book db pull-assets --dir verify_folder --type cover_asset
+
+# Pull all assets for a specific volume slug:
+curiokraft-book db pull-assets --slug curiokraft-aquatic_vol2 --dir vol2_verify
+```
+Each file is streamed from MinIO and verified against its PostgreSQL SHA-256 content hash:
+```text
+  [VERIFIED] page_001.png (2,305,216 bytes | SHA-256 match)
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png (13,954,329 bytes | SHA-256 match)
 ```
 
 ---
 
-## Step 4: Book Configuration & Theme Manifest (Saving to DB)
+## Step 4: Book Configuration, Manifest Mapping & Database Ingestion
 
-### 1. Initialize Workspace Directories
-```powershell
-curiokraft-book init --name "Ocean Expeditions & Aquatic Beings" --imprint "CurioKraft Publications"
-```
-This prepares all folder trees (`assets/`, `config/`, `manifest/`, `inbox/raw_pages/`, `output/interior_masters/`, `output/interior/`, `output/cover/`).
+Understanding how your book configuration, manifest files, and the database interconnect is essential for managing single and multi-volume publishing.
 
-### 2. Configure Book Specifications (`config/curiokraft.yaml`)
-Ensure your book configuration specifies the volume, dimensions, and theme:
+### 1. `curiokraft-book init` vs `curiokraft-book db init`
+It is important to distinguish between these two initialization commands:
+* **`curiokraft-book init` (Filesystem Scaffolding)**:
+  Prepares all local workspace directories (`assets/`, `config/`, `manifest/`, `inbox/raw_pages/`, `output/interior_masters/`, `output/interior/`, `output/cover/`) and creates starter template configuration files if they are missing. Run this once when setting up a fresh repository workspace.
+* **`curiokraft-book db init` (Database Schema Creation)**:
+  Connects to your active database engine (PostgreSQL 16 in Docker or embedded SQLite) and executes DDL to create the 6 relational tables: `books`, `pages`, `prompts`, `media_assets`, `pipeline_logs`, and `sync_outbox`. Run this once after starting your database or whenever resetting the database schema.
+
+### 2. The Configuration File: `config/book_config.yaml`
+`config/book_config.yaml` is the **single source of truth** for your publication. *(Note: Any references to `curiokraft.yaml` in older notes referred to this file; always use `config/book_config.yaml`)*.
+
 ```yaml
 book:
-  title: "Tiny Hands Color & Learn: Ocean Expeditions"
+  title: "OCEAN EXPEDITIONS & AQUATIC BEINGS"
   subtitle: "Toddler & Preschool Underwater Coloring Book"
-  volume: "aquatic_vol1"
-  page_count: 110
-  trim_size:
-    width_inches: 8.5
-    height_inches: 11.0
-  spine_width_inches: 0.248
-  margins:
-    inside_gutter_inches: 0.50
-    outside_inches: 0.375
+  volume: "aquatic_vol1"                          # Generates unique DB slug: curiokraft-aquatic_vol1
+  manifest: "manifest/pages_aquatic_vol1.json"    # Points to active manifest for this volume
+  target_audience:
+    age_min: 1
+    age_max: 4
+  interior:
+    page_count: 110
+    trim_size:
+      width_inches: 8.5
+      height_inches: 11.0
+    margins:
+      inside_gutter_inches: 0.50
+      outside_inches: 0.375
 ```
 
-### 3. Review Manifest Curriculum
-Inspect `manifest/pages.json` which structures the 110 pages:
-- **Pages 1–2**: Welcome Page & Milestone Spread
-- **Pages 3–106**: 52 Core Coloring Spreads (Odd page = Illustration, Even page = Blank Bleed Guard)
-- **Pages 107–108**: Review Alphabet Spread
-- **Pages 109–110**: Official Preschool Certificate & Blank End Page
+### 3. Maintaining Manifests for Different Volumes
+**Do you have to maintain only a single `manifest/pages.json` file?**
+**No!** You can maintain dedicated manifest files for each volume (e.g., `manifest/pages_aquatic_vol1.json`, `manifest/pages_vol2.json`, `manifest/pages_safari_vol1.json`).
 
-Audit the curriculum:
+* In `config/book_config.yaml`, simply point the `manifest:` key to the manifest file for the volume you are actively working on:
+  ```yaml
+  manifest: "manifest/pages_vol2.json"
+  ```
+* When you execute:
+  ```powershell
+  curiokraft-book db migrate-from-fs
+  ```
+  The ingestion engine automatically:
+  1. Reads the active volume slug from `config/book_config.yaml` (e.g. `curiokraft-vol2`).
+  2. Creates or selects that book record in the PostgreSQL `books` table.
+  3. Loads the specified manifest JSON file (`manifest/pages_vol2.json`) and inserts its 110 pages into the `pages` table linked to that volume's `book_id`.
+  4. Ingests any existing execution state from `pipeline_state.json`.
+
+### 4. Offline Resilience Guarantee (Zero-Breakage)
+**What happens if Docker, PostgreSQL, or MinIO is offline or unavailable?**
+CurioKraft is built with zero-breakage offline resilience:
+* If PostgreSQL is offline or `DATABASE_URL` is omitted, the engine automatically falls back to local embedded SQLite at `output/curiokraft.db` and stores binary CAS files in `output/storage/`.
+* If you operate entirely without a database, the core pipeline functions (prompt export, ingestion, special pages rendering, cover building, interior assembly, and preflight) operate directly against the filesystem files (`config/book_config.yaml`, `manifest/pages.json`, and `pipeline_state.json`). You can work completely offline on a plane or train with zero dependencies.
+
+### 5. What `manifest audit` and `manifest status` Do
+
+#### `curiokraft-book manifest audit`
+Performs an automated deterministic scan of the entire curriculum manifest to guarantee zero errors before generation begins:
+* **Duplicate Detection**: Verifies that no vocabulary word or canonical object is repeated across alphabet letters, counting numbers, or coloring spreads.
+* **Page Parity**: Verifies all 110 pages follow the strict odd/even alternating rule (Odd = Coloring Page, Even = Blank Bleed-Guard Backing).
+* **Expected Output**:
+  ```text
+  [SUCCESS] Manifest curriculum audit PASSED:
+    - Total Pages: 110
+    - Vocabulary Collisions: 0
+    - Alternating Spread Parity: 100% Compliant
+  ```
+
+#### `curiokraft-book manifest status`
+Inspects the database (or filesystem state) for the active volume and displays a lifecycle summary:
 ```powershell
-curiokraft-book manifest audit
 curiokraft-book manifest status
+# Or inspect another volume explicitly:
+curiokraft-book manifest status --slug curiokraft-aquatic_vol1
+```
+* **Expected Output**:
+  ```text
+  ============================================================
+  Book: OCEAN EXPEDITIONS & AQUATIC BEINGS (curiokraft-aquatic_vol1)
+  Total Pages: 110
+  ------------------------------------------------------------
+  DRAFT:                    0
+  PROMPT_GENERATED:         0
+  ILLUSTRATION_GENERATED:   0
+  APPROVED:                 110
+  ============================================================
+  ```
+To see a line-by-line breakdown of every single page (page ID, display title, current state, illustration hash), run:
+```powershell
+curiokraft-book manifest details
 ```
 
 ---
@@ -444,7 +534,32 @@ Generates 1-click submission metadata:
 - Optimized 7 Amazon Search Keywords & BISAC Categories.
 - Formatted HTML Book Description for Amazon Author Central.
 
-### 2. Synchronize Local Database & Assets to Cloud
+### 2. Index & Push Deliverables into Object Storage (`db sync-assets`)
+Once your interior masters, cover files, and interior PDF are generated, push them into MinIO / PostgreSQL:
+```powershell
+# Index and upload all 110 composite master PNGs:
+curiokraft-book db sync-assets --dir output/interior_masters --type composite_master
+
+# Index and upload print interior PDF:
+curiokraft-book db sync-assets --dir output/interior --type interior_pdf
+
+# Index and upload cover PNG and CMYK PDF:
+curiokraft-book db sync-assets --dir output/cover --type cover_asset
+```
+* **Idempotent & Deduplicated**: Every asset is indexed by its SHA-256 hash. If an asset is already in the database/MinIO, the upload is skipped. You can safely run this command as many times as you like.
+
+### 3. Pull & Verify Remote Assets Locally (`db pull-assets`)
+If you need to verify files stored in MinIO/PostgreSQL or pull assets down to another machine:
+```powershell
+# Pull and verify interior PDF:
+curiokraft-book db pull-assets --dir output/verified_assets --type interior_pdf
+
+# Pull and verify cover assets:
+curiokraft-book db pull-assets --dir output/verified_assets --type cover_asset
+```
+Each downloaded file is automatically verified against its stored SHA-256 hash in PostgreSQL to guarantee 100% bit-for-bit integrity.
+
+### 4. Synchronize Local Database & Assets to Cloud (`db sync`)
 ```powershell
 curiokraft-book db sync
 ```
@@ -475,3 +590,4 @@ curiokraft-book db sync
 | **4. Preflight** | `curiokraft-book preflight run` | Executes 18-point KDP diagnostic | Records preflight pass/fail audit in `pipeline_logs` |
 | **5. Metadata** | `curiokraft-book kdp generate` | Generates 1-click submission dashboard | Staged for release |
 | **5. Cloud Sync** | `curiokraft-book db sync` | Pushes local DB & assets to Cloud | Pushes Outbox to Neon & blobs to Cloudflare R2 |
+| **5. Verification** | `curiokraft-book db pull-assets` | Pulls assets from MinIO/DB to local machine | Verifies local downloads against PostgreSQL SHA-256 hashes |

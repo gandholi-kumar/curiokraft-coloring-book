@@ -113,10 +113,16 @@ curiokraft-book assemble interior
 # 7. Run Full 18-Point Deterministic KDP Preflight Diagnostic & Certificate
 curiokraft-book preflight run
 
-# 8. Generate Publishing Metadata & Synchronize Cloud Outbox (Neon + Cloudflare R2)
+# 8. Publishing Metadata, Storage Sync & Local Asset Verification
 curiokraft-book kdp generate
-curiokraft-book db sync
+curiokraft-book db sync-assets --dir output/interior_masters --type composite_master  # Index & push to MinIO/DB
+curiokraft-book db pull-assets --dir output/verified_assets --type interior_pdf       # Pull & verify SHA-256 locally
+curiokraft-book db sync                                                               # Bi-directional cloud sync
 curiokraft-book db export-to-fs
+
+# (Optional) Visual Inspection Consoles:
+# - pgAdmin 4:    http://localhost:5050  (admin@example.com / admin)
+# - MinIO S3:     http://localhost:9001  (minioadmin / minioadminpassword)
 ```
 
 ---

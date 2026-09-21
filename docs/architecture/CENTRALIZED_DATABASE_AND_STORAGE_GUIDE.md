@@ -219,11 +219,52 @@ Amazon KDP requires crisp, high-contrast black-and-white printing. Coloring book
 
 ---
 
-## 9. Multi-Volume Book Scoping (`--slug`)
+## 9. Multi-Volume Book Scoping & MinIO Storage Organization
 
-To support multi-volume production in a single shared database, books are scoped by unique slugs:
+To support multi-volume production in a single shared database and object storage bucket, books are scoped by unique slugs:
 - Default: `curiokraft-vol1` or `curiokraft-aquatic_vol1`
-- Custom volumes: `curiokraft-safari_vol1`, `curiokraft-space_vol1`
+- Custom volumes: `curiokraft-aquatic_vol2`, `curiokraft-safari_vol1`, `curiokraft-space_vol1`
+
+The volume slug is derived directly from the active `config/book_config.yaml`:
+```yaml
+book:
+  title: "OCEAN EXPEDITIONS & AQUATIC BEINGS"
+  volume: "aquatic_vol1" # Computes slug: curiokraft-aquatic_vol1
+  manifest: "manifest/pages_aquatic_vol1.json"
+```
+
+### MinIO S3 Object Storage Layout
+In MinIO / S3 (`curiokraft-assets` bucket), all assets are automatically organized by volume slug:
+```text
+curiokraft-assets/
+├── curiokraft-aquatic_vol1/
+│   ├── composite_master/
+│   │   ├── page_001.png
+│   │   ├── page_002.png
+│   │   └── ... (up to page_110.png)
+│   ├── cover_asset/
+│   │   ├── TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png
+│   │   └── TINY_HANDS_COLOR_AND_LEARN_Cover_CMYK.pdf
+│   └── interior_pdf/
+│       └── TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf
+│
+└── curiokraft-aquatic_vol2/         <-- Created automatically for Volume 2
+    ├── composite_master/
+    └── interior_pdf/
+```
+
+### MinIO Web Console Access
+* **URL**: [http://localhost:9001](http://localhost:9001)
+* **Access Key / Username**: `minioadmin`
+* **Secret Key / Password**: `minioadminpassword`
+* **Features**: Browse buckets, preview high-res master images, inspect metadata, download assets, and generate pre-signed shareable URLs.
+
+### Content-Addressable Storage (CAS) & Deduplication
+Whenever assets are indexed or pushed via `curiokraft-book db sync-assets`:
+1. The engine calculates the **SHA-256 cryptographic hash** of the file.
+2. It queries PostgreSQL: `SELECT * FROM media_assets WHERE sha256_hash = :hash`.
+3. If an identical file hash already exists, the upload is skipped and the existing record is reused.
+4. Duplicate blank bleed-guard pages (e.g., `page_004.png`, `page_006.png`, etc.) share a single hash, eliminating redundant storage.
 
 Pass the `--slug` flag to CLI commands to target specific books in the database:
 ```powershell
@@ -236,13 +277,46 @@ curiokraft-book generate book --slug curiokraft-aquatic_vol1
 
 ---
 
-## 10. Complete CLI Command Reference (`curiokraft-book db`)
+## 10. Pulling & Verifying Assets from MinIO / DB (`db pull-assets`)
+
+To restore or verify assets stored in MinIO and PostgreSQL onto your local disk (for example, on a fresh machine or to audit cloud-stored files without pushing), use `curiokraft-book db pull-assets`:
+
+### Usage Examples:
+```powershell
+# 1. Pull specific asset type into a verification folder:
+curiokraft-book db pull-assets --dir verification_assets --type interior_pdf
+curiokraft-book db pull-assets --dir verification_assets --type cover_asset
+curiokraft-book db pull-assets --dir verification_assets --type composite_master
+
+# 2. Pull all assets for the active volume into standard project folders:
+curiokraft-book db pull-assets
+
+# 3. Pull assets for a different volume by slug:
+curiokraft-book db pull-assets --slug curiokraft-aquatic_vol2 --dir vol2_verify
+```
+
+### Integrity Verification
+By default, `--verify-hash` is enabled. For every downloaded file, the engine:
+1. Streams the binary object from MinIO to the destination path.
+2. Re-computes the SHA-256 hash of the downloaded file on disk.
+3. Compares it against the authoritative `sha256_hash` stored in PostgreSQL.
+4. Reports verification status:
+```text
+  [VERIFIED] page_001.png (2,305,216 bytes | SHA-256 match)
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png (13,954,329 bytes | SHA-256 match)
+```
+
+---
+
+## 11. Complete CLI Command Reference (`curiokraft-book db`)
 
 | Command | Arguments / Flags | Purpose |
 | :--- | :--- | :--- |
-| `curiokraft-book db init` | `--db-url <url>` | Create database tables in SQLite or PostgreSQL. |
+| `curiokraft-book db init` | `--db-url <url>` | Create database tables in SQLite or PostgreSQL with auto-migration. |
 | `curiokraft-book db status` | — | Display active database engine, storage backend, book slug, and page state summary. |
 | `curiokraft-book db migrate-from-fs`| `--config`, `--manifest`, `--state` | Ingest existing `book_config.yaml`, `pages.json`, and `pipeline_state.json` into database. |
-| `curiokraft-book db sync-assets` | `--dir <path>`, `--type <asset_type>` | Scan directory of images, compute SHA-256 CAS hashes, and index into `media_assets`. |
+| `curiokraft-book db sync-assets` | `--dir <path>`, `--type <asset_type>` | Scan directory of images, compute SHA-256 CAS hashes, upload to MinIO/S3, and index into `media_assets`. |
+| `curiokraft-book db pull-assets` | `--dir <path>`, `--type <type>`, `--slug <slug>`, `--verify-hash` | Download assets from MinIO/S3 to local disk and verify SHA-256 hashes against PostgreSQL. |
 | `curiokraft-book db sync` | — | Run bi-directional synchronization with Neon PostgreSQL and Cloudflare R2. |
 | `curiokraft-book db export-to-fs` | `--out <path>` | Export complete database state back into `pipeline_state.json`. |
+
