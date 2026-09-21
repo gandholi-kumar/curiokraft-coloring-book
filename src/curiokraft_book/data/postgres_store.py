@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from curiokraft_book.data.base import (
@@ -71,9 +71,30 @@ class SQLDatabaseManager:
         self.init_db()
 
     def init_db(self) -> None:
-        """Create tables if they do not already exist."""
+        """Create tables if they do not already exist and ensure schema compatibility."""
         try:
             Base.metadata.create_all(self.engine)
+            if self.engine.dialect.name == "postgresql":
+                with self.engine.connect() as conn:
+                    conn.execute(
+                        text(
+                            """
+                            ALTER TABLE sync_outbox ALTER COLUMN id TYPE VARCHAR(128);
+                            ALTER TABLE sync_outbox ALTER COLUMN entity_id TYPE VARCHAR(128);
+                            ALTER TABLE sync_outbox ALTER COLUMN created_at TYPE VARCHAR(64);
+                            ALTER TABLE sync_outbox ALTER COLUMN processed_at TYPE VARCHAR(64);
+                            ALTER TABLE books ALTER COLUMN created_at TYPE VARCHAR(64);
+                            ALTER TABLE books ALTER COLUMN updated_at TYPE VARCHAR(64);
+                            ALTER TABLE pages ALTER COLUMN created_at TYPE VARCHAR(64);
+                            ALTER TABLE pages ALTER COLUMN updated_at TYPE VARCHAR(64);
+                            ALTER TABLE pages ALTER COLUMN last_updated TYPE VARCHAR(64);
+                            ALTER TABLE prompts ALTER COLUMN created_at TYPE VARCHAR(64);
+                            ALTER TABLE media_assets ALTER COLUMN created_at TYPE VARCHAR(64);
+                            ALTER TABLE execution_logs ALTER COLUMN timestamp TYPE VARCHAR(64);
+                            """
+                        )
+                    )
+                    conn.commit()
             logger.info("Database schema initialized successfully.")
         except Exception as e:
             logger.error(f"Failed to initialize database schema: {e}")

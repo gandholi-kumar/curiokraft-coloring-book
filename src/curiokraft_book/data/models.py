@@ -53,10 +53,10 @@ class BookModel(Base):
     sync_status: Mapped[str] = mapped_column(String(32), default="pending_upload", index=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
     updated_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
     __table_args__ = (
@@ -95,12 +95,12 @@ class PageModel(Base):
     composite_image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     sync_status: Mapped[str] = mapped_column(String(32), default="pending_upload", index=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
-    last_updated: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    last_updated: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
     updated_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
     __table_args__ = (
@@ -131,7 +131,7 @@ class PromptModel(Base):
     is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
     sync_status: Mapped[str] = mapped_column(String(32), default="pending_upload", index=True)
     created_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
 
@@ -155,7 +155,7 @@ class MediaAssetModel(Base):
     mime_type: Mapped[str] = mapped_column(String(64), default="image/png")
     sync_status: Mapped[str] = mapped_column(String(32), default="pending_upload", index=True)
     created_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
 
@@ -172,7 +172,7 @@ class LogModel(Base):
     message: Mapped[str] = mapped_column(Text)
     context: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     timestamp: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
 
@@ -181,13 +181,13 @@ class OutboxEventModel(Base):
 
     __tablename__ = "sync_outbox"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
     entity_type: Mapped[str] = mapped_column(String(32))  # book, page, prompt, media_asset
-    entity_id: Mapped[str] = mapped_column(String(64))
+    entity_id: Mapped[str] = mapped_column(String(128))
     operation: Mapped[str] = mapped_column(String(16))  # INSERT, UPDATE, DELETE
     payload: Mapped[dict[str, Any]] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(16), default="PENDING", index=True)
     created_at: Mapped[str] = mapped_column(
-        String(32), default=lambda: datetime.now(timezone.utc).isoformat()
+        String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
-    processed_at: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    processed_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
