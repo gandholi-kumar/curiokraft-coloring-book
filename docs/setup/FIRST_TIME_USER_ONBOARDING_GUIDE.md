@@ -149,20 +149,44 @@ STORAGE_BACKEND=local
 LOCAL_STORAGE_ROOT=output/storage
 ```
 
-### Option B: Local Docker Production-Parity Mode
-Run local PostgreSQL 16 and MinIO S3 object storage:
+### Option B: Local Docker Production-Parity Mode (PostgreSQL 16 + MinIO)
+
+> [!NOTE]
+> **Prerequisites**: [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) must be installed and running on your system.
+> If Docker is not installed on your machine, use **Option A (SQLite)** which works immediately out-of-the-box with zero installation!
+
+#### 1. Where to Execute Docker Compose:
+Open PowerShell or your terminal and navigate to the project root directory where [docker-compose.yml](file:///h:/Store/CurioKraft/Research_Dev/curiokraft-coloring-book/docker-compose.yml) is located:
 ```powershell
-# Start local PostgreSQL and MinIO
+cd H:\Store\CurioKraft\Research_Dev\curiokraft-coloring-book
+```
+
+#### 2. How to Start the Containers:
+Run Docker Compose in detached mode (`-d`):
+```powershell
 docker compose up -d
 ```
-Then configure your `.env`:
+*This spins up two containers:*
+- `curiokraft-postgres`: PostgreSQL 16 on port `5432` (database: `curiokraft`, user: `postgres`, password: `postgrespassword`)
+- `curiokraft-minio`: MinIO S3 API on port `9000`, Web Console on port `9001` (user: `minioadmin`, password: `minioadminpassword`)
+
+Verify both containers are healthy:
+```powershell
+docker compose ps
+```
+*(Optional: You can view the MinIO web dashboard by opening `http://localhost:9001` in your browser).*
+
+#### 3. Configure `.env` for Option B:
+Open or create `.env` in the project root (`curiokraft-coloring-book/.env`) and add:
 ```env
-# .env (Local Docker Mode)
-DATABASE_URL=postgresql+psycopg://curiokraft:curiokraft_dev@localhost:5432/curiokraft_book
+# Database Connection (PostgreSQL 16 in Docker)
+DATABASE_URL=postgresql+psycopg://postgres:postgrespassword@localhost:5432/curiokraft
+
+# Object / Blob Storage (MinIO in Docker)
 STORAGE_BACKEND=s3
 S3_ENDPOINT_URL=http://localhost:9000
 S3_ACCESS_KEY_ID=minioadmin
-S3_SECRET_ACCESS_KEY=minioadmin
+S3_SECRET_ACCESS_KEY=minioadminpassword
 S3_BUCKET_NAME=curiokraft-assets
 S3_REGION=us-east-1
 ```
