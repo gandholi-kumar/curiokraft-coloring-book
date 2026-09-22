@@ -3382,3 +3382,252 @@ def generate_certificate_page_prompt(
     )
 
     return positive_prompt, negative_prompt
+
+
+# =============================================================================
+# Pure Function Prompt Synthesis (Callable via HTTP / CLI / Background Tasks)
+# =============================================================================
+
+from curiokraft_book.schemas.prompt_manifest import PromptItem
+
+PromptRecord = PromptItem
+
+
+def synthesize_prompts(
+    book_config: dict[str, Any] | None = None,
+    manifest_path: str | Path | None = None,
+    debate_engine: DebateEngine | None = None,
+    selected_pages: list[str] | None = None,
+    count: int | None = None,
+) -> list[PromptItem]:
+    """Pure function: Synthesizes complete prompt set for covers, special pages, and interior coloring pages.
+
+    Does not depend on Typer, Rich console, or subprocesses.
+    Can be invoked directly from FastAPI endpoints, background tasks, or Typer CLI.
+    """
+    from curiokraft_book.constants import (
+        DEFAULT_BOOK_CONFIG,
+        DEFAULT_MASCOT_DROP_PATH,
+        DEFAULT_MASCOT_ENABLED,
+        DEFAULT_MASCOT_GENERATE_PROMPT,
+        DEFAULT_MASCOT_NAME,
+        DEFAULT_PAGES_MANIFEST,
+    )
+
+    # 1. Resolve manifest path
+    resolved_manifest = Path(manifest_path or DEFAULT_PAGES_MANIFEST)
+    if not resolved_manifest.is_absolute():
+        candidates = [
+            Path.cwd() / resolved_manifest,
+            Path(__file__).parent.parent.parent.parent / resolved_manifest,
+        ]
+        for c in candidates:
+            if c.exists():
+                resolved_manifest = c
+                break
+
+    all_pages: list[dict[str, Any]] = []
+    if resolved_manifest.exists():
+        try:
+            with open(resolved_manifest, encoding="utf-8") as mf:
+                data = json.load(mf)
+                all_pages = data.get("pages", [])
+        except Exception as e:
+            logger.warning(f"Failed to read manifest {resolved_manifest}: {e}")
+
+    # 2. Filter target pages
+    if selected_pages:
+        selected_upper = {s.strip().upper() for s in selected_pages}
+        target_pages = [p for p in all_pages if p.get("page_id", "").upper() in selected_upper]
+    elif count:
+        target_pages = all_pages[:count]
+    else:
+        target_pages = all_pages
+
+    engine = debate_engine or DebateEngine()
+    prompt_items: list[PromptItem] = []
+
+    # 3. Front Cover Prompt
+    f_pos, f_neg = generate_front_cover_prompt(manifest_path=str(resolved_manifest))
+    prompt_items.append(
+        PromptItem(
+            id="COVER_FRONT",
+            page_number=None,
+            label="FRONT COVER MASTER ARTWORK",
+            type="front_cover",
+            section="Covers",
+            drop_target="inbox/front_cover.png",
+            preset_name="CurioKraft - Cover Art Master",
+            aspect_ratio="3:4",
+            output_format="Images only",
+            temperature=0.9,
+            top_p=0.95,
+            positive_prompt=f_pos,
+            negative_prompt=f_neg,
+        )
+    )
+
+    # 4. Back Cover Prompt
+    b_pos, b_neg = generate_back_cover_prompt(manifest_path=str(resolved_manifest))
+    prompt_items.append(
+        PromptItem(
+            id="COVER_BACK",
+            page_number=None,
+            label="BACK COVER MASTER ARTWORK",
+            type="back_cover",
+            section="Covers",
+            drop_target="inbox/back_cover.png",
+            preset_name="CurioKraft - Cover Art Master",
+            aspect_ratio="3:4",
+            output_format="Images only",
+            temperature=0.9,
+            top_p=0.95,
+            positive_prompt=b_pos,
+            negative_prompt=b_neg,
+        )
+    )
+
+    # 5. Volume Mascot Prompt (if enabled)
+    if DEFAULT_MASCOT_ENABLED and DEFAULT_MASCOT_GENERATE_PROMPT:
+        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=str(resolved_manifest))
+        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=str(resolved_manifest))
+        m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
+        prompt_items.append(
+            PromptItem(
+                id="MASCOT",
+                page_number=None,
+                label=f"{m_name.upper()} (VOLUME MASCOT)",
+                type="special_asset",
+                section="Special Assets",
+                drop_target=m_drop_str,
+                preset_name="CurioKraft - Interior Coloring Pages",
+                aspect_ratio="3:4",
+                output_format="Images only",
+                temperature=0.9,
+                top_p=0.95,
+                positive_prompt=m_pos,
+                negative_prompt=m_neg,
+            )
+        )
+
+    # 6. Volume Perimeter Frame Prompt
+    b_cfg = (book_config or {}).get("book", {})
+    if not b_cfg and Path(DEFAULT_BOOK_CONFIG).exists():
+        try:
+            with open(DEFAULT_BOOK_CONFIG, encoding="utf-8") as f:
+                b_cfg = (yaml.safe_load(f) or {}).get("book", {})
+        except Exception:
+            b_cfg = {}
+    vol = str(b_cfg.get("volume", "vol1")).lower()
+    theme_name = str(b_cfg.get("theme", {}).get("name", "")).lower()
+    frame_drop_target = f"inbox/special_assets/{vol}/{vol}_frame.png"
+    fr_pos, fr_neg = generate_perimeter_frame_prompt(
+        theme_name=theme_name,
+        volume_name=vol,
+        book_config_path=str(DEFAULT_BOOK_CONFIG),
+        manifest_path=str(resolved_manifest),
+    )
+    prompt_items.append(
+        PromptItem(
+            id="FRAME_PERIMETER",
+            page_number=None,
+            label=f"{vol.upper()} PERIMETER FRAME",
+            type="special_asset",
+            section="Special Assets",
+            drop_target=frame_drop_target,
+            preset_name="CurioKraft - Interior Coloring Pages",
+            aspect_ratio="3:4",
+            output_format="Images only",
+            temperature=0.9,
+            top_p=0.95,
+            positive_prompt=fr_pos,
+            negative_prompt=fr_neg,
+        )
+    )
+
+    # 7. Interior Pages
+    for p in target_pages:
+        num = p.get("page_number", 0)
+        p_id = p.get("page_id", f"P{num:03d}")
+        p_type = p.get("type", "interior_page")
+
+        # Skip blank/verso pages
+        if p_type in ["blank_page", "bleed_guard", "blank"]:
+            continue
+
+        canon = p.get("canonical_object", p_id.lower())
+        label = p.get("display_label", canon.upper())
+
+        if p_type == "welcome_page":
+            w_pos, w_neg = generate_welcome_page_prompt()
+            prompt_items.append(
+                PromptItem(
+                    id=p_id,
+                    page_number=num,
+                    label=label,
+                    type="welcome_page",
+                    section=p.get("section", "Front Matter"),
+                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
+                    preset_name="CurioKraft - Interior Coloring Pages",
+                    aspect_ratio="3:4",
+                    output_format="Images only",
+                    temperature=0.9,
+                    top_p=0.95,
+                    positive_prompt=w_pos,
+                    negative_prompt=w_neg,
+                )
+            )
+            continue
+
+        if p_type == "certificate_page":
+            c_pos, c_neg = generate_certificate_page_prompt()
+            prompt_items.append(
+                PromptItem(
+                    id=p_id,
+                    page_number=num,
+                    label=label,
+                    type="certificate_page",
+                    section=p.get("section", "Back Matter"),
+                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
+                    preset_name="CurioKraft - Interior Coloring Pages",
+                    aspect_ratio="3:4",
+                    output_format="Images only",
+                    temperature=0.9,
+                    top_p=0.95,
+                    positive_prompt=c_pos,
+                    negative_prompt=c_neg,
+                )
+            )
+            continue
+
+        save_name = f"raw_p{num:03d}_{canon}.png"
+        custom = None
+        if p_type == "alphabet_spread" or canon in ["a_to_m", "n_to_z"]:
+            custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
+
+        if custom is not None:
+            pos_prompt, neg_prompt = custom
+        else:
+            res = engine.run_page_debate(p)
+            pos_prompt = res.positive_prompt
+            neg_prompt = res.negative_prompt
+
+        prompt_items.append(
+            PromptItem(
+                id=p_id,
+                page_number=num,
+                label=label,
+                type="interior_page",
+                section=p.get("section", "General"),
+                drop_target=f"inbox/raw_pages/{save_name}",
+                preset_name="CurioKraft - Interior Coloring Pages",
+                aspect_ratio="3:4",
+                output_format="Images only",
+                temperature=0.9,
+                top_p=0.95,
+                positive_prompt=pos_prompt,
+                negative_prompt=neg_prompt,
+            )
+        )
+
+    return prompt_items
