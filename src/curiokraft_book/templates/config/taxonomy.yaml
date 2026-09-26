@@ -1,0 +1,1657 @@
+# =============================================================================
+# CurioKraft Kids — Taxonomy Configuration
+# =============================================================================
+# ALL category keyword sets and visual prompt templates live here.
+# The debate engine reads this file at startup — ZERO hardcoded keywords in code.
+# To support a new Volume or new object category: edit this file, touch no code.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# LIVING TAXONOMY
+# ---------------------------------------------------------------------------
+
+# Objects whose canonical_object name LOOKS like a living being but is NOT.
+# These are checked FIRST — if matched, is_living = False regardless of name.
+inanimate_exceptions:
+  - rocking_horse
+  - toy_robot
+  - horse_shoe
+  - butterfly_net
+  - piggy_bank
+  - dragonfly_kite
+  - hobby_horse
+  - stuffed_animal
+  - rubber_duck
+  - wind_up_toy
+  - hot_dog
+  - hotdog
+  - corn_dog
+  - corndog
+  - butterfly_pasta
+  - dragonfruit
+  - catfish
+
+# Sections that strictly contain inanimate objects.
+# Any object in these sections is inanimate by default unless explicitly overridden.
+inanimate_sections:
+  - "Food & Drinks"
+  - "Fruits & Vegetables"
+  - "Household & Daily Living"
+  - "Clothing & Accessories"
+  - "Vehicles & Transport"
+  - "Musical Instruments"
+  - "Shapes & Geometry"
+  - "Numbers & Counting"
+  - "Alphabet & Letters"
+
+# Any token in canonical_object or section that signals a living being.
+# The engine tokenizes the string and checks for intersection with this list.
+living_keywords:
+  - animal
+  - creature
+  - pet
+  - insect
+  - bug
+  - bird
+  - fish
+  - dinosaur
+  - reptile
+  - mammal
+  - dog
+  - puppy
+  - cat
+  - kitten
+  - rabbit
+  - bunny
+  - elephant
+  - bear
+  - teddy
+  - doll
+  - lion
+  - tiger
+  - monkey
+  - duck
+  - frog
+  - butterfly
+  - bee
+  - whale
+  - dolphin
+  - turtle
+  - giraffe
+  - zebra
+  - sheep
+  - cow
+  - horse
+  - pig
+  - chicken
+  - hen
+  - penguin
+  - owl
+  - koala
+  - panda
+  - kangaroo
+  - snail
+  - octopus
+  - crab
+  - mudskipper
+  - nautilus
+  - mollusk
+  - cephalopod
+  - crustacean
+  - deer
+  - fox
+  - squirrel
+  - goat
+  - donkey
+  - parrot
+  - peacock
+  - swan
+  - human
+  - character
+  - queen
+  - king
+  - boy
+  - girl
+  - baby
+
+# ---------------------------------------------------------------------------
+# OBJECT CATEGORY DETECTION
+# Each category has:
+#   keywords    — tokens that match canonical_object or section
+#   section_hints — section-level strings that also match
+#   visual_template — f-string with {readable} placeholder
+# ---------------------------------------------------------------------------
+
+categories:
+
+  fruits_vegetables:
+    category_name: "Fruits & Vegetables"
+    category_rule: >-
+      Preserve the natural recognizable shape, structure, and essential physical characteristics of the fruit or vegetable.
+      Keep surface details minimal and only include details that are naturally important for recognition.
+    keywords:
+      - banana
+      - orange
+      - strawberry
+      - watermelon
+      - grape
+      - pineapple
+      - mango
+      - pear
+      - peach
+      - lemon
+      - carrot
+      - tomato
+      - potato
+      - corn
+      - broccoli
+      - pumpkin
+      - apple
+      - cherry
+      - coconut
+      - avocado
+      - cucumber
+      - onion
+      - pepper
+      - eggplant
+    section_hints:
+      - fruit
+      - vegetable
+      - produce
+    visual_template: >-
+      a single delicious {readable}, authentic simplified physical shape with large open coloring zones and zero micro-textures
+    negative_tokens:
+      - messy seeds
+      - toppings
+      - rind clutter
+      - face on fruit
+      - eyes on fruit
+      - smiling fruit
+      - cartoon face
+
+  food_drinks:
+    category_name: "Food & Drinks"
+    category_rule: >-
+      Preserve the recognizable physical form of the food or drink while simplifying unnecessary preparation,
+      packaging, texture, or decorative details. Include only essential features needed to identify the subject.
+    keywords:
+      - pizza
+      - sandwich
+      - burger
+      - pancake
+      - cookie
+      - donut
+      - cake
+      - ice_cream
+      - popcorn
+      - milk
+      - juice
+      - cup
+      - taco
+      - sushi
+      - hotdog
+      - hot_dog
+      - pretzel
+      - waffle
+      - croissant
+      - muffin
+      - cupcake
+    section_hints:
+      - food
+      - drink
+      - snack
+      - meal
+      - beverage
+      - dessert
+    visual_template: >-
+      a classic delicious {readable}, authentic simplified physical shape with large open coloring surfaces and zero messy textures
+    negative_tokens:
+      - messy crumbs
+      - wrappers
+      - brands
+      - logos
+      - face on food
+      - eyes on food
+      - cartoon food face
+
+  toys_playtime:
+    category_name: "Toys & Playtime"
+    category_rule: >-
+      Preserve the recognizable basic structure of the toy while simplifying mechanical or decorative details.
+      Use large simple shapes and avoid tiny components.
+    keywords:
+      - teddy_bear
+      - doll
+      - wagon
+      - kaleidoscope
+      - blocks
+      - building_blocks
+      - puzzle
+      - toy_robot
+      - pinwheel
+      - sand_bucket
+      - top
+      - spinning_top
+      - marbles
+      - jump_rope
+      - rocking_horse
+      - beach_ball
+      - ball
+      - yo_yo
+      - frisbee
+      - doll_house
+      - train_set
+      - lego
+      - kite
+      - balloon
+    section_hints:
+      - toy
+      - play
+      - game
+    visual_template: >-
+      a classic retro toddler {readable} toy, chunky physical contours with large bold colorable surfaces
+    negative_tokens:
+      - tiny mechanical parts
+      - complex gears
+      - loose wires
+      - background playroom
+
+  animals_creatures:
+    category_name: "Animals & Nature Creatures"
+    category_rule: >-
+      Preserve the natural recognizable anatomy and silhouette of the specified animal or creature.
+      Use simplified anatomy suitable for toddlers without turning the creature into an anthropomorphic cartoon character.
+    keywords:
+      - dog
+      - cat
+      - rabbit
+      - lion
+      - elephant
+      - giraffe
+      - monkey
+      - bear
+      - tiger
+      - horse
+      - cow
+      - sheep
+      - chicken
+      - duck
+      - frog
+      - butterfly
+      - snail
+      - bee
+      - puppy
+      - kitten
+      - bunny
+      - cub
+      - calf
+      - bird
+      - fish
+      - whale
+      - dolphin
+      - turtle
+    section_hints:
+      - animal
+      - creature
+      - wildlife
+      - safari
+      - farm
+      - pet
+    visual_template: >-
+      a cute friendly baby {readable}, adorable chubby preschool proportions, natural species-appropriate posture with sweet smiling round eyes and happy gentle expression
+    negative_tokens:
+      - human clothes
+      - human shoes
+      - anthropomorphic clothing
+      - standing on two legs
+      - upright on hind legs
+      - bipedal stance
+      - human-like posture
+      - human arms
+      - human hands
+      - human feet
+      - sitting like a human
+      - scary expression
+      - sharp teeth
+      - realistic fur texture
+      - complex scales
+      - realistic animal photo
+      - background habitat
+      - floor
+      - grass
+      - jungle
+
+  clothing_accessories:
+    category_name: "Clothing & Accessories"
+    category_rule: >-
+      Preserve the recognizable shape and basic construction of the clothing item or accessory.
+      Avoid complex fabric textures, intricate patterns, excessive folds, and decorative micro-details.
+    keywords:
+      - shirt
+      - pants
+      - dress
+      - socks
+      - shoes
+      - jacket
+      - backpack
+      - sunglasses
+      - coat
+      - sweater
+      - hat
+      - cap
+      - bag
+      - scarf
+      - skirt
+      - shorts
+      - vest
+      - apron
+      - hoodie
+      - raincoat
+      - boots
+      - mittens
+      - gloves
+    section_hints:
+      - clothing
+      - cloth
+      - wear
+      - fashion
+      - apparel
+      - accessory
+    visual_template: >-
+      a classic toddler {readable}, clean 2D flat-lay presentation with neat smooth seams, rounded contours, and large uncluttered coloring surfaces
+    negative_tokens:
+      - intricate fabric patterns
+      - plaid
+      - houndstooth
+      - zipper micro-teeth
+      - hanger
+      - person wearing clothes
+      - body
+
+  household_daily_living:
+    category_name: "Household & Daily Living"
+    category_rule: >-
+      Preserve the recognizable everyday form and essential functional characteristics of the household or daily-living object.
+      Simplify buttons, controls, textures, and small components.
+    keywords:
+      - bed
+      - chair
+      - table
+      - lamp
+      - clock
+      - toothbrush
+      - comb
+      - soap
+      - towel
+      - pillow
+      - couch
+      - sofa
+      - bath
+      - bathtub
+      - toothpaste
+      - brush
+      - mirror
+      - vase
+      - kettle
+      - pot
+      - pan
+      - mug
+      - bowl
+      - plate
+      - fork
+      - spoon
+      - knife
+      - scissors
+      - broom
+      - bucket
+    section_hints:
+      - household
+      - house
+      - home
+      - furniture
+      - kitchen
+      - bathroom
+      - daily
+    visual_template: >-
+      a classic toddler {readable}, clear three-quarter or frontal view displaying its iconic simplified physical structure, smooth clean surface, cozy preschool proportions, and wide open coloring areas
+    negative_tokens:
+      - room interior
+      - floor
+      - wall
+      - wallpaper
+      - electrical cords
+      - plugs
+      - tiny screws
+      - face on object
+
+  vehicles_transportation:
+    category_name: "Vehicles & Transportation"
+    category_rule: >-
+      Preserve the recognizable overall structure and defining characteristics of the vehicle.
+      Simplify mechanical components and avoid unnecessary technical details, while keeping the vehicle immediately identifiable.
+    keywords:
+      - car
+      - bus
+      - truck
+      - bicycle
+      - motorcycle
+      - taxi
+      - ambulance
+      - fire_truck
+      - police_car
+      - helicopter
+      - sailboat
+      - rocket
+      - train
+      - plane
+      - airplane
+      - boat
+      - yacht
+      - scooter
+      - tractor
+      - wagon
+    section_hints:
+      - vehicle
+      - transport
+      - transportation
+      - automobile
+    visual_template: >-
+      a cute classic {readable}, clear three-quarter or side profile view displaying the complete vehicle body, authentic support structure, big clear colorable panels, and friendly preschool proportions
+    negative_tokens:
+      - tiny mechanical chains
+      - complex engine parts
+      - road
+      - street
+      - background scenery
+      - exhaust smoke
+      - human driver
+
+  nature_sky_garden:
+    category_name: "Nature, Sky & Garden"
+    category_rule: >-
+      Represent the specified natural subject as a simple standalone form.
+      Preserve its recognizable natural characteristics while avoiding scenery, environmental context, or additional background elements.
+    keywords:
+      - tree
+      - flower
+      - cactus
+      - mushroom
+      - cloud
+      - raindrop
+      - snowflake
+      - mountain
+      - pond
+      - waterfall
+      - river
+      - sun
+      - moon
+      - star
+      - rainbow
+      - leaf
+      - grass
+      - rock
+      - stone
+      - wave
+      - volcano
+      - island
+    section_hints:
+      - nature
+      - sky
+      - garden
+      - outdoor
+      - weather
+    visual_template: >-
+      a single iconic {readable}, standalone isolated central vignette with clean rounded contours, strictly zero horizon, zero landscape background
+    negative_tokens:
+      - full landscape
+      - horizon line
+      - background forest
+      - mountain range
+      - sky backdrop
+      - ground plane
+      - scenery
+
+  musical_instruments:
+    category_name: "Musical Instruments & Sound Toys"
+    category_rule: >-
+      Preserve the recognizable shape and essential structural characteristics of the musical instrument or sound toy.
+      Simplify strings, keys, holes, controls, and other small components where necessary.
+    keywords:
+      - piano
+      - trumpet
+      - violin
+      - tambourine
+      - maraca
+      - harmonica
+      - drum
+      - guitar
+      - flute
+      - xylophone
+      - bell
+      - harp
+      - accordion
+      - recorder
+      - saxophone
+      - tuba
+      - banjo
+      - ukulele
+      - cello
+      - clarinet
+    section_hints:
+      - musical
+      - music
+      - instrument
+      - sound
+    visual_template: >-
+      a classic toddler {readable} musical instrument, three-quarter angle view displaying its simplified musical body (large keys, bold strings, or clean drum surface), wide open coloring zones
+    negative_tokens:
+      - sheet music
+      - musical notes floating
+      - musician
+      - hands playing
+      - stage
+      - intricate frets
+      - micro-screws
+
+  paired_items:
+    category_name: "Paired Items"
+    category_rule: >-
+      Show a matching pair placed neatly side-by-side with balanced open coloring surfaces.
+    keywords:
+      - shoes
+      - socks
+      - boots
+      - gloves
+      - mittens
+      - maracas
+      - chopsticks
+      - slippers
+      - earrings
+      - flip_flops
+    section_hints: []
+    visual_template: >-
+      a cute matching pair of toddler {readable} placed neatly side-by-side with wide open coloring surfaces
+    negative_tokens:
+      - single shoe
+      - single sock
+      - feet
+      - floor
+
+  # State-dependent items are resolved by the engine before category matching.
+  state_dependent:
+    items:
+      book:
+        visual_template: >-
+          a wide open toddler storybook with large clean blank colorable pages and a simple bookmark ribbon
+      umbrella:
+        visual_template: >-
+          an open round canopy umbrella with distinct colorable stripe sections and a clean curved J-handle
+      sunglasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+      glasses:
+        visual_template: >-
+          a pair of cute toddler sunglasses, front view, round bold frames, and clean lenses
+      chair:
+        visual_template: >-
+          a classic toddler wooden chair, three-quarter view displaying its sturdy legs, backrest, smooth surface, and cozy preschool proportions
+      table:
+        visual_template: >-
+          a classic toddler wooden table, three-quarter view displaying its sturdy four legs, smooth flat tabletop, and cozy preschool proportions
+      crib:
+        visual_template: >-
+          a classic toddler crib, three-quarter view displaying its sturdy corner posts, smooth safety rails, and cozy preschool proportions
+
+  # Fallback — used when nothing else matches
+  fallback:
+    category_name: "General Objects"
+    category_rule: >-
+      Preserve the iconic simplified physical silhouette with wide open coloring zones and clear contours.
+    visual_template: >-
+      a single {readable}, clear three-quarter or frontal view displaying its most iconic, authentic simplified physical silhouette with wide open coloring zones
+    negative_tokens:
+      - background scenery
+      - floor
+      - text
+      - shading
+
+# ---------------------------------------------------------------------------
+# ANIMAL LOCOMOTION & ANATOMY MATRIX (Authoritative Standard)
+# ---------------------------------------------------------------------------
+animal_locomotion_matrix:
+  quadrupeds:
+    locomotion_type: "quadrupedal_walking"
+    limb_count: 4
+    default_posture: "natural quadrupedal standing posture, standing securely on all four legs with all four paws supporting the body"
+    default_orientation: "three-quarter front view showing the complete body and limbs"
+    safeguards: "Head and neck positioned naturally relative to the body. Do not stand upright on the hind legs. Do not use a human-like standing posture. Do not anthropomorphize the body."
+    keywords:
+      - dog
+      - cat
+      - puppy
+      - kitten
+      - rabbit
+      - bunny
+      - lion
+      - tiger
+      - bear
+      - elephant
+      - giraffe
+      - zebra
+      - cow
+      - horse
+      - sheep
+      - pig
+      - goat
+      - deer
+      - fox
+      - panda
+      - kangaroo
+      - cub
+      - calf
+    negative_tokens:
+      - "standing on two legs"
+      - "upright on hind legs"
+      - "bipedal stance"
+      - "human-like posture"
+      - "human arms"
+      - "human hands"
+      - "human feet"
+      - "sitting like a human"
+      - "anthropomorphic body"
+
+  bipeds:
+    locomotion_type: "bipedal_walking"
+    limb_count: 2
+    default_posture: "natural bird standing posture on two legs, standing balanced on both feet"
+    default_orientation: "three-quarter view showing both feet supporting the body"
+    safeguards: "Head and neck positioned naturally. Do not use four legs. Do not give human arms or hands. Do not anthropomorphize the bird."
+    keywords:
+      - bird
+      - chicken
+      - duck
+      - chick
+      - hen
+      - rooster
+      - penguin
+      - flamingo
+      - ostrich
+      - owl
+      - parrot
+      - swan
+      - peacock
+    negative_tokens:
+      - "four legs"
+      - "quadrupedal stance"
+      - "human arms"
+      - "human hands"
+      - "human feet"
+      - "human shoes"
+      - "anthropomorphic body"
+
+  aquatic:
+    locomotion_type: "swimming"
+    limb_count: 0
+    default_posture: "natural horizontal streamlined swimming posture"
+    default_orientation: "side-facing swimming profile"
+    safeguards: "Fins and tail positioned naturally. Do not draw legs, feet, or terrestrial ground."
+    keywords:
+      - fish
+      - dolphin
+      - whale
+      - shark
+      - octopus
+      - crab
+      - lobster
+      - seal
+      - walrus
+      - tang
+      - idol
+      - ray
+      - eel
+      - squid
+      - jellyfish
+      - urchin
+      - seahorse
+      - anemone
+      - starfish
+      - clam
+      - nautilus
+      - krill
+      - otter
+      - coral
+      - manatee
+      - dugong
+      - narwhal
+      - beluga
+      - porpoise
+      - orca
+    negative_tokens:
+      - "legs"
+      - "feet"
+      - "paws"
+      - "standing on ground"
+      - "walking upright"
+      - "terrestrial walking"
+
+  amphibians:
+    locomotion_type: "crouching_hopping"
+    limb_count: 4
+    default_posture: "natural low-to-ground crouching posture with folded hind legs and front paws grounded"
+    default_orientation: "three-quarter front view"
+    safeguards: "Do not stand upright like a human. Do not give human hands or clothing."
+    keywords:
+      - frog
+      - toad
+      - turtle
+      - lizard
+      - alligator
+      - snake
+      - crocodile
+    negative_tokens:
+      - "standing upright"
+      - "bipedal stance"
+      - "human arms"
+      - "human hands"
+      - "human legs"
+
+  invertebrates:
+    locomotion_type: "crawling"
+    limb_count: 0
+    default_posture: "natural low-to-ground crawling posture with shell balanced naturally"
+    default_orientation: "side profile view"
+    safeguards: "Do not draw legs, arms, or human features."
+    keywords:
+      - snail
+      - slug
+      - worm
+      - caterpillar
+    negative_tokens:
+      - "legs"
+      - "feet"
+      - "paws"
+      - "human arms"
+      - "human hands"
+
+  insects:
+    locomotion_type: "flying_perching"
+    limb_count: 6
+    default_posture: "natural resting or flying posture with symmetrical wings"
+    default_orientation: "balanced view showing complete wing silhouette"
+    safeguards: "Do not draw human arms, hands, shoes, or cartoon mascot clothes."
+    keywords:
+      - butterfly
+      - bee
+      - bug
+      - ant
+      - ladybug
+      - dragonfly
+    negative_tokens:
+      - "human arms"
+      - "human hands"
+      - "human shoes"
+      - "anthropomorphic clothing"
+
+  arboreal:
+    locomotion_type: "climbing_quadrupedal"
+    limb_count: 4
+    default_posture: "natural species-appropriate four-limbed posture or seated natural posture on all fours"
+    default_orientation: "three-quarter front view"
+    safeguards: "Do not stand upright like a human child. Do not give human feet or clothing."
+    keywords:
+      - monkey
+      - chimpanzee
+      - gorilla
+      - sloth
+      - koala
+      - squirrel
+    negative_tokens:
+      - "standing upright on two legs"
+      - "human standing posture"
+      - "bipedal stance"
+      - "human clothes"
+      - "shoes"
+
+animal_species_profiles:
+  dog:
+    class: "quadrupeds"
+    anatomy: "natural canine anatomy with a compact baby puppy body, four sturdy legs, four paws, a wagging tail, floppy puppy ears, and a cute canine muzzle"
+  cat:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a rounded kitten body, four sturdy legs, four paws, a gentle tail, triangular ears, sweet whiskers, and a cute feline muzzle"
+  rabbit:
+    class: "quadrupeds"
+    anatomy: "natural leporid anatomy with a compact bunny body, long upright ears, four legs with characteristic folded hind legs and front paws, and a small fluffy tail"
+    posture_override: "natural quadrupedal rabbit stance, standing naturally on all four paws"
+  lion:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a compact baby lion cub body, four sturdy legs, four paws, a slender tail with a small tuft, rounded lion ears, and a gentle muzzle"
+  elephant:
+    class: "quadrupeds"
+    anatomy: "natural proboscidean anatomy with a rounded baby elephant body, four sturdy column-like legs, large soft flapping ears, a curved playful trunk, and a small tail"
+    safeguards_extra: "Trunk remains naturally attached to the face and curves gently downward and upward."
+  giraffe:
+    class: "quadrupeds"
+    anatomy: "natural giraffid anatomy with four long slender legs, a tall elegant neck, a compact torso, small ossicones, gentle ears, a short mane, and a slender tail"
+    safeguards_extra: "Tall neck remains anatomically connected to the torso and held naturally upright."
+  monkey:
+    class: "arboreal"
+    anatomy: "natural primate anatomy with a baby monkey body, four grasping limbs, four paws, rounded ears, and a long curved tail"
+  bear:
+    class: "quadrupeds"
+    anatomy: "natural ursid anatomy with a chubby baby bear cub body, four sturdy thick legs, four paws, small rounded ears, a short tail, and a cute bear muzzle"
+    safeguards_extra: "Strictly remain on all four legs. Do not rear up on hind legs."
+  tiger:
+    class: "quadrupeds"
+    anatomy: "natural feline anatomy with a baby tiger cub body, four sturdy legs, four paws, a long striped tail, rounded ears, and gentle wide preschool tiger stripe outlines"
+  horse:
+    class: "quadrupeds"
+    anatomy: "natural equine anatomy with a baby foal body, four long slender legs, four hooves, a soft mane, gentle ears, and a flowing tail"
+    posture_override: "natural equine quadrupedal standing posture, standing securely on all four hooves"
+  cow:
+    class: "quadrupeds"
+    anatomy: "natural bovine anatomy with a rounded baby calf body, four sturdy legs, four hooves, soft ears, a small tail, and gentle wide preschool spots"
+    posture_override: "natural bovine quadrupedal standing posture, standing securely on all four hooves"
+  sheep:
+    class: "quadrupeds"
+    anatomy: "natural ovine anatomy with a fluffy cloud-like rounded lamb body, four slender legs, small hooves, soft floppy ears, and a tiny tail"
+    posture_override: "natural ovine quadrupedal standing posture, standing securely on all four legs"
+  chicken:
+    class: "bipeds"
+    anatomy: "natural gallinaceous bird anatomy with a plump rounded chick body, two small wings, two legs with three-toed bird feet supporting the body, and a small cute beak"
+  duck:
+    class: "bipeds"
+    anatomy: "natural anseriform bird anatomy with a rounded baby duckling body, two small wings, two legs with webbed duck feet supporting the body, and a flat rounded bill"
+  frog:
+    class: "amphibians"
+    anatomy: "natural amphibian anatomy with a plump rounded frog body, big round protruding eyes on top of the head, front webbed paws, and folded powerful hind legs"
+  butterfly:
+    class: "insects"
+    anatomy: "natural lepidopteran insect anatomy with a slender insect body, two delicate antennae, and two pairs of large symmetrical open colorable wings with simple bold preschool shapes"
+  snail:
+    class: "invertebrates"
+    anatomy: "natural gastropod mollusk anatomy with a smooth spiral shell on its back, a soft elongated crawling foot, and two sweet antennae with rounded eye dots"
+  bee:
+    class: "insects"
+    anatomy: "natural hymenopteran insect anatomy with a chubby rounded bumblebee body, two small clear wings, two antennae, six small legs, and bold preschool stripe segments"
+
+# ---------------------------------------------------------------------------
+# VEHICLE STRUCTURAL DOMAIN & DESIGN MATRIX (Authoritative Standard)
+# ---------------------------------------------------------------------------
+vehicle_domain_matrix:
+  wheeled_four_wheel:
+    domain_type: "land_wheeled_automotive"
+    has_wheels: true
+    wheel_count: 4
+    default_support: "four chunky round rubber tires supporting a sturdy automotive chassis"
+    default_orientation: "three-quarter side-front profile view displaying the complete vehicle body and wheels"
+    safeguards: "Keep windows large, clean, and empty. Avoid complex engine details, exhaust smoke, or road lines."
+    keywords:
+      - car
+      - bus
+      - truck
+      - van
+      - jeep
+      - tractor
+      - taxi
+      - ambulance
+      - fire_truck
+      - police_car
+      - automobile
+    negative_tokens:
+      - "tiny mechanical chains"
+      - "complex engine parts"
+      - "road"
+      - "street"
+      - "exhaust smoke"
+      - "human driver"
+      - "passengers"
+
+  wheeled_two_wheel:
+    domain_type: "land_cycle"
+    has_wheels: true
+    wheel_count: 2
+    default_support: "two clearly separated circular wheels connected by a clean tubular frame"
+    default_orientation: "side profile view clearly displaying both wheels and frame"
+    safeguards: "Show exactly two wheels. Do not draw four wheels or car bodies. Keep frame clean without complex sprockets."
+    keywords:
+      - bicycle
+      - bike
+      - motorcycle
+      - scooter
+      - tricycle
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+      - "complex sprockets"
+      - "tiny gear teeth"
+      - "road"
+      - "street"
+      - "human rider"
+
+  rail_vehicles:
+    domain_type: "rail_transit"
+    has_wheels: true
+    wheel_count: "multiple_rail_wheels"
+    default_support: "multiple round steel train wheels aligned neatly along the bottom baseline"
+    default_orientation: "three-quarter side profile view displaying the locomotive cabin and wheels"
+    safeguards: "Keep train wheels cleanly circular and aligned. Avoid heavy smoke, dirty soot, or complex drive rods."
+    keywords:
+      - train
+      - locomotive
+      - subway
+      - tram
+      - trolley
+    negative_tokens:
+      - "rubber car tires"
+      - "steering wheel"
+      - "complex pistons"
+      - "heavy dark smoke"
+      - "road"
+      - "street"
+
+  rotorcraft:
+    domain_type: "aerial_rotary"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "two horizontal parallel landing skids (runner rails) attached cleanly beneath the fuselage"
+    default_orientation: "three-quarter side profile view displaying the cockpit bubble, top rotor, tail boom, and landing skids"
+    safeguards: "Supported strictly by twin landing skids. Strictly DO NOT draw wheels, tires, car wheels, or landing gear wheels. Strictly DO NOT draw airplane wings."
+    keywords:
+      - helicopter
+      - chopper
+      - gyrocopter
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear wheels"
+      - "airplane wings"
+      - "jet engines"
+      - "road"
+      - "street"
+      - "human pilot"
+
+  spacecraft:
+    domain_type: "space_propulsion"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "3 to 4 bold symmetrical stabilizing fins flared at the bottom base with a central rocket exhaust nozzle"
+    default_orientation: "upright vertical or dynamic slight upward angle displaying the complete rocket fuselage and base fins"
+    safeguards: "Supported strictly by aerodynamic base fins and rocket nozzle. Strictly DO NOT draw wheels, tires, road gear, landing tracks, or airplane wings."
+    keywords:
+      - rocket
+      - spaceship
+      - shuttle
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "road wheels"
+      - "landing gear"
+      - "road"
+      - "street"
+      - "tracks"
+      - "ground"
+      - "wings with propellers"
+      - "astronaut face"
+
+  watercraft:
+    domain_type: "marine_surface"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a smooth curved buoyant boat hull resting on a clean horizontal waterline"
+    default_orientation: "three-quarter side profile view displaying the buoyant hull, deck, and sails or cabin"
+    safeguards: "Supported strictly by a floating boat hull. Strictly DO NOT draw wheels, tires, automotive axles, or legs."
+    keywords:
+      - boat
+      - sailboat
+      - ship
+      - yacht
+      - canoe
+      - kayak
+      - tugboat
+      - ferry
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear"
+      - "road"
+      - "pavement"
+      - "street"
+      - "tracks"
+      - "legs"
+      - "human captain"
+
+  fixed_wing_aircraft:
+    domain_type: "aerial_fixed_wing"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "aerodynamic flight stance with two wide symmetrical horizontal wings and clean minimal landing gear"
+    default_orientation: "three-quarter front-side view displaying the full wingspan, fuselage, and tail fin"
+    safeguards: "Wings must be smoothly attached to the cylindrical fuselage. Keep windows clean and colorable."
+    keywords:
+      - plane
+      - airplane
+      - jet
+      - biplane
+    negative_tokens:
+      - "car wheels"
+      - "bicycle wheels"
+      - "road"
+      - "street"
+      - "complex mechanical engines"
+      - "military weapons"
+      - "passengers"
+      - "human pilot"
+
+  submersible:
+    domain_type: "marine_underwater"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a streamlined watertight cylindrical submarine hull with diving fins and rear propeller"
+    default_orientation: "side profile view displaying the elongated hull, conning tower, and periscope"
+    safeguards: "Strictly DO NOT draw wheels, tires, or landing tracks."
+    keywords:
+      - submarine
+      - submersible
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "landing gear"
+      - "legs"
+      - "road"
+
+  lighter_than_air:
+    domain_type: "aerial_buoyant"
+    has_wheels: false
+    wheel_count: 0
+    default_support: "a large buoyant fabric balloon envelope with a neat woven passenger basket suspended underneath"
+    default_orientation: "upright frontal or three-quarter view"
+    safeguards: "Strictly DO NOT draw wheels, wings, or engines."
+    keywords:
+      - balloon
+      - blimp
+      - airship
+      - hot_air_balloon
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "wings"
+      - "propellers"
+      - "road"
+
+vehicle_design_profiles:
+  rocket:
+    class: "spacecraft"
+    anatomy: "aerodynamic space rocket anatomy with a sleek rounded cylindrical fuselage tapering upward to a smooth conical nose cone, a circular round astronaut observation porthole, 3 to 4 bold symmetrical stabilizing fins flared at the bottom base, and a clean central propulsion exhaust nozzle"
+    support_override: "3 to 4 bold flared base stabilizing fins and a central propulsion nozzle, strictly NO wheels"
+    orientation: "upright vertical or dynamic slight upward angle displaying the complete rocket body, porthole, and base fins"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, or landing gear. The rocket is purely aerodynamic and fin-supported."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "road wheels"
+      - "landing gear"
+      - "road"
+      - "tracks"
+
+  helicopter:
+    class: "rotorcraft"
+    anatomy: "authentic rotary aircraft anatomy with a rounded aerodynamic cockpit cabin, large clear colorable windshield, a horizontal top main rotor mast with bold flat spinning blades, a slender tail boom with a small vertical tail rotor, and two horizontal parallel landing skids"
+    support_override: "two horizontal parallel landing skids (runner rails) attached beneath the cockpit cabin, strictly NO wheels"
+    orientation: "three-quarter side profile view displaying the cockpit bubble, top rotor blades, tail rotor, and twin landing skids"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, or airplane wings. Supported solely by twin runner skids."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "bicycle wheels"
+      - "landing gear wheels"
+      - "airplane wings"
+      - "road"
+
+  sailboat:
+    class: "watercraft"
+    anatomy: "authentic watercraft anatomy with a smooth curved buoyant boat hull, a flat deck, a sturdy central vertical mast, large crisp triangular fabric sails, and a clean rudder outline"
+    support_override: "a smooth curved buoyant boat hull resting on a clean horizontal water baseline, strictly NO wheels"
+    orientation: "three-quarter side profile view displaying the buoyant hull, deck, mast, and sails"
+    safeguards_extra: "Strictly DO NOT draw wheels, tires, axles, or land vehicle parts."
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "road"
+      - "pavement"
+
+  car:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler automobile anatomy with a smooth rounded car body, large chunky round wheels with clean hubcaps, front windshield, side windows, headlights, and clean bumpers"
+
+  bus:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler school bus anatomy with a long cheerful rectangular bus body, multiple large colorable square passenger windows, two large chunky round wheels along the visible side, front windshield, and front grille"
+
+  truck:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler pickup or transport truck anatomy with a sturdy front driver cab, clear windshield, an open rear cargo bed, and chunky round heavy-duty wheels"
+
+  bicycle:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler bicycle anatomy with exactly two clearly separated circular wheels, a simple sturdy diamond tubular frame, front handlebars, cozy seat, and pedals"
+    support_override: "exactly two clearly separated circular wheels connected by a clean frame"
+    orientation: "side profile view clearly displaying both wheels, handlebars, and seat"
+    safeguards_extra: "Show exactly two wheels. Do not draw four wheels or training wheels unless specified."
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+
+  motorcycle:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler motorcycle anatomy with two chunky round wheels, a sleek streamlined body frame, front handlebars with headlight, a cozy seat, and a clean simple exhaust pipe"
+    support_override: "two chunky round wheels supporting a streamlined cycle frame"
+    orientation: "side profile view clearly displaying both wheels and the streamlined frame"
+    safeguards_extra: "Show exactly two wheels. Do not draw a four-wheeled car body."
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+
+  taxi:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler city taxi cab anatomy with a rounded sedan body, large chunky round wheels, clean windows, and a cute classic taxi roof sign"
+
+  ambulance:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler ambulance anatomy with a sturdy van rescue body, chunky round wheels, clear windows, a clean medical cross emblem on the side, and a simple rooftop emergency light"
+
+  fire_truck:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler fire engine truck anatomy with a bold rescue cab, chunky round wheels, a clean folded extension ladder on the roof, side hose compartment, and rooftop emergency lights"
+
+  police_car:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler police patrol car anatomy with a sleek sedan body, chunky round wheels, clean windows, a friendly star emblem on the door, and a classic rooftop police light bar"
+
+  airplane:
+    class: "fixed_wing_aircraft"
+    anatomy: "classic toddler passenger airplane anatomy with a streamlined cylindrical fuselage, two wide horizontal wings, a vertical tail fin with horizontal stabilizers, round cockpit windshield, and oval cabin windows"
+    support_override: "streamlined flight stance with two wide wings, strictly NO car wheels"
+
+  train:
+    class: "rail_vehicles"
+    anatomy: "classic toddler steam locomotive train anatomy with a rounded engine boiler, cozy engineer cab, front cowcatcher grill, top smokestack, and multiple round train wheels aligned along the bottom"
+    support_override: "multiple round steel train wheels aligned neatly along the bottom baseline"
+
+  boat:
+    class: "watercraft"
+    anatomy: "classic toddler motorboat or tugboat anatomy with a buoyant rounded hull, a cozy steering cabin with windows, and a smooth deck"
+    support_override: "a buoyant rounded hull resting on a water baseline, strictly NO wheels"
+    negative_tokens:
+      - "wheels"
+      - "tires"
+      - "car wheels"
+      - "road"
+
+  tractor:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler farm tractor anatomy with a high driver cab, very large chunky round rear wheels, smaller front wheels, a front engine hood, and an exhaust pipe"
+
+  wagon:
+    class: "wheeled_four_wheel"
+    anatomy: "classic toddler pull wagon cart anatomy with a shallow open rectangular wagon bed, four small round wheels, and a long front pulling handle"
+
+  scooter:
+    class: "wheeled_two_wheel"
+    anatomy: "classic toddler kick scooter anatomy with a low flat foot deck, two small round inline wheels, and a vertical steering column with handlebars"
+    support_override: "two small round wheels supporting a low foot deck"
+    negative_tokens:
+      - "four wheels"
+      - "car body"
+
+# ---------------------------------------------------------------------------
+# UNIVERSAL PROMPT STANDARDS & BASE NEGATIVES
+# Centralized so Python debate engine never hardcodes static token lists.
+# ---------------------------------------------------------------------------
+prompt_standards:
+  common_coloring_negatives:
+    - "shading"
+    - "shadows"
+    - "gradients"
+    - "gray"
+    - "grayscale"
+    - "color"
+    - "textures"
+    - "3d"
+    - "photorealistic"
+    - "intricate patterns"
+    - "airbrush"
+    - "stippling"
+    - "cross-hatching"
+    - "thin lines"
+    - "borders"
+    - "frames"
+    - "separator lines"
+    - "text"
+    - "letters"
+    - "words"
+    - "alphabet"
+    - "typography"
+    - "watermarks"
+    - "labels"
+    - "writing"
+    - "scary expression"
+    - "widescreen"
+    - "16:9"
+    - "landscape orientation"
+    - "horizontal cropping"
+    - "cut off edges"
+  isolated_object_negatives:
+    - "multiple objects"
+    - "background scenery"
+    - "floor"
+    - "ground"
+    - "sky"
+    - "horizon"
+
+# ---------------------------------------------------------------------------
+# DYNAMIC ENVIRONMENT / HABITAT TEMPLATES
+# Maps composition types (e.g. integrated_aquatic_scene, integrated_land_scene)
+# or visual_style.background to their respective habitat elements and rules.
+# Zero Python code modification required when adding new biomes or series.
+# ---------------------------------------------------------------------------
+environment_templates:
+  aquatic:
+    composition_patterns:
+      - "integrated_aquatic_scene"
+      - "aquatic"
+      - "ocean"
+      - "marine"
+      - "underwater"
+    background_patterns:
+      - "aquatic_environment"
+    habitat_name: "natural ocean and underwater marine habitat"
+    habitat_elements: "rising air bubbles, fluid gentle water currents, swaying kelp fronds, and colorable coral reef formations on the sea bed"
+    subject_action: "swimming in its natural ocean habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background marine elements (bubbles, water currents, kelp, coral) with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background marine elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "diver"
+      - "boat"
+      - "trash"
+      - "murky water"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "murky water"
+      - "diver"
+      - "boat"
+      - "trash"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural swimming locomotion."
+      - "Ensure AI integrates a cohesive vector line art background (water, bubbles, kelp, coral) matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+  land:
+    composition_patterns:
+      - "integrated_land_scene"
+      - "land"
+      - "savanna"
+      - "safari"
+      - "forest"
+      - "woodland"
+      - "jungle"
+      - "terrestrial"
+    background_patterns:
+      - "land_environment"
+      - "savanna_environment"
+      - "forest_environment"
+    habitat_name: "natural savanna meadow or woodland land habitat"
+    habitat_elements: "swaying grasses, wildflowers, gentle rolling ground contours, distant stylized trees, and foliage"
+    subject_action: "standing or resting naturally in its natural land habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background landscape elements (grasses, trees, foliage) with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background landscape elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "cars"
+      - "pavement"
+      - "buildings"
+      - "trash"
+      - "cages"
+      - "zoo bars"
+      - "fences"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "cars"
+      - "pavement"
+      - "buildings"
+      - "trash"
+      - "cages"
+      - "zoo bars"
+      - "fences"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural terrestrial locomotion."
+      - "Ensure AI integrates a cohesive vector line art landscape (grass, trees, foliage) matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+  air:
+    composition_patterns:
+      - "integrated_air_scene"
+      - "air"
+      - "sky"
+      - "avian"
+      - "flight"
+    background_patterns:
+      - "air_environment"
+      - "sky_environment"
+    habitat_name: "natural open sky and canopy habitat"
+    habitat_elements: "soft stylized puffy clouds, open sky currents, gentle sun rays, and leafy treetop branch perches"
+    subject_action: "gliding or perching naturally in its natural open sky canopy habitat"
+    line_weight: "Bold 4pt black vector outline on subject silhouette; lighter 2pt outlines for background sky and branch elements with distinct outline separation for effortless coloring."
+    stroke_hierarchy: "Clear stroke hierarchy: bold 4pt black vector contour defining the {readable_name} silhouette with wide open interior coloring zones, and lighter 2pt outlines for background sky and branch elements, with distinct outline separation around the creature for effortless coloring fill."
+    margin_reserve: "Leave generous 20% empty white margin space at the top of the canvas for typography."
+    prohibited_market:
+      - "cages"
+      - "airplanes"
+      - "smoke"
+      - "smog"
+      - "power lines"
+      - "indoor ceiling"
+      - "human"
+      - "clothes"
+    negative_tokens:
+      - "cages"
+      - "airplanes"
+      - "smoke"
+      - "smog"
+      - "power lines"
+      - "indoor ceiling"
+      - "human"
+      - "clothes"
+    critic_findings:
+      - "Verify authentic living {readable_name} anatomy and natural flight/perch posture."
+      - "Ensure AI integrates cohesive vector line art sky/branch elements matching the subject style."
+      - "Ensure distinct stroke hierarchy and boundary separation around the creature for effortless coloring fill."
+      - "Ensure AI renders pure flat 2D line art with zero pencil shading or gray airbrushing."
+      - "Ensure typography is NOT drawn on canvas (handled by compositor with reserved top margin)."
+
+# ---------------------------------------------------------------------------
+# DYNAMIC PUBLICATION COVER THEMES
+# Drives Front and Back Cover Master Artwork across CurioKraft publication series.
+# Enables zero-code expansion for Ocean, Land, Sky, Geometric Patterns, and Toddler.
+# ---------------------------------------------------------------------------
+cover_themes:
+  ocean:
+    theme_id: "ocean"
+    display_name: "Ocean Expeditions & Marine Habitats"
+    pattern_matchers:
+      - "aquatic"
+      - "ocean"
+      - "marine"
+      - "underwater"
+      - "sea"
+    palette:
+      primary_bg: "deep royal oceanic navy (#0F2B48) softly transitioning into sunlit radiant turquoise (#00A896)"
+      accents: "bioluminescent cyan (#00F0FF), vibrant coral orange (#FF6B6B), and warm gold (#FFAA00)"
+      card_bg: "#FFFFFF"
+      card_border: "#1B3B5F"
+    baseline_spec:
+      height_percentage: 20
+      style: "fluid, continuous rolling underwater ocean current swells and silhouettes of coral reef seabed"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "rising effervescent air bubbles, crepuscular sunbeams filtering down through crystal-clear water, tiny floating sea stars, and subtle bioluminescent sparkles"
+    hero_action: "swimming dynamically and gliding gracefully through crystal-clear sunlit coral waters with natural marine locomotion"
+    hero_prohibitions:
+      - "legs"
+      - "standing"
+      - "sitting"
+      - "sitting on ground"
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+    title_styling: "vibrant 3D golden-amber and sunshine yellow display lettering (#FFD13B to #FFAA00) with sculpted wave bevels, clean white die-cut contour outline, and deep navy drop-shadow for maximum contrast against the turquoise sea"
+    framing: "full-bleed borderless edge-to-edge illustration across all four borders, strictly zero decorative corner frames, zero margin lines"
+    back_cover:
+      headline: "UNLOCK THE WONDERS OF THE DEEP BLUE OCEAN!"
+      headline_styling: "artistic sculpted 3D nautical display lettering with luminous golden-coral gradients and deep ocean drop-shadow"
+      description: "Spark your child's curiosity for marine life and ocean wonders! As young artists bring each majestic creature to life, they build fine motor dexterity, cultivate calming screen-free mindfulness, and gain creative confidence exploring the breathtaking beauty of our living seas."
+      parent_benefit_pills:
+        - "★ 50+ Majestic Sea Creatures & Natural Habitats"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Authentic Marine Anatomy & Educational Species Names"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  land:
+    theme_id: "land"
+    display_name: "Wild Savanna & Terrestrial Kingdoms"
+    pattern_matchers:
+      - "land"
+      - "savanna"
+      - "safari"
+      - "forest"
+      - "jungle"
+      - "woodland"
+      - "terrestrial"
+    palette:
+      primary_bg: "warm sunlit savanna amber (#F9A825) blending into deep canopy green (#2E7D32)"
+      accents: "terracotta earth (#D84315), meadow gold (#FBC02D), and sky azure (#4FC3F7)"
+      card_bg: "#FFFFFF"
+      card_border: "#2C3E50"
+    baseline_spec:
+      height_percentage: 20
+      style: "gentle, continuous rolling savanna meadow grasses, wildflowers, and distant stylized acacia trees"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "floating flower petals, gentle drifting dandelion seeds, warm golden sunlight motes, and fluttering foliage leaves"
+    hero_action: "standing proudly or bounding gracefully across rolling meadow grasses with natural four-legged terrestrial posture"
+    hero_prohibitions:
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+      - "cages"
+      - "zoo bars"
+    title_styling: "bold, adventurous expedition display lettering with natural sculpted earth tones"
+    back_cover:
+      headline: "EXPLORE THE WONDERS OF THE WILD KINGDOM!"
+      description: "Journey into the heart of the wild across magnificent terrestrial habitats! Discover and color 50+ incredible wild animals living naturally in their open-air homes."
+      parent_benefit_pills:
+        - "★ 50+ Wild Animals in Authentic Natural Habitats"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Accurate Wildlife Anatomy & First Animal Facts"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  sky:
+    theme_id: "sky"
+    display_name: "Open Sky & Avian Expeditions"
+    pattern_matchers:
+      - "sky"
+      - "air"
+      - "avian"
+      - "flight"
+      - "birds"
+    palette:
+      primary_bg: "radiant sky azure (#0288D1) softly transitioning into sunburst gold (#FFD54F) and horizon lavender (#E1BEE7)"
+      accents: "cloud white (#FFFFFF), sunny yellow (#FFEE58), and coral pink (#FF8A80)"
+      card_bg: "#FFFFFF"
+      card_border: "#1A365D"
+    baseline_spec:
+      height_percentage: 20
+      style: "soft, continuous rolling treetop canopy branches and gentle stylized cloud banks"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "swirling breeze wind currents, drifting soft bird feathers, warm radiant sunbeams, and twinkling sky sparkles"
+    hero_action: "soaring gracefully with wide outstretched wings or perching naturally on a leafy branch"
+    hero_prohibitions:
+      - "holding crayons"
+      - "crayons"
+      - "human clothes"
+      - "cages"
+    title_styling: "sweeping aerodynamic display lettering with soaring wing accents and sunlit reflections"
+    back_cover:
+      headline: "SOAR INTO THE WONDERS OF THE OPEN SKY!"
+      description: "Take flight into the heavens across magnificent aerial habitats! Discover and color 50+ fascinating winged creatures gliding and perching in their natural sky canopies."
+      parent_benefit_pills:
+        - "★ 50+ Magnificent Winged Creatures & Sky Canopies"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Authentic Avian Anatomy & First Sky Facts"
+        - "★ Perfect for Young Explorers Ages 4 to 10"
+
+  geometric_mandala:
+    theme_id: "geometric_mandala"
+    display_name: "Hypnotic Mandalas & Geometric Patterns"
+    pattern_matchers:
+      - "geometric"
+      - "pattern"
+      - "mandala"
+      - "shapes"
+      - "tessellation"
+    palette:
+      primary_bg: "rich jewel-toned midnight indigo (#1A1B4B) blending into electric teal (#00F5D4)"
+      accents: "shimmering gold (#FFD166), vivid magenta (#F72585), and electric purple (#7209B7)"
+      card_bg: "#FFFFFF"
+      card_border: "#2B2D42"
+    baseline_spec:
+      height_percentage: 20
+      style: "continuous ornamental geometric wave band with symmetrical rhythmic tessellation motifs"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "delicate floating geometric starbursts, kaleidoscopic dust, and harmonized symmetric sparkles"
+    hero_action: "intricate focal mandala emblem with radiating circular petals and geometric harmony"
+    hero_prohibitions:
+      - "faces"
+      - "eyes"
+      - "characters"
+      - "animals"
+      - "text"
+    title_styling: "sophisticated modern display lettering with sharp geometric vertices and metallic jewel accents"
+    back_cover:
+      headline: "DISCOVER THE CALM OF MINDFUL GEOMETRIC COLORING!"
+      description: "Unwind and focus your mind with 50+ mesmerizing geometric line art designs, intricate wave patterns, and soothing concentric circles."
+      parent_benefit_pills:
+        - "★ 50+ Intricate Mandalas, Waves & Tessellations"
+        - "★ Single-Sided Pages to Prevent Marker Bleed-Through"
+        - "★ Enhances Spatial Reasoning, Focus & Mindfulness"
+        - "★ Designed for All Ages: Kids, Teens & Adults"
+
+  toddler:
+    theme_id: "toddler"
+    display_name: "Preschool First Words & Early Learning"
+    pattern_matchers:
+      - "toddler"
+      - "preschool"
+      - "first_words"
+      - "vol1"
+      - "tiny_hands"
+    palette:
+      primary_bg: "cheerful warm butter-cream / soft sunny pale yellow canvas (#FFF9E6)"
+      accents: "pastel turquoise (#48CAE4), mint green (#A8DADC), sunny lemon yellow (#FFE494), and coral candy red (#FF6B6B)"
+      card_bg: "#FFFFFF"
+      card_border: "#2C1810"
+    baseline_spec:
+      height_percentage: 20
+      style: "smooth, gentle rolling wave in pastel turquoise and mint"
+      spine_continuity: "horizontally flat at spine fold, seamless borderless transition across spine"
+    atmosphere: "celebratory toddler star dust, floating 4-point and 5-point twinkling stars in golden yellow, soft pastel floating hearts in pink and lilac, and colorful confetti dots"
+    hero_action: "an adorable chubby baby animal waving cheerfully with friendly round eyes and rosy cheeks"
+    hero_prohibitions:
+      - "sharp teeth"
+      - "scary expressions"
+      - "dark shadows"
+    title_styling: "joyful upward arch in large chunky 3D puffy inflated candy bubble letters with high-gloss specular reflections"
+    back_cover:
+      headline: "DISCOVER, COLOR & LEARN!"
+      description: "Packed with 100+ adorable preschool illustrations and everyday first words, perfect for building fine motor skills, early vocabulary, and creative confidence!"
+      parent_benefit_pills:
+        - "★ 100+ Brand-New Simple Drawings"
+        - "★ Chunky Outlines for Little Hands"
+        - "★ 110 Full Pages of Double-Sided Coloring"
+        - "★ Perfect for Ages 1 to 4"
+
+# ---------------------------------------------------------------------------
+# UNIVERSAL PAGE ARCHETYPES
+# Decouples page prompt generation from Python conditionals.
+# Enables instant creation of new book formats (Mandalas, Dots, Tracing, Habitats).
+# ---------------------------------------------------------------------------
+page_archetypes:
+  integrated_habitat:
+    archetype_id: "integrated_habitat"
+    description: "Living subject seamlessly embedded in natural environment with stroke hierarchy (4pt subject silhouette, 2pt habitat elements)."
+    entity_policy: "always_living"
+    requires_living_eyes: true
+    requires_background_environment: true
+    margin_reserve: "20% empty white margin at top for title typography"
+
+  single_centered_subject:
+    archetype_id: "single_centered_subject"
+    description: "Single isolated subject centered on pure white canvas, 5pt contour, zero scenery."
+    entity_policy: "semantic_domain"
+    requires_living_eyes: false
+    requires_background_environment: false
+
+  geometric_pattern:
+    archetype_id: "geometric_pattern"
+    description: "Pure abstract geometric coloring line art (waves, concentric circles, mandalas, tessellations)."
+    entity_policy: "strictly_abstract"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "faces"
+      - "eyes"
+      - "mouth"
+      - "head"
+      - "body"
+      - "animals"
+      - "characters"
+      - "people"
+      - "text"
+      - "letters"
+      - "numbers"
+      - "words"
+
+  connect_the_dots:
+    archetype_id: "connect_the_dots"
+    description: "Numbered guide dots (1, 2, 3...) connected by faint dotted guideline contours forming a hidden shape."
+    entity_policy: "activity_puzzle"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "solid line art"
+      - "colored lines"
+      - "shading"
+      - "pre-drawn dark outline"
+      - "text paragraphs"
+
+  tracing_handwriting:
+    archetype_id: "tracing_handwriting"
+    description: "Primary 3-line ruling guidelines with hollow letterforms containing centered directional dotted stroke tracing paths."
+    entity_policy: "educational_handwriting"
+    requires_living_eyes: false
+    requires_background_environment: false
+    negative_tokens:
+      - "solid filled letters"
+      - "black letters"
+      - "solid black typography"
+      - "shading"
+      - "curved wavy lines"
+
+  multi_card_spread:
+    archetype_id: "multi_card_spread"
+    description: "Uniform grid of N flashcard containers with bubble glyph on left and line art on right."
+    entity_policy: "spread_grid"
+    requires_living_eyes: false
+    requires_background_environment: false
+
+

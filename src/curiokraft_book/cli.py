@@ -2,10 +2,12 @@
 
 import json
 import logging
+import shutil
 import sys
 from pathlib import Path
 
 import typer
+import yaml
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
@@ -179,16 +181,29 @@ def main_callback():
 def init_workspace(
     project_name: str = typer.Option(DEFAULT_BOOK_TITLE, "--name", "-n", help="Book title"),
     imprint: str = typer.Option(DEFAULT_IMPRINT, "--imprint", "-i", help="Publisher imprint"),
+    preset: str = typer.Option(
+        "non-bleed",
+        "--preset",
+        "-p",
+        help="Layout preset: 'non-bleed' (default, centered object with white margins) or 'bleed' (full coverage)",
+    ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", "-f", help="Overwrite existing configuration and templates"
+    ),
 ):
     """Scaffold complete directory structure and templates on a fresh installation or new laptop."""
     console.print(
-        Panel.fit(f"[bold cyan]Initializing CurioKraft Book Workspace: {project_name}[/bold cyan]")
+        Panel.fit(
+            f"[bold cyan]Initializing CurioKraft Book Workspace: {project_name}[/bold cyan]\n"
+            f"[dim]Layout Preset: [bold yellow]{preset}[/bold yellow][/dim]"
+        )
     )
 
     required_dirs = [
         "assets/logo",
         "assets/emblem",
         "assets/fonts",
+        "assets/special_assets",
         "config",
         "manifest",
         "output/interior",
@@ -196,17 +211,74 @@ def init_workspace(
         "output/interior_masters",
         "output/samples",
         "output/reports",
+        "output/kdp",
         "inbox/raw_pages",
+        "inbox/kdp_forms",
+        "inbox/special_assets",
         "generated/raw_pages",
         "generated/cover",
         "logs",
         "dont-delete-alter",
+        "storage",
     ]
 
     for d in required_dirs:
         p = Path(d)
         p.mkdir(parents=True, exist_ok=True)
         console.print(f"  [green][OK][/green] Directory ready: [cyan]{d}/[/cyan]")
+
+    # Extract bundled package templates if available
+    templates_dir = Path(__file__).parent / "templates"
+    if templates_dir.exists() and templates_dir.is_dir():
+        copied_count = 0
+        for item in templates_dir.rglob("*"):
+            if item.is_file():
+                rel_path = item.relative_to(templates_dir)
+                dest = Path(rel_path)
+                if not dest.exists() or overwrite:
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, dest)
+                    copied_count += 1
+        if copied_count > 0:
+            console.print(
+                f"  [bold green][TEMPLATES][/bold green] Unpacked [cyan]{copied_count}[/cyan] default configuration and asset templates."
+            )
+
+    # Initialize active config/book_config.yaml from chosen preset
+    cfg_file = Path("config/book_config.yaml")
+    preset_choice = "bleed" if "bleed" in preset.lower() and "non" not in preset.lower() else "non_bleed"
+    source_preset = Path(f"config/book_config_{preset_choice}.yaml")
+    if source_preset.exists() and (not cfg_file.exists() or overwrite):
+        shutil.copy2(source_preset, cfg_file)
+        console.print(
+            f"  [bold green][CONFIG][/bold green] Activated layout preset: [cyan]{source_preset.name}[/cyan]"
+        )
+
+    # Initialize .env from .env.example if missing
+    env_file = Path(".env")
+    env_example = Path(".env.example")
+    if not env_file.exists() and env_example.exists():
+        shutil.copy2(env_example, env_file)
+        console.print("  [bold green][ENV][/bold green] Created local [cyan].env[/cyan] from template.")
+
+    # Apply custom project name and imprint to config/book_config.yaml if provided
+    cfg_file = Path("config/book_config.yaml")
+    if cfg_file.exists() and (project_name != DEFAULT_BOOK_TITLE or imprint != DEFAULT_IMPRINT):
+        try:
+            with open(cfg_file, encoding="utf-8") as f:
+                cfg_data = yaml.safe_load(f) or {}
+            if "book" in cfg_data and isinstance(cfg_data["book"], dict):
+                if project_name != DEFAULT_BOOK_TITLE:
+                    cfg_data["book"]["title"] = project_name
+                if imprint != DEFAULT_IMPRINT:
+                    cfg_data["book"]["brand"] = imprint
+                with open(cfg_file, "w", encoding="utf-8") as f:
+                    yaml.safe_dump(cfg_data, f, sort_keys=False)
+                console.print(
+                    f"  [bold green][CONFIG][/bold green] Set book title to '[cyan]{project_name}[/cyan]' and brand to '[cyan]{imprint}[/cyan]'."
+                )
+        except Exception as e:
+            logger.debug(f"Failed updating book_config.yaml with custom parameters: {e}")
 
     # Create README templates in assets and inbox if missing
     inbox_readme = Path("inbox/raw_pages/README.md")
@@ -239,11 +311,18 @@ def init_workspace(
             encoding="utf-8",
         )
 
-    print_hint(
-        "Workspace Initialization",
-        "curiokraft-book doctor",
-        "Audit workspace health, verify publisher assets, and check active AI provider.",
+    console.print(
+        Panel(
+            "[bold green][PASS] Workspace Initialized Successfully![/bold green]\n\n"
+            ">> [bold cyan]WORKFLOW GUIDE:[/] [bold yellow]COMMANDS.md[/bold yellow]\n"
+            "   Step-by-step CLI commands and image drop guide available in this directory.\n\n"
+            ">> [bold cyan]RECOMMENDED NEXT STEP:[/] [bold yellow]curiokraft-book doctor[/bold yellow]\n"
+            "   Audit workspace health, verify publisher assets, and check active AI provider.",
+            border_style="green",
+            title="[bold green]Lifecycle Guidance[/bold green]",
+        )
     )
+
 
 
 @app.command("doctor")
