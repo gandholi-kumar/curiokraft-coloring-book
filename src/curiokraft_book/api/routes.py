@@ -51,6 +51,7 @@ from curiokraft_book.constants import (
 from curiokraft_book.data.base import (
     BookRecord,
     PageRecord,
+    SyncStatus,
 )
 from curiokraft_book.data.base import (
     PromptRecord as StoragePromptRecord,
@@ -347,9 +348,11 @@ async def list_book_pages(
             raw_image_path=p.raw_image_path,
             rescued_image_path=p.rescued_image_path,
             composite_image_path=p.composite_image_path,
-            sync_status=p.sync_status.value
-            if hasattr(p.sync_status, "value")
-            else str(p.sync_status),
+            sync_status=(
+                p.sync_status
+                if isinstance(p.sync_status, SyncStatus)
+                else SyncStatus(str(p.sync_status).lower())
+            ),
             version=p.version,
             created_at=p.created_at,
             updated_at=p.updated_at,
@@ -390,9 +393,11 @@ async def get_book_page(
         raw_image_path=page.raw_image_path,
         rescued_image_path=page.rescued_image_path,
         composite_image_path=page.composite_image_path,
-        sync_status=page.sync_status.value
-        if hasattr(page.sync_status, "value")
-        else str(page.sync_status),
+        sync_status=(
+            page.sync_status
+            if isinstance(page.sync_status, SyncStatus)
+            else SyncStatus(str(page.sync_status).lower())
+        ),
         version=page.version,
         created_at=page.created_at,
         updated_at=page.updated_at,
@@ -422,9 +427,11 @@ def _format_page_response(page: PageRecord) -> PageResponse:
         raw_image_path=page.raw_image_path,
         rescued_image_path=page.rescued_image_path,
         composite_image_path=page.composite_image_path,
-        sync_status=page.sync_status.value
-        if hasattr(page.sync_status, "value")
-        else str(page.sync_status),
+        sync_status=(
+            page.sync_status
+            if isinstance(page.sync_status, SyncStatus)
+            else SyncStatus(str(page.sync_status).lower())
+        ),
         version=page.version,
         created_at=page.created_at,
         updated_at=page.updated_at,

@@ -101,7 +101,12 @@ markers = [
 
 [tool.coverage.run]
 source = ["src/curiokraft_book"]
-omit = ["tests/*", "src/curiokraft_book/cli.py", "src/curiokraft_book/cli_db.py"]
+omit = [
+    "tests/*",
+    "src/curiokraft_book/cli.py",
+    "src/curiokraft_book/cli_db.py",
+    "src/curiokraft_book/cli_web.py",
+]
 
 [tool.coverage.report]
 show_missing = true
