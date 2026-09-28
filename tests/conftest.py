@@ -37,21 +37,17 @@ def _isolate_database_and_storage(monkeypatch, tmp_path):
     monkeypatch.setenv("STORAGE_BACKEND", "local")
     monkeypatch.delenv("REMOTE_DATABASE_URL", raising=False)
     monkeypatch.delenv("S3_ENDPOINT_URL", raising=False)
-    try:
+    import contextlib
+
+    with contextlib.suppress(Exception):
         from curiokraft_book.data.hybrid_store import reset_global_data_store
 
         reset_global_data_store()
-    except ImportError:
-        # Hybrid store might not be available during early test initialization
-        pass
     yield
-    try:
+    with contextlib.suppress(Exception):
         from curiokraft_book.data.hybrid_store import reset_global_data_store
 
         reset_global_data_store()
-    except ImportError:
-        # Hybrid store might not be available during test teardown
-        pass
 
 
 @pytest.fixture

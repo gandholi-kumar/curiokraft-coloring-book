@@ -78,8 +78,8 @@ def _safe_resolve_manifest_path(path: str | Path | None) -> Path | None:
     """
     if not path:
         return None
-    raw_p = Path(path)
-    if ".." in raw_p.parts:
+    raw_str = str(path).strip()
+    if not raw_str or ".." in raw_str:
         return None
 
     # Restrict resolution strictly to trusted roots (cwd, pkg_root, system temp)
@@ -89,39 +89,46 @@ def _safe_resolve_manifest_path(path: str | Path | None) -> Path | None:
         Path(tempfile.gettempdir()).resolve(),
     ]
 
+    import os
+
+    clean_name = os.path.basename(raw_str)
+    # Check if this filename directly exists in allowed manifest or config folders
+    for folder in ("manifest", "config"):
+        for root in allowed_roots:
+            cand = (root / folder / clean_name).resolve()
+            if cand.is_file():
+                return cand
+
     try:
-        if raw_p.is_absolute():
-            resolved = raw_p.resolve()
-            for root in allowed_roots:
-                try:
-                    if resolved.is_relative_to(root) and resolved.is_file():
-                        return resolved
-                except (ValueError, OSError):
-                    # Continue checking next allowed root
-                    continue
-            return None
+        raw_p = Path(raw_str)
+        cand_resolved = raw_p.resolve() if raw_p.is_absolute() else (Path.cwd() / raw_p).resolve()
+        for root in allowed_roots:
+            try:
+                if (
+                    os.path.commonpath([str(root), str(cand_resolved)]) == str(root)
+                    and cand_resolved.is_file()
+                ):
+                    return cand_resolved
+            except (ValueError, OSError):
+                continue
     except (ValueError, OSError):
-        # Ignore resolution failure for malformed paths
         return None
 
-    for root in allowed_roots:
-        try:
-            cand = (root / raw_p).resolve()
-            if cand.is_relative_to(root) and cand.is_file():
-                return cand
-        except (ValueError, OSError):
-            # Continue checking next allowed root
-            continue
     return None
 
 
 def _load_json(path: str) -> dict:
     """Load a JSON manifest file relative to cwd or package root."""
     p = _safe_resolve_manifest_path(path)
-    if not p or not p.exists() or not p.is_file():
+    if not p or not p.is_file():
         return {}
-    with open(p, encoding="utf-8") as f:
-        return json.load(f) or {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f) or {}
+    except (OSError, json.JSONDecodeError) as e:
+        clean_err = re.sub(r"[\r\n\t]", " ", str(e))
+        logger.warning("Failed to parse JSON file: %s", clean_err)
+        return {}
 
 
 # Loaded once at import time — cached for the process lifetime
@@ -2832,7 +2839,8 @@ def extract_cover_showcase_cards(
                     if p.get("page_number", 0) >= 4 and p.get("type") in ["coloring_page", None]
                 ]
         except Exception as e:
-            logger.warning(f"Error loading manifest pages: {e}")
+            clean_err = re.sub(r"[\r\n\t]", " ", str(e))
+            logger.warning("Error loading manifest pages: %s", clean_err)
 
     # Check if manifest has distinct sections (e.g., Aquatic or multi-biome)
     unique_sections: list[str] = []
@@ -3422,6 +3430,9 @@ def synthesize_prompts(
 
     # 1. Resolve manifest path
     resolved_manifest = _safe_resolve_manifest_path(manifest_path or DEFAULT_PAGES_MANIFEST)
+    manifest_clean_path = (
+        str(resolved_manifest) if resolved_manifest else str(DEFAULT_PAGES_MANIFEST)
+    )
     all_pages: list[dict[str, Any]] = []
     if resolved_manifest and resolved_manifest.is_file():
         try:
@@ -3445,7 +3456,7 @@ def synthesize_prompts(
     prompt_items: list[PromptItem] = []
 
     # 3. Front Cover Prompt
-    f_pos, f_neg = generate_front_cover_prompt(manifest_path=str(resolved_manifest))
+    f_pos, f_neg = generate_front_cover_prompt(manifest_path=manifest_clean_path)
     prompt_items.append(
         PromptItem(
             id="COVER_FRONT",
@@ -3465,7 +3476,7 @@ def synthesize_prompts(
     )
 
     # 4. Back Cover Prompt
-    b_pos, b_neg = generate_back_cover_prompt(manifest_path=str(resolved_manifest))
+    b_pos, b_neg = generate_back_cover_prompt(manifest_path=manifest_clean_path)
     prompt_items.append(
         PromptItem(
             id="COVER_BACK",
@@ -3486,12 +3497,8 @@ def synthesize_prompts(
 
     # 5. Volume Mascot Prompt (if enabled)
     if DEFAULT_MASCOT_ENABLED and DEFAULT_MASCOT_GENERATE_PROMPT:
-        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(
-            manifest_path=str(resolved_manifest)
-        )
-        m_pos, m_neg = generate_mascot_prompt(
-            mascot_name=m_name, manifest_path=str(resolved_manifest)
-        )
+        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=manifest_clean_path)
+        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=manifest_clean_path)
         m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
         prompt_items.append(
             PromptItem(
@@ -3526,7 +3533,7 @@ def synthesize_prompts(
         theme_name=theme_name,
         volume_name=vol,
         book_config_path=str(DEFAULT_BOOK_CONFIG),
-        manifest_path=str(resolved_manifest),
+        manifest_path=manifest_clean_path,
     )
     prompt_items.append(
         PromptItem(

@@ -7,6 +7,7 @@ Commands:
 
 from __future__ import annotations
 
+import contextlib
 import threading
 import time
 import webbrowser
@@ -28,11 +29,8 @@ def _open_browser_delayed(url: str, delay_seconds: float = 1.2) -> None:
 
     def _target():
         time.sleep(delay_seconds)
-        try:
+        with contextlib.suppress(Exception):
             webbrowser.open(url)
-        except Exception:
-            # Best-effort browser launch; safely ignore failures in headless environments
-            pass
 
     threading.Thread(target=_target, daemon=True).start()
 
@@ -54,9 +52,9 @@ def start_web_server(
     ),
 ):
     """[Studio Gateway] Launch the CurioKraft Publishing Studio API & WebSocket server."""
-    base_url = f"http://{host}:{port}"
+    base_url = f"http://{host}:{port}"  # NOSONAR - local development server
     docs_url = f"{base_url}/docs"
-    ws_url = f"ws://{host}:{port}/ws"
+    ws_url = f"ws://{host}:{port}/ws"  # NOSONAR - local development websocket
 
     console.print(
         Panel.fit(
@@ -92,7 +90,7 @@ def check_web_status(
     """[Health Diagnostic] Probe the local CurioKraft Studio gateway for status."""
     import httpx
 
-    target_url = f"http://{host}:{port}/api/health"
+    target_url = f"http://{host}:{port}/api/health"  # NOSONAR - local health check
     try:
         resp = httpx.get(target_url, timeout=3.0)
         if resp.status_code == 200:

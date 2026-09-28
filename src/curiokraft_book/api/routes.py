@@ -10,7 +10,6 @@ from typing import Any, Literal
 from uuid import uuid4
 
 import anyio
-
 from fastapi import (
     APIRouter,
     Depends,
@@ -44,6 +43,7 @@ from curiokraft_book.api.websocket_manager import ws_manager
 from curiokraft_book.constants import (
     CANVAS_DPI,
     DEFAULT_AGE_GROUPS,
+    DEFAULT_PAGES_MANIFEST,
     DEFAULT_TRIM_SIZES,
     DEFAULT_WORKFLOW_MODES,
     calculate_spine_width,
@@ -300,8 +300,9 @@ async def list_book_pages(
             try:
                 import json
 
-                with open(manifest_path, encoding="utf-8") as f:
-                    data = json.load(f)
+                async with await anyio.open_file(manifest_path, encoding="utf-8") as f:
+                    manifest_content = await f.read()
+                    data = json.loads(manifest_content)
                 raw_pages = data.get("pages", [])
                 page_records: list[PageRecord] = []
                 for p in raw_pages:
@@ -449,16 +450,17 @@ def _format_book_response(book: BookRecord) -> BookResponse:
         page_count=book.page_count,
         visual_style=book.visual_style,
         status=book.status,
-        sync_status=book.sync_status.value if hasattr(book.sync_status, "value") else str(book.sync_status),
+        sync_status=(
+            book.sync_status.value if hasattr(book.sync_status, "value") else str(book.sync_status)
+        ),
         version=book.version,
         created_at=book.created_at,
         updated_at=book.updated_at,
     )
 
+
 def _match_file_to_page(file_stem: str, pages: list[PageRecord]) -> PageRecord | None:
     """Match a filename or stem against candidate book pages using page number, id, or canonical object."""
-    import re
-
     clean = file_stem.lower().strip().replace(" ", "_")
 
     # 1. Try matching explicit page number: e.g. raw_p001, p001, raw_p1, p1, raw_p003_clownfish
@@ -511,15 +513,22 @@ async def upload_book_raw_pages(
 
     for upload_file in files:
         raw_name = upload_file.filename or f"raw_{uuid4().hex[:8]}.png"
-        safe_name = raw_name.replace(" ", "_")
-        dest_path = inbox_dir / safe_name
+        clean_name = Path(raw_name).name
+        safe_name = re.sub(r"[^a-zA-Z0-9_.-]", "_", clean_name)
+        if not safe_name or safe_name in (".", ".."):
+            safe_name = f"raw_{uuid4().hex[:8]}.png"
+        dest_path = (inbox_dir / safe_name).resolve()
+        if not dest_path.is_relative_to(inbox_dir.resolve()):
+            unmatched_files.append(safe_name)
+            continue
 
         try:
             content = await upload_file.read()
-            with open(dest_path, "wb") as f:
-                f.write(content)
+            async with await anyio.open_file(dest_path, "wb") as f:
+                await f.write(content)
         except Exception as e:
-            logger.error(f"Failed to write uploaded file {safe_name}: {e}")
+            log_name = re.sub(r"[\r\n\t]", " ", safe_name)
+            logger.error("Failed to write uploaded file %s: %s", log_name, str(e))
             unmatched_files.append(safe_name)
             continue
 
@@ -531,7 +540,8 @@ async def upload_book_raw_pages(
 
             if auto_rescue:
                 canon_str = matched_page.canonical_object or dest_path.stem
-                rescued_name = f"raw_p{matched_page.page_number:03d}_{canon_str}_rescued.png"
+                safe_canon = re.sub(r"[^a-zA-Z0-9_-]", "_", canon_str)
+                rescued_name = f"raw_p{matched_page.page_number:03d}_{safe_canon}_rescued.png"
                 rescued_dest = generated_dir / rescued_name
                 try:
                     res = rescue_binarize(input_path=dest_path, output_path=rescued_dest)
@@ -540,7 +550,8 @@ async def upload_book_raw_pages(
                         new_status = "RESCUED"
                         rescued_count += 1
                 except Exception as e:
-                    logger.warning(f"Auto-rescue binarization failed for {dest_path.name}: {e}")
+                    log_file = re.sub(r"[\r\n\t]", " ", dest_path.name)
+                    logger.warning("Auto-rescue binarization failed for %s: %s", log_file, str(e))
 
             updated_page = store.update_page(
                 matched_page.page_id,
@@ -743,8 +754,15 @@ async def trigger_prompt_synthesis(
     )
 
     try:
+        safe_manifest: Path | None = None
+        if payload.pages_csv_path:
+            clean_mp = Path(payload.pages_csv_path).name
+            cand_p = Path("manifest") / clean_mp
+            if cand_p.is_file():
+                safe_manifest = cand_p
+
         prompt_items = synthesize_prompts(
-            manifest_path=payload.pages_csv_path,
+            manifest_path=safe_manifest or DEFAULT_PAGES_MANIFEST,
             count=count,
         )
 

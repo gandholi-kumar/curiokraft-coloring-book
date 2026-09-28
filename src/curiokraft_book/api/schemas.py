@@ -14,6 +14,7 @@ from curiokraft_book.constants import (
     DEFAULT_TRIM_SIZES,
     DEFAULT_WORKFLOW_MODES,
 )
+from curiokraft_book.data.base import PageRecord
 from curiokraft_book.schemas.prompt_manifest import PromptDefaults, PromptItem
 
 # ------------------------------------------------------------------------------
@@ -126,8 +127,6 @@ class BookUpdateRequest(BaseModel):
 # ------------------------------------------------------------------------------
 # Page Schemas
 # ------------------------------------------------------------------------------
-
-from curiokraft_book.data.base import PageRecord
 
 
 class PageResponse(PageRecord):
