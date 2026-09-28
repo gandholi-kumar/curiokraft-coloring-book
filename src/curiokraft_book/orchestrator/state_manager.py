@@ -2,10 +2,12 @@
 
 import json
 import logging
+import threading
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
@@ -52,6 +54,24 @@ class PageStateRecord(BaseModel):
     display_label: str
     section: str
     status: PageStatus = PageStatus.PLANNED
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_upper = v.upper()
+            if v_upper in ("RECEIVED", "RECEIVING"):
+                return PageStatus.GENERATED
+            if v_upper in ("RESCUING",):
+                return PageStatus.GENERATING
+            if v_upper in ("PASSED",):
+                return PageStatus.TECHNICAL_QA_PASSED
+            try:
+                return PageStatus(v_upper)
+            except ValueError:
+                pass
+        return v
+
     attempts: int = 0
     max_attempts: int = MAX_RETRY_ATTEMPTS
     positive_prompt: str | None = None
@@ -66,6 +86,7 @@ class PageStateRecord(BaseModel):
 
 
 class PipelineStateManager:
+    _save_lock = threading.Lock()  # Class-level lock for atomic saves
     """Manages the lifecycle state of all 110 pages with atomic DB and JSON persistence."""
 
     logger = logging.getLogger(__name__)
@@ -86,7 +107,10 @@ class PipelineStateManager:
             from curiokraft_book.data.hybrid_store import get_data_store
 
             # Only attach global store if using default production paths or explicit book_slug
-            if Path(state_file_path) == Path(DEFAULT_PIPELINE_STATE_FILE) or book_slug:
+            if (
+                Path(state_file_path) == Path(DEFAULT_PIPELINE_STATE_FILE)
+                and Path(manifest_path) == Path(DEFAULT_PAGES_MANIFEST)
+            ) or book_slug:
                 self.data_store = get_data_store(book_slug=book_slug)
         except Exception as e:
             self.logger.debug(f"HybridDataStore notice: {e}")
@@ -186,15 +210,28 @@ class PipelineStateManager:
         return summary
 
     def save(self) -> None:
-        """Persist state atomically to disk JSON."""
-        self.state_file.parent.mkdir(parents=True, exist_ok=True)
-        serializable = {
-            "total_pages": len(self.pages),
-            "summary": self.get_summary(),
-            "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
-        }
-        # Atomic write: temp file + rename
-        temp_file = self.state_file.with_suffix(".tmp")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(serializable, f, indent=2)
-        temp_file.replace(self.state_file)  # Atomic on POSIX, replace on Windows
+        """Persist state atomically to disk JSON with thread safety."""
+        # Ensure only one thread writes at a time
+        with self._save_lock:
+            self.state_file.parent.mkdir(parents=True, exist_ok=True)
+            serializable = {
+                "total_pages": len(self.pages),
+                "summary": self.get_summary(),
+                "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
+            }
+            # Atomic write: temp file + rename
+            temp_file = self.state_file.with_suffix(".tmp")
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(serializable, f, indent=2)
+            # On Windows, the target file may be locked; attempt safe replace
+            try:
+                temp_file.replace(self.state_file)  # Atomic on POSIX, replace on Windows
+            except PermissionError:
+                # If file is locked, remove it then replace
+                try:
+                    if self.state_file.exists():
+                        self.state_file.unlink()
+                    temp_file.replace(self.state_file)
+                except Exception as e:
+                    self.logger.error(f"Failed to replace pipeline state file: {e}")
+                    raise

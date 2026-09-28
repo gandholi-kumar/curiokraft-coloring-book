@@ -14,6 +14,7 @@ from rich.table import Table
 from curiokraft_book.agents.kdp_parser import inspect_kdp_inbox_forms
 from curiokraft_book.agents.kdp_publisher import KDPPublisherOrchestrator
 from curiokraft_book.cli_db import db_app
+from curiokraft_book.cli_web import web_app
 from curiokraft_book.compositor.cover import composite_kdp_cover
 from curiokraft_book.compositor.interior_pdf import compile_interior_pdf
 from curiokraft_book.compositor.kdp_dashboard import save_kdp_submission_bundle
@@ -32,10 +33,6 @@ from curiokraft_book.constants import (
     DEFAULT_INTERIOR_MASTERS_DIR,
     DEFAULT_KDP_FORMS_INBOX_DIR,
     DEFAULT_KDP_OUTPUT_DIR,
-    DEFAULT_MASCOT_DROP_PATH,
-    DEFAULT_MASCOT_ENABLED,
-    DEFAULT_MASCOT_GENERATE_PROMPT,
-    DEFAULT_MASCOT_NAME,
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_SPECIAL_ASSETS_DIR,
     DEFAULT_WELCOME_PAGE_ENABLED,
@@ -128,6 +125,7 @@ app.add_typer(debate_app, name="debate")
 app.add_typer(blueprint_app, name="blueprint")
 app.add_typer(kdp_app, name="kdp")
 app.add_typer(db_app, name="db")
+app.add_typer(web_app, name="web")
 
 
 def print_hint(step_name: str, next_cmd: str, description: str):
@@ -1275,7 +1273,7 @@ def export_prompts(
     ),
 ):
     """[Free Web Workflow] Export all or selected page prompts into a ready-to-use markdown document and/or JSON manifest."""
-    from curiokraft_book.schemas import CurioKraftPromptManifest, PromptDefaults, PromptItem
+    from curiokraft_book.schemas import CurioKraftPromptManifest, PromptDefaults
 
     manifest_path = Path(manifest)
     if not manifest_path.exists():
@@ -1295,6 +1293,16 @@ def export_prompts(
         target_pages = all_pages
 
     debate = DebateEngine()
+
+    from curiokraft_book.orchestrator.debate_engine import synthesize_prompts
+
+    sel_pages = [p.strip().upper() for p in pages.split(",")] if pages else None
+    prompt_items = synthesize_prompts(
+        manifest_path=manifest,
+        selected_pages=sel_pages,
+        count=count,
+        debate_engine=debate,
+    )
 
     out_p = Path(output_file)
     json_p = Path(json_out)
@@ -1317,304 +1325,23 @@ def export_prompts(
         "",
     ]
 
-    # Prepend Front and Back Cover Prompts
-    from curiokraft_book.orchestrator.debate_engine import (
-        generate_back_cover_prompt,
-        generate_front_cover_prompt,
-        get_custom_alphabet_spread_prompt,
-    )
-
-    f_pos, f_neg = generate_front_cover_prompt(manifest_path=manifest)
-    b_pos, b_neg = generate_back_cover_prompt(manifest_path=manifest)
-
-    prompt_items: list[PromptItem] = []
-
-    # Front Cover
-    prompt_items.append(
-        PromptItem(
-            id="COVER_FRONT",
-            page_number=None,
-            label="FRONT COVER MASTER ARTWORK",
-            type="front_cover",
-            section="Covers",
-            drop_target="inbox/front_cover.png",
-            preset_name="CurioKraft - Cover Art Master",
-            aspect_ratio="3:4",
-            output_format="Images only",
-            temperature=0.9,
-            top_p=0.95,
-            positive_prompt=f_pos,
-            negative_prompt=f_neg,
+    for item in prompt_items:
+        page_str = f"Page {item.page_number:03d} " if item.page_number else ""
+        type_str = (
+            f" [{item.type.upper()}]"
+            if item.type in ["front_cover", "back_cover", "welcome_page", "certificate_page"]
+            else ""
         )
-    )
-
-    lines.append("## 🎨 FRONT COVER MASTER ARTWORK")
-    lines.append("- **Drop Target:** `inbox/front_cover.png` (or `inbox/front_cover.jpg`)")
-    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
-    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
-    lines.append("- **Positive Prompt (Copy & Paste):**")
-    lines.append(f"  ```text\n  {f_pos}\n  ```")
-    lines.append("- **Negative Prompt:**")
-    lines.append(f"  ```text\n  {f_neg}\n  ```")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-
-    # Back Cover
-    prompt_items.append(
-        PromptItem(
-            id="COVER_BACK",
-            page_number=None,
-            label="BACK COVER MASTER ARTWORK",
-            type="back_cover",
-            section="Covers",
-            drop_target="inbox/back_cover.png",
-            preset_name="CurioKraft - Cover Art Master",
-            aspect_ratio="3:4",
-            output_format="Images only",
-            temperature=0.9,
-            top_p=0.95,
-            positive_prompt=b_pos,
-            negative_prompt=b_neg,
-        )
-    )
-
-    lines.append("## 📄 BACK COVER MASTER ARTWORK")
-    lines.append("- **Drop Target:** `inbox/back_cover.png` (or `inbox/back_cover.jpg`)")
-    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
-    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
-    lines.append("- **Positive Prompt (Copy & Paste):**")
-    lines.append(f"  ```text\n  {b_pos}\n  ```")
-    lines.append("- **Negative Prompt:**")
-    lines.append(f"  ```text\n  {b_neg}\n  ```")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-
-    # Volume Mascot Prompt (if enabled and generate_prompt is true)
-    if DEFAULT_MASCOT_ENABLED and DEFAULT_MASCOT_GENERATE_PROMPT:
-        from curiokraft_book.orchestrator.debate_engine import (
-            auto_pick_volume_mascot,
-            generate_mascot_prompt,
-        )
-
-        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=manifest)
-        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=manifest)
-        m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
-
-        prompt_items.append(
-            PromptItem(
-                id="MASCOT",
-                page_number=None,
-                label=f"{m_name.upper()} (VOLUME MASCOT)",
-                type="special_asset",
-                section="Special Assets",
-                drop_target=m_drop_str,
-                preset_name="CurioKraft - Interior Coloring Pages",
-                aspect_ratio="3:4",
-                output_format="Images only",
-                temperature=0.9,
-                top_p=0.95,
-                positive_prompt=m_pos,
-                negative_prompt=m_neg,
-            )
-        )
-
-        lines.append(f"## 🧸 VOLUME MASCOT ARTWORK: {m_name.upper()}")
-        lines.append(f"- **Drop Target:** `{m_drop_str}`")
-        lines.append(
-            "- **Role:** Continuous coloring companion used on BOTH Page 001 (Welcome) and Page 110 (Completion Certificate)"
-        )
-        lines.append("- **Orientation:** Vertical Portrait (3:4)")
-        lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI)")
+        lines.append(f"## {page_str}({item.id}): {item.label}{type_str}")
+        lines.append(f"- **Drop Target:** `{item.drop_target}`")
+        lines.append(f"- **Section:** {item.section}")
+        lines.append(f"- **Orientation:** Vertical Portrait ({item.aspect_ratio})")
         lines.append("- **Positive Prompt (Copy & Paste):**")
-        lines.append(f"  ```text\n  {m_pos}\n  ```")
+        lines.append(f"  ```text\n  {item.positive_prompt}\n  ```")
         lines.append("- **Negative Prompt:**")
-        lines.append(f"  ```text\n  {m_neg}\n  ```")
+        lines.append(f"  ```text\n  {item.negative_prompt}\n  ```")
         lines.append("")
         lines.append("---")
-        lines.append("")
-
-    # Volume Perimeter Frame Prompt (for Milestone Pages: Page 001 Welcome & Page 110 Certificate)
-    import yaml
-
-    from curiokraft_book.orchestrator.debate_engine import generate_perimeter_frame_prompt
-
-    b_cfg = {}
-    if Path(DEFAULT_BOOK_CONFIG).exists():
-        try:
-            with open(DEFAULT_BOOK_CONFIG, encoding="utf-8") as f:
-                b_cfg = (yaml.safe_load(f) or {}).get("book", {})
-        except Exception:
-            b_cfg = {}
-    vol = str(b_cfg.get("volume", DEFAULT_BOOK_VOLUME)).lower()
-    theme_name = str(b_cfg.get("theme", {}).get("name", "")).lower()
-    frame_drop_target = f"inbox/special_assets/{vol}/{vol}_frame.png"
-    f_pos, f_neg = generate_perimeter_frame_prompt(
-        theme_name=theme_name,
-        volume_name=vol,
-        book_config_path=str(DEFAULT_BOOK_CONFIG),
-        manifest_path=manifest,
-    )
-    prompt_items.append(
-        PromptItem(
-            id="FRAME_PERIMETER",
-            page_number=None,
-            label=f"{vol.upper()} PERIMETER FRAME",
-            type="special_asset",
-            section="Special Assets",
-            drop_target=frame_drop_target,
-            preset_name="CurioKraft - Interior Coloring Pages",
-            aspect_ratio="3:4",
-            output_format="Images only",
-            temperature=0.9,
-            top_p=0.95,
-            positive_prompt=f_pos,
-            negative_prompt=f_neg,
-        )
-    )
-
-    lines.append(f"## 🖼️ VOLUME PERIMETER FRAME: {vol.upper()}")
-    lines.append(f"- **Drop Target:** `{frame_drop_target}`")
-    lines.append(
-        "- **Role:** Thematic living perimeter illustration frame for Milestone Pages (Page 001 Welcome & Completion Certificate)"
-    )
-    lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
-    lines.append("- **Format:** High-Resolution RGB PNG or JPG (300 DPI, solid white background)")
-    lines.append("- **Positive Prompt (Copy & Paste):**")
-    lines.append(f"  ```text\n  {f_pos}\n  ```")
-    lines.append("- **Negative Prompt:**")
-    lines.append(f"  ```text\n  {f_neg}\n  ```")
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-
-    console.print(f"[cyan]Synthesizing prompts for {len(target_pages)} pages...[/cyan]")
-    for p in target_pages:
-        num = p["page_number"]
-        p_id = p["page_id"]
-        p_type = p.get("type", "interior_page")
-
-        # Blank verso pages do not require AI generation
-        if p_type in ["blank_page", "bleed_guard", "blank"]:
-            continue
-
-        canon = p["canonical_object"]
-        label = p.get("display_label", canon.upper())
-
-        # Milestone whole-page AI prompt generators using Skill Sets 1 & 2
-        if p_type == "welcome_page":
-            from curiokraft_book.orchestrator.debate_engine import generate_welcome_page_prompt
-
-            w_pos, w_neg = generate_welcome_page_prompt()
-            prompt_items.append(
-                PromptItem(
-                    id=p_id,
-                    page_number=num,
-                    label=label,
-                    type="welcome_page",
-                    section=p.get("section", "Front Matter"),
-                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
-                    preset_name="CurioKraft - Interior Coloring Pages",
-                    aspect_ratio="3:4",
-                    output_format="Images only",
-                    temperature=0.9,
-                    top_p=0.95,
-                    positive_prompt=w_pos,
-                    negative_prompt=w_neg,
-                )
-            )
-            lines.append(f"## Page {num:03d} ({p_id}): {label} [WELCOME PAGE]")
-            lines.append(
-                f"- **Drop Target:** `inbox/raw_pages/raw_p{num:03d}.png` (or `inbox/raw_pages/raw_welcome.png`)"
-            )
-            lines.append("- **Positive Prompt (Copy & Paste):**")
-            lines.append(f"  ```text\n  {w_pos}\n  ```")
-            lines.append("- **Negative Prompt:**")
-            lines.append(f"  ```text\n  {w_neg}\n  ```")
-            lines.append("")
-            lines.append("---")
-            lines.append("")
-            continue
-
-        if p_type == "certificate_page":
-            from curiokraft_book.orchestrator.debate_engine import generate_certificate_page_prompt
-
-            c_pos, c_neg = generate_certificate_page_prompt()
-            prompt_items.append(
-                PromptItem(
-                    id=p_id,
-                    page_number=num,
-                    label=label,
-                    type="certificate_page",
-                    section=p.get("section", "Back Matter"),
-                    drop_target=f"inbox/raw_pages/raw_p{num:03d}.png",
-                    preset_name="CurioKraft - Interior Coloring Pages",
-                    aspect_ratio="3:4",
-                    output_format="Images only",
-                    temperature=0.9,
-                    top_p=0.95,
-                    positive_prompt=c_pos,
-                    negative_prompt=c_neg,
-                )
-            )
-            lines.append(f"## Page {num:03d} ({p_id}): {label} [COMPLETION CERTIFICATE]")
-            lines.append(
-                f"- **Drop Target:** `inbox/raw_pages/raw_p{num:03d}.png` (or `inbox/raw_pages/raw_certificate.png`)"
-            )
-            lines.append("- **Positive Prompt (Copy & Paste):**")
-            lines.append(f"  ```text\n  {c_pos}\n  ```")
-            lines.append("- **Negative Prompt:**")
-            lines.append(f"  ```text\n  {c_neg}\n  ```")
-            lines.append("")
-            lines.append("---")
-            lines.append("")
-            continue
-
-        save_name = f"raw_p{num:03d}_{canon}.png"
-
-        # Use custom hand-crafted alphabet spread prompts if available (P002, P003 in Vol 1)
-        custom = None
-        if p_type == "alphabet_spread" or canon in ["a_to_m", "n_to_z"]:
-            custom = get_custom_alphabet_spread_prompt(p, all_manifest_pages=all_pages)
-        if custom is not None:
-            pos_prompt, neg_prompt = custom
-            prompt_source = "📖 Custom Template (config/A-Z.md + Manifest Cards)"
-        else:
-            res = debate.run_page_debate(p)
-            pos_prompt = res.positive_prompt
-            neg_prompt = res.negative_prompt
-            prompt_source = "🤖 Multi-Agent Debate Engine"
-
-        prompt_items.append(
-            PromptItem(
-                id=p_id,
-                page_number=num,
-                label=label,
-                type="interior_page",
-                section=p.get("section", "General"),
-                drop_target=f"inbox/raw_pages/{save_name}",
-                preset_name="CurioKraft - Interior Coloring Pages",
-                aspect_ratio="3:4",
-                output_format="Images only",
-                temperature=0.9,
-                top_p=0.95,
-                positive_prompt=pos_prompt,
-                negative_prompt=neg_prompt,
-            )
-        )
-
-        lines.append(f"## Page {num:03d} ({p_id}): {label}")
-        lines.append(
-            f"- **Drop Target:** `inbox/raw_pages/{save_name}` (or `inbox/raw_pages/{canon}.png`)"
-        )
-        lines.append(f"- **Section:** {p.get('section', 'General')}")
-        lines.append(f"- **Prompt Source:** {prompt_source}")
-        lines.append("- **Orientation:** Vertical Portrait (3:4 or 8.5:11)")
-        lines.append("- **Positive Prompt (Copy & Paste):**")
-        lines.append(f"  ```text\n  {pos_prompt}\n  ```")
-        lines.append("- **Negative Prompt:**")
-        lines.append(f"  ```text\n  {neg_prompt}\n  ```")
         lines.append("")
 
     # Construct Pydantic Manifest

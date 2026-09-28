@@ -383,3 +383,24 @@ def get_certificate_page_number(config_path: Path | str = DEFAULT_BOOK_CONFIG) -
 
     # Default to single-sided odd recto page (page_count - 1 e.g. 109)
     return (page_count - 1) if (page_count % 2 == 0) else page_count
+
+
+# ==============================================================================
+# 5. Publishing Studio & Web Gateway Constants
+# ==============================================================================
+DEFAULT_WORKFLOW_MODES = ["free_web_ui", "auto_api_batch"]
+API_KEY_ENV_VARS = ["GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+DEFAULT_TRIM_SIZES = ["8.5 x 11 in", "8.25 x 11 in", "8.5 x 8.5 in"]
+DEFAULT_AGE_GROUPS = ["1-3 Toddler", "3-5 Preschool", "4-8 Kids"]
+KDP_WHITE_PAPER_SPINE_MULTIPLIER = 0.002252
+KDP_CREAM_PAPER_SPINE_MULTIPLIER = 0.0025
+
+
+def calculate_spine_width(page_count: int, paper_type: str = "white") -> float:
+    """Calculate KDP spine thickness in inches based on page count and paper type."""
+    multiplier = (
+        KDP_CREAM_PAPER_SPINE_MULTIPLIER
+        if str(paper_type).lower() == "cream"
+        else KDP_WHITE_PAPER_SPINE_MULTIPLIER
+    )
+    return round(page_count * multiplier, 4)

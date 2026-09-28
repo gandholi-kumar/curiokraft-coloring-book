@@ -71,44 +71,56 @@ class HybridDataStore:
         """Read book configuration and ensure a book record exists in DB."""
         import yaml
 
-        if slug_override:
-            existing = self.books.get_by_slug(slug_override)
+        try:
+            if slug_override:
+                existing = self.books.get_by_slug(slug_override)
+                if existing:
+                    return existing
+                new_book = BookRecord(
+                    slug=slug_override,
+                    title=slug_override.replace("-", " ").title(),
+                    volume="vol1",
+                    status="IN_PRODUCTION",
+                )
+                return self.books.save(new_book)
+
+            slug = "tiny-hands-vol1"
+            title = "Tiny Hands Color & Learn"
+            volume = "vol1"
+
+            if self.book_config_path.exists():
+                try:
+                    with open(self.book_config_path, encoding="utf-8") as f:
+                        cfg = yaml.safe_load(f) or {}
+                    b_cfg = cfg.get("book", {})
+                    title = b_cfg.get("title", title)
+                    volume = str(b_cfg.get("volume", volume)).lower()
+                    slug = f"curiokraft-{volume}"
+                except Exception as e:
+                    logger.debug(f"Notice reading book_config: {e}")
+
+            existing = self.books.get_by_slug(slug)
             if existing:
                 return existing
+
             new_book = BookRecord(
-                slug=slug_override,
-                title=slug_override.replace("-", " ").title(),
-                volume="vol1",
+                slug=slug,
+                title=title,
+                volume=volume,
                 status="IN_PRODUCTION",
             )
             return self.books.save(new_book)
-
-        slug = "tiny-hands-vol1"
-        title = "Tiny Hands Color & Learn"
-        volume = "vol1"
-
-        if self.book_config_path.exists():
-            try:
-                with open(self.book_config_path, encoding="utf-8") as f:
-                    cfg = yaml.safe_load(f) or {}
-                b_cfg = cfg.get("book", {})
-                title = b_cfg.get("title", title)
-                volume = str(b_cfg.get("volume", volume)).lower()
-                slug = f"curiokraft-{volume}"
-            except Exception as e:
-                logger.debug(f"Notice reading book_config: {e}")
-
-        existing = self.books.get_by_slug(slug)
-        if existing:
-            return existing
-
-        new_book = BookRecord(
-            slug=slug,
-            title=title,
-            volume=volume,
-            status="IN_PRODUCTION",
-        )
-        return self.books.save(new_book)
+        except Exception as e:
+            logger.warning(
+                f"Could not connect to database for active book: {e}. Falling back to in-memory book record."
+            )
+            target_slug = slug_override or "curiokraft-vol1"
+            return BookRecord(
+                slug=target_slug,
+                title="Tiny Hands Color & Learn",
+                volume="vol1",
+                status="IN_PRODUCTION",
+            )
 
     # --------------------------------------------------------------------------
     # Page Operations (Dual-Write & Fallback Read)
@@ -344,3 +356,9 @@ def get_data_store(book_slug: str | None = None) -> HybridDataStore:
     if _global_data_store is None:
         _global_data_store = HybridDataStore()
     return _global_data_store
+
+
+def reset_global_data_store() -> None:
+    """Reset the global HybridDataStore singleton (primarily used for test isolation)."""
+    global _global_data_store
+    _global_data_store = None
