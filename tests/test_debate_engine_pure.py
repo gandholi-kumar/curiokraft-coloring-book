@@ -20,7 +20,9 @@ def test_prompt_item_required_fields():
     for p in prompts:
         assert p.id, "Prompt ID must not be empty"
         assert p.label, "Prompt label must not be empty"
-        assert len(p.positive_prompt) > 20, "Positive prompt must contain descriptive line art instructions"
+        assert len(p.positive_prompt) > 20, (
+            "Positive prompt must contain descriptive line art instructions"
+        )
         assert len(p.negative_prompt) > 10, "Negative prompt must contain quality constraints"
         assert p.aspect_ratio in ["3:4", "8.5:11"], "Aspect ratio must be portrait"
         assert 0.0 <= p.temperature <= 1.0, "Temperature must be between 0.0 and 1.0"

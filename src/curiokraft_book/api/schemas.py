@@ -13,10 +13,8 @@ from curiokraft_book.constants import (
     DEFAULT_AGE_GROUPS,
     DEFAULT_TRIM_SIZES,
     DEFAULT_WORKFLOW_MODES,
-    calculate_spine_width,
 )
 from curiokraft_book.schemas.prompt_manifest import PromptDefaults, PromptItem
-
 
 # ------------------------------------------------------------------------------
 # System & Health Schemas
@@ -28,8 +26,12 @@ class HealthResponse(BaseModel):
 
     status: str = Field(default="ok", description="Overall service status")
     version: str = Field(..., description="CurioKraft software version")
-    db_status: str = Field(..., description="Database connection status ('connected' or 'degraded')")
-    storage_backend: str = Field(..., description="Active storage backend (e.g. local_disk, s3_r2, minio)")
+    db_status: str = Field(
+        ..., description="Database connection status ('connected' or 'degraded')"
+    )
+    storage_backend: str = Field(
+        ..., description="Active storage backend (e.g. local_disk, s3_r2, minio)"
+    )
     timestamp: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(),
         description="ISO 8601 UTC timestamp",
@@ -68,7 +70,9 @@ class BookCreateRequest(BaseModel):
     spine_width_in: float | None = Field(default=None, description="Calculated spine width")
     page_count: int = Field(default=110, ge=10, le=400, description="Total interior page count")
     bleed: bool = Field(default=False, description="Whether interior bleed is enabled")
-    layout: str = Field(default="single_sided", description="Page layout (single_sided or double_sided)")
+    layout: str = Field(
+        default="single_sided", description="Page layout (single_sided or double_sided)"
+    )
     visual_style: dict[str, Any] = Field(
         default_factory=lambda: {
             "style_preset": "bold_clean_line_art",
@@ -161,11 +165,21 @@ class PageResponse(BaseModel):
 class PromptSynthesizeRequest(BaseModel):
     """Request to synthesize illustration prompts via the multi-agent debate engine."""
 
-    theme: str | None = Field(default=None, description="Optional theme override (e.g. 'Animals', 'Vehicles')")
-    include_covers: bool = Field(default=True, description="Whether to include Front & Back cover prompts")
-    include_special_pages: bool = Field(default=True, description="Whether to include Welcome & Certificate prompts")
-    pages_csv_path: str | None = Field(default=None, description="Optional custom CSV manifest path")
-    book_config_path: str | None = Field(default=None, description="Optional custom book YAML config path")
+    theme: str | None = Field(
+        default=None, description="Optional theme override (e.g. 'Animals', 'Vehicles')"
+    )
+    include_covers: bool = Field(
+        default=True, description="Whether to include Front & Back cover prompts"
+    )
+    include_special_pages: bool = Field(
+        default=True, description="Whether to include Welcome & Certificate prompts"
+    )
+    pages_csv_path: str | None = Field(
+        default=None, description="Optional custom CSV manifest path"
+    )
+    book_config_path: str | None = Field(
+        default=None, description="Optional custom book YAML config path"
+    )
 
 
 class PromptManifestResponse(BaseModel):
@@ -239,4 +253,3 @@ class IngestUploadResponse(BaseModel):
     unmatched_files: list[str] = Field(default_factory=list)
     processed_pages: list[PageResponse] = Field(default_factory=list)
     message: str = "Ingestion completed successfully"
-

@@ -16,9 +16,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from curiokraft_book.data.base import StorageBackend
+
+load_dotenv()
 
 logger = logging.getLogger("curiokraft.storage")
 
@@ -91,10 +91,26 @@ class S3StorageBackend(StorageBackend):
 
         self.bucket_name = bucket_name
         self.endpoint_url = endpoint_url or os.environ.get("S3_ENDPOINT_URL")
-        key_id = access_key_id or os.environ.get("S3_ACCESS_KEY_ID") or os.environ.get("AWS_ACCESS_KEY_ID")
-        secret_key = secret_access_key or os.environ.get("S3_SECRET_ACCESS_KEY") or os.environ.get("AWS_SECRET_ACCESS_KEY")
+        key_id = (
+            access_key_id
+            or os.environ.get("S3_ACCESS_KEY_ID")
+            or os.environ.get("AWS_ACCESS_KEY_ID")
+        )
+        secret_key = (
+            secret_access_key
+            or os.environ.get("S3_SECRET_ACCESS_KEY")
+            or os.environ.get("AWS_SECRET_ACCESS_KEY")
+        )
 
-        config = Config(s3={"addressing_style": "path"}) if "localhost" in str(self.endpoint_url) or "127.0.0.1" in str(self.endpoint_url) else Config()
+        config = (
+            Config(
+                s3={"addressing_style": "path"},
+                connect_timeout=2,
+                retries={"max_attempts": 1},
+            )
+            if "localhost" in str(self.endpoint_url) or "127.0.0.1" in str(self.endpoint_url)
+            else Config(connect_timeout=5, retries={"max_attempts": 2})
+        )
 
         self.s3_client = boto3.client(
             "s3",
@@ -169,9 +185,14 @@ def get_storage_backend(
     local_dir: str = "storage",
 ) -> StorageBackend:
     """Factory creating the appropriate StorageBackend strategy."""
-    mode = backend_type.lower()
+    env_backend = os.environ.get("STORAGE_BACKEND")
+    mode = (env_backend if backend_type == "auto" and env_backend else backend_type).lower()
     if mode == "auto":
-        if os.environ.get("S3_ENDPOINT_URL") or os.environ.get("S3_ACCESS_KEY_ID") or os.environ.get("AWS_ACCESS_KEY_ID"):
+        if (
+            os.environ.get("S3_ENDPOINT_URL")
+            or os.environ.get("S3_ACCESS_KEY_ID")
+            or os.environ.get("AWS_ACCESS_KEY_ID")
+        ):
             mode = "s3"
         else:
             mode = "local"
@@ -180,7 +201,9 @@ def get_storage_backend(
         try:
             return S3StorageBackend(bucket_name=bucket_name)
         except Exception as e:
-            logger.warning(f"Failed initializing S3 storage ({e}); falling back to local disk storage.")
+            logger.warning(
+                f"Failed initializing S3 storage ({e}); falling back to local disk storage."
+            )
             return LocalFileStorageBackend(base_dir=local_dir)
 
     return LocalFileStorageBackend(base_dir=local_dir)

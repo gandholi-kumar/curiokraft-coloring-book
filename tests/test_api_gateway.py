@@ -2,21 +2,29 @@
 
 from __future__ import annotations
 
-import os
+from io import BytesIO
 from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from curiokraft_book.api.app import create_app
 from curiokraft_book.data.hybrid_store import HybridDataStore
+from curiokraft_book.data.object_storage import LocalFileStorageBackend
 
 
 @pytest.fixture
-def test_client(tmp_path: Path):
+def test_client(tmp_path: Path, monkeypatch):
     """Fixture providing an isolated FastAPI TestClient with an ephemeral SQLite database."""
+    monkeypatch.setenv("STORAGE_BACKEND", "local")
+    monkeypatch.delenv("S3_ENDPOINT_URL", raising=False)
     test_db = tmp_path / "test_api.db"
     db_url = f"sqlite:///{test_db}"
-    store = HybridDataStore(db_url=db_url)
+    store = HybridDataStore(
+        db_url=db_url,
+        storage_backend=LocalFileStorageBackend(base_dir=tmp_path / "storage"),
+    )
 
     app = create_app(db_url=db_url, test_mode=True)
     app.state.store = store
@@ -53,7 +61,6 @@ def test_books_crud_workflow(test_client: TestClient):
     assert list_resp.status_code == 200
     books = list_resp.json()
     assert len(books) >= 1
-    active_id = books[0]["id"]
 
     # 2. Create a new custom book
     new_book_payload = {
@@ -159,7 +166,7 @@ def test_telemetry_logs_and_websocket(test_client: TestClient):
     logs_resp = test_client.get("/api/telemetry/logs")
     assert logs_resp.status_code == 200
     recent_logs = logs_resp.json()
-    assert any("Gateway unit test telemetry probe" in l["message"] for l in recent_logs)
+    assert any("Gateway unit test telemetry probe" in entry["message"] for entry in recent_logs)
 
     # 3. Test WebSocket connection
     with test_client.websocket_connect("/ws") as ws:
@@ -187,9 +194,6 @@ def test_upload_raw_pages_endpoint(test_client: TestClient):
     books = test_client.get("/api/books").json()
     book_id = books[0]["id"]
 
-    from io import BytesIO
-    from PIL import Image
-
     img = Image.new("RGB", (100, 100), color="white")
     buf = BytesIO()
     img.save(buf, format="PNG")
@@ -215,4 +219,3 @@ def test_scan_inbox_endpoint(test_client: TestClient):
     data = resp.json()
     assert "total_files" in data
     assert "matched_pages" in data
-

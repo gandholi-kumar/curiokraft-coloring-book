@@ -59,9 +59,7 @@ class BookModel(Base):
         String(64), default=lambda: datetime.now(timezone.utc).isoformat()
     )
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "slug", name="uq_tenant_book_slug"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "slug", name="uq_tenant_book_slug"),)
 
     pages: Mapped[list[PageModel]] = relationship(
         "PageModel", back_populates="book", cascade="all, delete-orphan"
@@ -74,7 +72,9 @@ class PageModel(Base):
     __tablename__ = "pages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    book_id: Mapped[str] = mapped_column(String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True)
+    book_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True
+    )
     page_id: Mapped[str] = mapped_column(String(32), index=True)  # e.g., P001
     page_number: Mapped[int] = mapped_column(Integer, index=True)
     section: Mapped[str] = mapped_column(String(64), default="General")
@@ -117,7 +117,9 @@ class PromptModel(Base):
     __tablename__ = "prompts"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    book_id: Mapped[str] = mapped_column(String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True)
+    book_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True
+    )
     page_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     prompt_type: Mapped[str] = mapped_column(String(32), default="interior_page")
     positive_prompt: Mapped[str] = mapped_column(Text)
@@ -125,7 +127,9 @@ class PromptModel(Base):
     temperature: Mapped[float] = mapped_column(Float, default=0.5)
     top_p: Mapped[float] = mapped_column(Float, default=0.95)
     aspect_ratio: Mapped[str] = mapped_column(String(16), default="3:4")
-    preset_name: Mapped[str] = mapped_column(String(128), default="CurioKraft - Interior Coloring Pages")
+    preset_name: Mapped[str] = mapped_column(
+        String(128), default="CurioKraft - Interior Coloring Pages"
+    )
     chat_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
     is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -141,9 +145,13 @@ class MediaAssetModel(Base):
     __tablename__ = "media_assets"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    book_id: Mapped[str] = mapped_column(String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True)
+    book_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("books.id", ondelete="CASCADE"), index=True
+    )
     page_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
-    asset_type: Mapped[str] = mapped_column(String(32))  # raw_image, composite_master, cover_png, etc.
+    asset_type: Mapped[str] = mapped_column(
+        String(32)
+    )  # raw_image, composite_master, cover_png, etc.
     storage_backend: Mapped[str] = mapped_column(String(32), default="local_disk")
     storage_key: Mapped[str] = mapped_column(String(512), index=True)
     sha256_hash: Mapped[str] = mapped_column(String(64), index=True)

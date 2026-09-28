@@ -32,6 +32,9 @@ from curiokraft_book.constants import (
 )
 from curiokraft_book.orchestrator.archetypes import CoverThemeRegistry, MultiCardSpreadStrategy
 from curiokraft_book.orchestrator.llm_client import LLMClient
+from curiokraft_book.schemas.prompt_manifest import PromptItem
+
+PromptRecord = PromptItem
 
 logger = logging.getLogger("curiokraft.debate_engine")
 
@@ -3388,10 +3391,6 @@ def generate_certificate_page_prompt(
 # Pure Function Prompt Synthesis (Callable via HTTP / CLI / Background Tasks)
 # =============================================================================
 
-from curiokraft_book.schemas.prompt_manifest import PromptItem
-
-PromptRecord = PromptItem
-
 
 def synthesize_prompts(
     book_config: dict[str, Any] | None = None,
@@ -3489,8 +3488,12 @@ def synthesize_prompts(
 
     # 5. Volume Mascot Prompt (if enabled)
     if DEFAULT_MASCOT_ENABLED and DEFAULT_MASCOT_GENERATE_PROMPT:
-        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(manifest_path=str(resolved_manifest))
-        m_pos, m_neg = generate_mascot_prompt(mascot_name=m_name, manifest_path=str(resolved_manifest))
+        m_name = DEFAULT_MASCOT_NAME or auto_pick_volume_mascot(
+            manifest_path=str(resolved_manifest)
+        )
+        m_pos, m_neg = generate_mascot_prompt(
+            mascot_name=m_name, manifest_path=str(resolved_manifest)
+        )
         m_drop_str = str(DEFAULT_MASCOT_DROP_PATH).replace("\\", "/")
         prompt_items.append(
             PromptItem(

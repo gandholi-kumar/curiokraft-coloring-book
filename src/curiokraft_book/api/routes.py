@@ -2,13 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from sqlalchemy import text
 
 from curiokraft_book import __version__
@@ -27,7 +38,6 @@ from curiokraft_book.api.schemas import (
     TelemetryLogEvent,
 )
 from curiokraft_book.api.websocket_manager import ws_manager
-from curiokraft_book.rescue.binarizer import rescue_binarize
 from curiokraft_book.constants import (
     CANVAS_DPI,
     DEFAULT_AGE_GROUPS,
@@ -38,11 +48,14 @@ from curiokraft_book.constants import (
 from curiokraft_book.data.base import (
     BookRecord,
     PageRecord,
+)
+from curiokraft_book.data.base import (
     PromptRecord as StoragePromptRecord,
 )
 from curiokraft_book.data.hybrid_store import HybridDataStore
 from curiokraft_book.orchestrator.debate_engine import synthesize_prompts
-from curiokraft_book.schemas.prompt_manifest import PromptDefaults, PromptItem
+from curiokraft_book.rescue.binarizer import rescue_binarize
+from curiokraft_book.schemas.prompt_manifest import PromptItem
 
 logger = logging.getLogger("curiokraft.api")
 
@@ -126,7 +139,9 @@ async def list_books(store: HybridDataStore = Depends(get_store)) -> list[BookRe
                 page_count=active.page_count,
                 visual_style=active.visual_style,
                 status=active.status,
-                sync_status=active.sync_status.value if hasattr(active.sync_status, "value") else str(active.sync_status),
+                sync_status=active.sync_status.value
+                if hasattr(active.sync_status, "value")
+                else str(active.sync_status),
                 version=active.version,
                 created_at=active.created_at,
                 updated_at=active.updated_at,
@@ -151,7 +166,9 @@ async def list_books(store: HybridDataStore = Depends(get_store)) -> list[BookRe
             page_count=b.page_count,
             visual_style=b.visual_style,
             status=b.status,
-            sync_status=b.sync_status.value if hasattr(b.sync_status, "value") else str(b.sync_status),
+            sync_status=b.sync_status.value
+            if hasattr(b.sync_status, "value")
+            else str(b.sync_status),
             version=b.version,
             created_at=b.created_at,
             updated_at=b.updated_at,
@@ -222,7 +239,9 @@ async def create_book(
         page_count=saved.page_count,
         visual_style=saved.visual_style,
         status=saved.status,
-        sync_status=saved.sync_status.value if hasattr(saved.sync_status, "value") else str(saved.sync_status),
+        sync_status=saved.sync_status.value
+        if hasattr(saved.sync_status, "value")
+        else str(saved.sync_status),
         version=saved.version,
         created_at=saved.created_at,
         updated_at=saved.updated_at,
@@ -238,7 +257,9 @@ async def get_book(book_id: str, store: HybridDataStore = Depends(get_store)) ->
         if store.active_book and store.active_book.id == book_id:
             book = store.active_book
         else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Book not found: {book_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"Book not found: {book_id}"
+            )
 
     return BookResponse(
         id=book.id,
@@ -257,7 +278,9 @@ async def get_book(book_id: str, store: HybridDataStore = Depends(get_store)) ->
         page_count=book.page_count,
         visual_style=book.visual_style,
         status=book.status,
-        sync_status=book.sync_status.value if hasattr(book.sync_status, "value") else str(book.sync_status),
+        sync_status=book.sync_status.value
+        if hasattr(book.sync_status, "value")
+        else str(book.sync_status),
         version=book.version,
         created_at=book.created_at,
         updated_at=book.updated_at,
@@ -271,7 +294,9 @@ async def update_book(
     """Update book settings and recompute spine if needed."""
     book = store.books.get_by_id(book_id)
     if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Book not found: {book_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Book not found: {book_id}"
+        )
 
     if payload.title is not None:
         book.title = payload.title
@@ -314,7 +339,9 @@ async def update_book(
         page_count=saved.page_count,
         visual_style=saved.visual_style,
         status=saved.status,
-        sync_status=saved.sync_status.value if hasattr(saved.sync_status, "value") else str(saved.sync_status),
+        sync_status=saved.sync_status.value
+        if hasattr(saved.sync_status, "value")
+        else str(saved.sync_status),
         version=saved.version,
         created_at=saved.created_at,
         updated_at=saved.updated_at,
@@ -327,7 +354,9 @@ async def update_book(
 
 
 @api_router.get("/books/{book_id}/pages", response_model=list[PageResponse])
-async def list_book_pages(book_id: str, store: HybridDataStore = Depends(get_store)) -> list[PageResponse]:
+async def list_book_pages(
+    book_id: str, store: HybridDataStore = Depends(get_store)
+) -> list[PageResponse]:
     """Retrieve all pages for a given book, syncing from manifest if empty."""
     pages = store.pages.get_pages_for_book(book_id)
     if not pages:
@@ -383,7 +412,9 @@ async def list_book_pages(book_id: str, store: HybridDataStore = Depends(get_sto
             raw_image_path=p.raw_image_path,
             rescued_image_path=p.rescued_image_path,
             composite_image_path=p.composite_image_path,
-            sync_status=p.sync_status.value if hasattr(p.sync_status, "value") else str(p.sync_status),
+            sync_status=p.sync_status.value
+            if hasattr(p.sync_status, "value")
+            else str(p.sync_status),
             version=p.version,
             created_at=p.created_at,
             updated_at=p.updated_at,
@@ -393,7 +424,9 @@ async def list_book_pages(book_id: str, store: HybridDataStore = Depends(get_sto
 
 
 @api_router.get("/books/{book_id}/pages/{page_id}", response_model=PageResponse)
-async def get_book_page(book_id: str, page_id: str, store: HybridDataStore = Depends(get_store)) -> PageResponse:
+async def get_book_page(
+    book_id: str, page_id: str, store: HybridDataStore = Depends(get_store)
+) -> PageResponse:
     """Retrieve detailed state for a single book page."""
     page = store.pages.get_page(book_id, page_id)
     if not page:
@@ -422,7 +455,9 @@ async def get_book_page(book_id: str, page_id: str, store: HybridDataStore = Dep
         raw_image_path=page.raw_image_path,
         rescued_image_path=page.rescued_image_path,
         composite_image_path=page.composite_image_path,
-        sync_status=page.sync_status.value if hasattr(page.sync_status, "value") else str(page.sync_status),
+        sync_status=page.sync_status.value
+        if hasattr(page.sync_status, "value")
+        else str(page.sync_status),
         version=page.version,
         created_at=page.created_at,
         updated_at=page.updated_at,
@@ -452,7 +487,9 @@ def _format_page_response(page: PageRecord) -> PageResponse:
         raw_image_path=page.raw_image_path,
         rescued_image_path=page.rescued_image_path,
         composite_image_path=page.composite_image_path,
-        sync_status=page.sync_status.value if hasattr(page.sync_status, "value") else str(page.sync_status),
+        sync_status=page.sync_status.value
+        if hasattr(page.sync_status, "value")
+        else str(page.sync_status),
         version=page.version,
         created_at=page.created_at,
         updated_at=page.updated_at,
@@ -560,7 +597,11 @@ async def upload_book_raw_pages(
         level="INFO",
         message=f"Uploaded {total_files} illustrations: {len(matched_pages)} matched to pages, {rescued_count} rescued",
         component="ingestion",
-        context={"book_id": book_id, "matched": len(matched_pages), "unmatched": len(unmatched_files)},
+        context={
+            "book_id": book_id,
+            "matched": len(matched_pages),
+            "unmatched": len(unmatched_files),
+        },
     )
     await ws_manager.broadcast_progress(
         stage="ingestion",
@@ -695,6 +736,12 @@ async def list_book_prompts(
     db_prompts = store.prompts.list_prompts_for_book(book_id)
     items: list[PromptItem] = []
     for p in db_prompts:
+        preset: Literal["CurioKraft - Interior Coloring Pages", "CurioKraft - Cover Art Master"] = (
+            "CurioKraft - Cover Art Master"
+            if p.preset_name == "CurioKraft - Cover Art Master"
+            or "cover" in (p.prompt_type or "").lower()
+            else "CurioKraft - Interior Coloring Pages"
+        )
         items.append(
             PromptItem(
                 id=p.page_id or p.id,
@@ -702,8 +749,10 @@ async def list_book_prompts(
                 label=p.prompt_type.replace("_", " ").title(),
                 type="interior_page" if p.prompt_type == "interior_page" else "front_cover",
                 section="General",
-                drop_target=f"inbox/raw_pages/raw_{p.page_id}.png" if p.page_id else "inbox/cover/cover.png",
-                preset_name=p.preset_name,
+                drop_target=f"inbox/raw_pages/raw_{p.page_id}.png"
+                if p.page_id
+                else "inbox/cover/cover.png",
+                preset_name=preset,
                 aspect_ratio=p.aspect_ratio,
                 temperature=p.temperature,
                 top_p=p.top_p,
@@ -780,7 +829,7 @@ async def trigger_prompt_synthesis(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prompt synthesis failed: {e}",
-        )
+        ) from e
 
 
 # ------------------------------------------------------------------------------
@@ -803,8 +852,14 @@ async def get_book_production_status(
     pages = store.pages.get_pages_for_book(book_id)
     total_pages = len(pages) or target_pages
     planned = sum(1 for p in pages if p.status == "planned")
-    inbox_received = sum(1 for p in pages if p.raw_image_path is not None or p.status in ("received", "rescuing", "rescued", "passed"))
-    rescued = sum(1 for p in pages if p.rescued_image_path is not None or p.status in ("rescued", "passed"))
+    inbox_received = sum(
+        1
+        for p in pages
+        if p.raw_image_path is not None or p.status in ("received", "rescuing", "rescued", "passed")
+    )
+    rescued = sum(
+        1 for p in pages if p.rescued_image_path is not None or p.status in ("rescued", "passed")
+    )
     qa_passed = sum(1 for p in pages if p.qa_passed or p.status == "passed")
     composited = sum(1 for p in pages if p.composite_image_path is not None)
 
@@ -824,7 +879,9 @@ async def get_book_production_status(
     stage_2_prompts = PipelineStageStatus(
         stage_id="prompts",
         title="2. Prompt Arsenal Synthesis",
-        status="completed" if prompts_count >= target_pages else ("in_progress" if prompts_count > 0 else "pending"),
+        status="completed"
+        if prompts_count >= target_pages
+        else ("in_progress" if prompts_count > 0 else "pending"),
         progress_percentage=min(100.0, (prompts_count / max(1, target_pages)) * 100.0),
         completed_items=prompts_count,
         total_items=target_pages,
@@ -833,7 +890,9 @@ async def get_book_production_status(
     stage_3_ingestion = PipelineStageStatus(
         stage_id="ingestion",
         title="3. Ingestion & Pre-QA Rescue",
-        status="completed" if rescued >= target_pages else ("in_progress" if inbox_received > 0 else "pending"),
+        status="completed"
+        if rescued >= target_pages
+        else ("in_progress" if inbox_received > 0 else "pending"),
         progress_percentage=min(100.0, (rescued / max(1, target_pages)) * 100.0),
         completed_items=rescued,
         total_items=target_pages,
@@ -842,7 +901,9 @@ async def get_book_production_status(
     stage_4_masters = PipelineStageStatus(
         stage_id="masters",
         title="4. Composite Masters (600 DPI)",
-        status="completed" if composited >= target_pages else ("in_progress" if composited > 0 else "pending"),
+        status="completed"
+        if composited >= target_pages
+        else ("in_progress" if composited > 0 else "pending"),
         progress_percentage=min(100.0, (composited / max(1, target_pages)) * 100.0),
         completed_items=composited,
         total_items=target_pages,
@@ -851,7 +912,9 @@ async def get_book_production_status(
     stage_5_preflight = PipelineStageStatus(
         stage_id="preflight",
         title="5. KDP Preflight Diagnostic",
-        status="completed" if qa_passed >= target_pages else ("in_progress" if qa_passed > 0 else "pending"),
+        status="completed"
+        if qa_passed >= target_pages
+        else ("in_progress" if qa_passed > 0 else "pending"),
         progress_percentage=min(100.0, (qa_passed / max(1, target_pages)) * 100.0),
         completed_items=qa_passed,
         total_items=target_pages,

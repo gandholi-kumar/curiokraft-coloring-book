@@ -104,7 +104,9 @@ class MediaAssetRecord(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     book_id: str
     page_id: str | None = None
-    asset_type: str  # raw_image, rescued_image, composite_master, cover_png, cover_pdf, interior_pdf
+    asset_type: (
+        str  # raw_image, rescued_image, composite_master, cover_png, cover_pdf, interior_pdf
+    )
     storage_backend: str = "local_disk"  # local_disk, s3_r2, minio
     storage_key: str  # Path or S3 URI
     sha256_hash: str
@@ -184,7 +186,9 @@ class PromptRepository(ABC):
     """Abstract contract for prompt persistence and locking."""
 
     @abstractmethod
-    def get_prompt(self, book_id: str, page_id: str | None, prompt_type: str) -> PromptRecord | None:
+    def get_prompt(
+        self, book_id: str, page_id: str | None, prompt_type: str
+    ) -> PromptRecord | None:
         pass
 
     @abstractmethod

@@ -15,9 +15,6 @@ from pathlib import Path
 from uuid import uuid4
 
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -42,6 +39,8 @@ from curiokraft_book.data.models import (
     PageModel,
     PromptModel,
 )
+
+load_dotenv()
 
 logger = logging.getLogger("curiokraft.db")
 
@@ -170,7 +169,9 @@ class SQLBookRepository(BookRepository):
         with self.db_mgr.session() as s:
             stmt = select(BookModel).where(BookModel.tenant_id == tenant_id)
             models = s.scalars(stmt).all()
-            return [BookRecord(**{k: getattr(m, k) for k in BookRecord.model_fields}) for m in models]
+            return [
+                BookRecord(**{k: getattr(m, k) for k in BookRecord.model_fields}) for m in models
+            ]
 
 
 class SQLPageRepository(PageRepository):
@@ -181,7 +182,9 @@ class SQLPageRepository(PageRepository):
 
     def get_page(self, book_id: str, page_id: str) -> PageRecord | None:
         with self.db_mgr.session() as s:
-            stmt = select(PageModel).where(PageModel.book_id == book_id, PageModel.page_id == page_id)
+            stmt = select(PageModel).where(
+                PageModel.book_id == book_id, PageModel.page_id == page_id
+            )
             m = s.scalars(stmt).first()
             if not m:
                 return None
@@ -189,13 +192,21 @@ class SQLPageRepository(PageRepository):
 
     def get_pages_for_book(self, book_id: str) -> list[PageRecord]:
         with self.db_mgr.session() as s:
-            stmt = select(PageModel).where(PageModel.book_id == book_id).order_by(PageModel.page_number)
+            stmt = (
+                select(PageModel)
+                .where(PageModel.book_id == book_id)
+                .order_by(PageModel.page_number)
+            )
             models = s.scalars(stmt).all()
-            return [PageRecord(**{k: getattr(m, k) for k in PageRecord.model_fields}) for m in models]
+            return [
+                PageRecord(**{k: getattr(m, k) for k in PageRecord.model_fields}) for m in models
+            ]
 
     def save_page(self, page: PageRecord) -> PageRecord:
         with self.db_mgr.session() as s:
-            stmt = select(PageModel).where(PageModel.book_id == page.book_id, PageModel.page_id == page.page_id)
+            stmt = select(PageModel).where(
+                PageModel.book_id == page.book_id, PageModel.page_id == page.page_id
+            )
             existing = s.scalars(stmt).first()
 
             page.updated_at = datetime.now(timezone.utc).isoformat()
@@ -233,7 +244,9 @@ class SQLPageRepository(PageRepository):
                 .order_by(PageModel.updated_at.desc())
             )
             models = s.scalars(stmt).all()
-            return [PageRecord(**{k: getattr(m, k) for k in PageRecord.model_fields}) for m in models]
+            return [
+                PageRecord(**{k: getattr(m, k) for k in PageRecord.model_fields}) for m in models
+            ]
 
 
 class SQLPromptRepository(PromptRepository):
@@ -242,7 +255,9 @@ class SQLPromptRepository(PromptRepository):
     def __init__(self, db_mgr: SQLDatabaseManager):
         self.db_mgr = db_mgr
 
-    def get_prompt(self, book_id: str, page_id: str | None, prompt_type: str) -> PromptRecord | None:
+    def get_prompt(
+        self, book_id: str, page_id: str | None, prompt_type: str
+    ) -> PromptRecord | None:
         with self.db_mgr.session() as s:
             stmt = select(PromptModel).where(
                 PromptModel.book_id == book_id,
@@ -285,7 +300,10 @@ class SQLPromptRepository(PromptRepository):
         with self.db_mgr.session() as s:
             stmt = select(PromptModel).where(PromptModel.book_id == book_id)
             models = s.scalars(stmt).all()
-            return [PromptRecord(**{k: getattr(m, k) for k in PromptRecord.model_fields}) for m in models]
+            return [
+                PromptRecord(**{k: getattr(m, k) for k in PromptRecord.model_fields})
+                for m in models
+            ]
 
 
 class SQLAssetRepository(AssetRepository):
@@ -338,13 +356,19 @@ class SQLAssetRepository(AssetRepository):
                 MediaAssetModel.book_id == book_id, MediaAssetModel.page_id == page_id
             )
             models = s.scalars(stmt).all()
-            return [MediaAssetRecord(**{k: getattr(m, k) for k in MediaAssetRecord.model_fields}) for m in models]
+            return [
+                MediaAssetRecord(**{k: getattr(m, k) for k in MediaAssetRecord.model_fields})
+                for m in models
+            ]
 
     def list_assets_for_book(self, book_id: str) -> list[MediaAssetRecord]:
         with self.db_mgr.session() as s:
             stmt = select(MediaAssetModel).where(MediaAssetModel.book_id == book_id)
             models = s.scalars(stmt).all()
-            return [MediaAssetRecord(**{k: getattr(m, k) for k in MediaAssetRecord.model_fields}) for m in models]
+            return [
+                MediaAssetRecord(**{k: getattr(m, k) for k in MediaAssetRecord.model_fields})
+                for m in models
+            ]
 
 
 class SQLLogRepository(LogRepository):

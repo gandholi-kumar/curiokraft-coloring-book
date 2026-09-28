@@ -10,14 +10,13 @@ Provides real-time event broadcasting to web clients for:
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections import deque
 from datetime import datetime, timezone
-import json
-import logging
 from typing import Any
 from uuid import uuid4
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
 logger = logging.getLogger("curiokraft.ws")
 
@@ -35,7 +34,9 @@ class ConnectionManager:
         await websocket.accept()
         async with self._lock:
             self.active_connections.add(websocket)
-        logger.info(f"WebSocket client connected. Active connections: {len(self.active_connections)}")
+        logger.info(
+            f"WebSocket client connected. Active connections: {len(self.active_connections)}"
+        )
 
         # Send initial handshake with recent log history
         await websocket.send_json(
@@ -51,7 +52,9 @@ class ConnectionManager:
         """Unregister a disconnected WebSocket."""
         async with self._lock:
             self.active_connections.discard(websocket)
-        logger.info(f"WebSocket client disconnected. Remaining connections: {len(self.active_connections)}")
+        logger.info(
+            f"WebSocket client disconnected. Remaining connections: {len(self.active_connections)}"
+        )
 
     async def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a JSON message to all active WebSocket clients."""

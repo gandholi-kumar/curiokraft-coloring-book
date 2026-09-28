@@ -10,7 +10,6 @@ from __future__ import annotations
 import threading
 import time
 import webbrowser
-from typing import Optional
 
 import typer
 import uvicorn
@@ -20,9 +19,7 @@ from rich.table import Table
 
 from curiokraft_book import __version__
 
-web_app = typer.Typer(
-    help="[Studio Web UI] Interactive Web Publishing Studio gateway & server"
-)
+web_app = typer.Typer(help="[Studio Web UI] Interactive Web Publishing Studio gateway & server")
 console = Console(force_terminal=True, legacy_windows=False)
 
 
@@ -41,12 +38,8 @@ def _open_browser_delayed(url: str, delay_seconds: float = 1.2) -> None:
 
 @web_app.command("start")
 def start_web_server(
-    host: str = typer.Option(
-        "127.0.0.1", "--host", "-h", help="Bind host address for the gateway"
-    ),
-    port: int = typer.Option(
-        8000, "--port", "-p", help="Bind port number for the gateway"
-    ),
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Bind host address for the gateway"),
+    port: int = typer.Option(8000, "--port", "-p", help="Bind port number for the gateway"),
     reload: bool = typer.Option(
         False, "--reload", "-r", help="Enable auto-reload on code changes (development)"
     ),
@@ -55,7 +48,7 @@ def start_web_server(
         "--open-browser/--no-open-browser",
         help="Automatically open web browser to the studio dashboard",
     ),
-    db_url: Optional[str] = typer.Option(
+    db_url: str | None = typer.Option(
         None, "--db-url", help="Database URL override (PostgreSQL or SQLite)"
     ),
 ):
@@ -103,7 +96,9 @@ def check_web_status(
         resp = httpx.get(target_url, timeout=3.0)
         if resp.status_code == 200:
             data = resp.json()
-            table = Table(title=f"CurioKraft Studio Gateway Online ({target_url})", border_style="green")
+            table = Table(
+                title=f"CurioKraft Studio Gateway Online ({target_url})", border_style="green"
+            )
             table.add_column("Property", style="bold cyan")
             table.add_column("Value", style="green")
 

@@ -132,9 +132,10 @@ def test_corrupt_state_file_is_logged_but_does_not_crash(tmp_path: Path):
     # Capture log output
     import logging
     from io import StringIO
+
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
-    logger = logging.getLogger('curiokraft_book.orchestrator.state_manager')
+    logger = logging.getLogger("curiokraft_book.orchestrator.state_manager")
     logger.addHandler(handler)
     logger.setLevel(logging.ERROR)
 
@@ -155,6 +156,37 @@ def test_corrupt_state_file_is_logged_but_does_not_crash(tmp_path: Path):
         recovered_data = json.loads(state_file.read_text(encoding="utf-8"))
         assert recovered_data["total_pages"] == 3
         assert "pages" in recovered_data
+    finally:
+        logger.removeHandler(handler)
+
+
+def test_unexpected_error_loading_state_file_is_logged_and_reraised(tmp_path: Path, monkeypatch):
+    """An unexpected exception during state file load (e.g. PermissionError or OSError) is logged and re-raised."""
+    state_file = tmp_path / "pipeline_state.json"
+    state_file.write_text('{"pages": {}}', encoding="utf-8")
+    manifest = _manifest(tmp_path)
+
+    import logging
+    from io import StringIO
+
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.orchestrator.state_manager")
+    logger.addHandler(handler)
+    logger.setLevel(logging.ERROR)
+
+    def explode(*_args, **_kwargs):
+        raise PermissionError("Simulated filesystem permission denied")
+
+    try:
+        with monkeypatch.context() as m:
+            m.setattr(json, "load", explode)
+            with pytest.raises(PermissionError, match="Simulated filesystem permission denied"):
+                PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+
+        log_output = log_stream.getvalue()
+        assert "Failed to load pipeline state" in log_output
+        assert str(state_file) in log_output
     finally:
         logger.removeHandler(handler)
 
