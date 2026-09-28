@@ -8,22 +8,75 @@
 
 ## 🎯 Choose Your Publishing Workflow
 
-Select the workflow that matches your preferred generation setup:
+Select the workflow that matches your preferred generation setup. Both tracks run on the same robust, centralized database and storage foundation:
 
 ```md
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                        CHOOSE YOUR PUBLISHING WORKFLOW                          │
 ├───────────────────────────────────────┬─────────────────────────────────────────┤
-│ 🟢 TRACK 1: FREE WEB UI WORKFLOW      | ⚡ TRACK 2: AUTOMATED CLOUD API        |
+│ 🟢 TRACK 1: FREE WEB UI WORKFLOW      │ ⚡ TRACK 2: AUTOMATED CLOUD API         │
 │ (Zero API Billing / Google AI Studio) │ (Fast Batch / OpenAI DALL-E or Gemini)  │
 │                                       │                                         │
 │ • Zero API cost                       │ • Fully hands-off 110-page generation   │
 │ • Copy-paste prompts into browser     │ • Requires paid API key in environment  │
 │ • Drop images into inbox/             │ • Executes in ~5–10 minutes             │
-│ • Run `curiokraft-book ingest`        │ • Run `curiokraft-book generate book`   │
+│ • Run `curiokraft-book ingest`        │ • Automatic DB cross-book asset reuse   │
+│ • Instant DB state sync               │ • Run `curiokraft-book generate book`   │
 │                                       │                                         │
-│ ➔ JUMP TO TRACK 1 BELOW              │ ➔ JUMP TO TRACK 2 BELOW                │
+│ ➔ JUMP TO TRACK 1 BELOW               │ ➔ JUMP TO TRACK 2 BELOW                 │
 └───────────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+---
+
+## 🏗️ Master Production Lifecycle (Sequential Execution Flow)
+
+Regardless of which generation track you select, the production lifecycle proceeds through **6 sequential stages**:
+
+```
+[Stage 0: Workspace & DB Setup] ──► [Stage 1: Manifest & Asset Indexing] ──► [Stage 2: Visual Review Gate]
+                                                                                       │
+[Stage 5: Cloud Sync & Backup] ◄── [Stage 4: 18-Point Preflight] ◄── [Stage 3: Production Batch & Cover]
+```
+
+---
+
+## ⚙️ Stage 0: Workspace & Centralized Database Setup (One-Time / Start)
+
+Before generating or ingesting illustrations, initialize the workspace directories and relational database:
+
+```powershell
+# 1. Initialize workspace directories and default templates
+curiokraft-book init
+
+# 2. Initialize relational database tables (SQLite or PostgreSQL)
+curiokraft-book db init
+
+# 3. If migrating from an existing file-based project, ingest configs & pipeline_state.json:
+curiokraft-book db migrate-from-fs
+
+# 4. Verify diagnostic health of assets, fonts, and database engine
+curiokraft-book doctor
+curiokraft-book db status
+```
+
+* **Local Engine:** Defaults to zero-config SQLite at `output/curiokraft.db`.
+* **Docker Mode:** Run `docker compose up -d` for local PostgreSQL (port 5432) + MinIO S3 (port 9000).
+* **Cloud Mode:** Set `DATABASE_URL` (Neon / Supabase) and `S3_ENDPOINT_URL` (Cloudflare R2) in `.env`.
+
+---
+
+## 📋 Stage 1: Manifest Audit & Asset Pre-Indexing
+
+```powershell
+# 1. Verify 0 vocabulary collisions or duplicate objects in the manifest
+curiokraft-book manifest audit
+
+# 2. Inspect 110-page lifecycle status for the target book volume
+curiokraft-book manifest status --slug curiokraft-vol1
+
+# 3. Index any pre-existing illustrations or shared assets with SHA-256 CAS deduplication
+curiokraft-book db sync-assets --dir inbox/raw_pages --type raw_image
 ```
 
 ---
@@ -195,19 +248,24 @@ curiokraft-book sample generate --count 3 --source gemini
 
 ---
 
-### Step 3: Run Full 110-Page Production Batch
+### Step 3: Run Full 110-Page Production Batch & Cross-Book Asset Reuse
 
 Execute the automated multi-agent debate, generation, code rescue, and vector typography pipeline across all 110 pages:
 
 ```powershell
 # Using OpenAI:
-curiokraft-book generate book --source openai
+curiokraft-book generate book --source openai --slug curiokraft-vol1
 
 # OR using Gemini:
-curiokraft-book generate book --source gemini
+curiokraft-book generate book --source gemini --slug curiokraft-vol1
+
+# Optional: Parallel generation for faster turnaround (2-8 workers)
+curiokraft-book generate book --source gemini --parallel --workers 4
 ```
 
-* **Output:** `output/interior_masters/page_001.png` through `page_110.png`.
+* **Intelligent Cross-Book Asset Reuse**: Before calling the AI generator for any page, the engine queries `data_store.find_raw_asset_by_canonical(canonical)` across the database. If an approved illustration already exists (e.g. from a previous volume or shared theme), it reuses the asset automatically, bypassing the external API and saving quota.
+* **Automatic CAS Indexing**: Newly generated illustrations and approved master pages are automatically indexed into `media_assets` with SHA-256 Content-Addressable digests.
+* **Dual-Write State**: Simultaneously commits to the SQL database and mirrors atomically to `output/pipeline_state.json`.
 * Check progress in the terminal progress bar or inspect `logs/pipeline.log`.
 
 ---
@@ -247,12 +305,63 @@ curiokraft-book kdp generate
 
 ---
 
+## ☁️ Stage 5: Cloud Synchronization, Asset Backup & Local Verification
+
+After production and preflight, synchronize local database records and image binaries to the cloud, or verify remote assets on your local workstation:
+
+### 1. Ingest & Index Local Deliverables into Object Storage (MinIO / S3 / R2)
+Push your finalized interior masters, assembled interior PDF, and cover files into centralized storage with SHA-256 Content-Addressable deduplication:
+```powershell
+# Index and upload all 110 composite master PNGs:
+curiokraft-book db sync-assets --dir output/interior_masters --type composite_master
+
+# Index and upload print-ready interior PDF:
+curiokraft-book db sync-assets --dir output/interior --type interior_pdf
+
+# Index and upload paperback cover master PNG and CMYK PDF:
+curiokraft-book db sync-assets --dir output/cover --type cover_asset
+```
+* **CAS Deduplication**: Each file is hashed via SHA-256 before upload. If the hash already exists in PostgreSQL/MinIO, upload is safely skipped. Running `db sync-assets` multiple times is completely idempotent.
+
+### 2. Pull & Verify Assets on Local Workstation (`db pull-assets`)
+To restore, audit, or verify assets stored in MinIO/PostgreSQL on a fresh machine (or without having local files), pull them down with automated cryptographic integrity checking:
+```powershell
+# Pull specific asset types to a verification directory:
+curiokraft-book db pull-assets --dir output/verified_assets --type interior_pdf
+curiokraft-book db pull-assets --dir output/verified_assets --type cover_asset
+curiokraft-book db pull-assets --dir output/verified_assets --type composite_master
+
+# Pull assets for a specific book volume:
+curiokraft-book db pull-assets --slug curiokraft-aquatic_vol1 --dir output/vol1_pull
+```
+* **Bit-for-Bit Integrity Verification**: For every downloaded file, the engine recomputes its local SHA-256 hash and compares it against the authoritative database record (`media_assets.sha256_hash`), certifying that no corruption occurred during transfer:
+  ```text
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Interior_110p.pdf (82,319,410 bytes | SHA-256 match)
+  [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png (13,954,329 bytes | SHA-256 match)
+  ```
+
+### 3. Bi-Directional Cloud Outbox Synchronization
+Synchronize relational database changes and prompt locks with your remote team:
+```powershell
+# Push pending outbox events to Neon PostgreSQL and binaries to Cloudflare R2
+curiokraft-book db sync
+
+# (Optional) Export database state back to filesystem JSON for backup
+curiokraft-book db export-to-fs
+```
+
+* **Bi-Directional Sync**: Pushes all locally approved pages, prompt locks, and media hashes to the cloud; pulls remote updates with Last-Write-Wins conflict resolution.
+* **$0 Egress Bandwidth**: Leveraging Cloudflare R2 guarantees zero egress fees for large master PDF and PNG uploads.
+
+---
+
 ## 🧪 Track 3: Offline Developer / Test Mode (Zero Cost Bézier Mock)
 
 For local development, testing scripts, and CI/CD without calling any AI APIs:
 
 ```powershell
-# Generate 3 mock vector pages:
+# Initialize DB & generate 3 mock vector pages:
+curiokraft-book db init
 curiokraft-book sample generate --count 3 --source mock
 
 # Generate complete 110-page mock book:
@@ -261,30 +370,41 @@ curiokraft-book cover build
 curiokraft-book assemble interior
 curiokraft-book preflight run
 curiokraft-book kdp generate --no-open
+curiokraft-book db export-to-fs
 ```
 
 ---
 
-## 📋 CLI Command Cheat Sheet
+## 📋 CLI Command Cheat Sheet (Sequential Lifecycle Order)
 
-| Command | Purpose | When to Use |
+| Lifecycle Stage | Command | Purpose |
 | :--- | :--- | :--- |
-| `curiokraft-book doctor` | Check assets, fonts, and API environment | Initial workspace setup |
-| `curiokraft-book manifest audit` | Verify 0 duplicate vocabulary collisions in manifest | Before generation |
-| `curiokraft-book prompt export` | Export all 110 prompts + Cover prompts to markdown | **Track 1 (Free Web UI)** |
-| `curiokraft-book prompt show -p P005` | Display single page prompt in terminal | Track 1 quick copy |
-| `curiokraft-book cover prompt` | Display Front and Back cover artwork prompts | Track 1 cover creation |
-| `curiokraft-book ingest` | Process user images from `inbox/raw_pages/` | **Track 1 (Free Web UI)** |
-| `curiokraft-book sample generate` | Generate 1–5 sample master pages for review | Gate 2 visual check |
-| `curiokraft-book generate book` | Run full automated 110-page generation batch | **Track 2 (Automated API)** |
-| `curiokraft-book cover build` | Composite 17.498×11.250" cover PNG & PDF | After interior masters ready |
-| `curiokraft-book cover validate` | Validate KDP cover dimensions, spine, and barcode zone | Cover compliance verification |
-| `curiokraft-book assemble interior` | Compile 110 master PNGs into print interior PDF | After interior masters ready |
-| `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight | Pre-publication certification |
-| `curiokraft-book kdp generate` | 4-agent KDP metadata & 1-click copy dashboard | Publishing submission |
-| `curiokraft-book kdp show` | Display formatted KDP submission table in terminal | Terminal preview |
-| `curiokraft-book kdp parse` | Parse HTML forms dropped into `inbox/kdp_forms/` | Schema inspection |
-| `curiokraft-book debate show -p P005` | Inspect 4-round agent debate log for a page | Debugging / Quality Audit |
+| **Stage 0: Setup** | `curiokraft-book init` | Initialize workspace directories and manifest templates |
+| | `curiokraft-book db init` | Initialize database schema tables (SQLite or PostgreSQL) |
+| | `curiokraft-book db migrate-from-fs` | Ingest existing `book_config.yaml` and `pipeline_state.json` into DB |
+| | `curiokraft-book doctor` | Check environment, API keys, assets, and font files |
+| | `curiokraft-book db status` | Inspect database engine, active book, and page count summary |
+| **Stage 1: Manifest** | `curiokraft-book manifest audit` | Verify 0 duplicate vocabulary collisions in manifest |
+| | `curiokraft-book manifest status [--slug]` | Display lifecycle status breakdown for book |
+| | `curiokraft-book manifest details [--slug]` | Display detailed page-by-page state table |
+| | `curiokraft-book db sync-assets` | Scan and index disk illustrations with SHA-256 CAS hashes |
+| | `curiokraft-book db pull-assets` | Download assets from MinIO/DB to local disk and verify SHA-256 integrity |
+| **Track 1 (Web UI)** | `curiokraft-book prompt export` | Export all 110 prompts + Cover prompts to markdown |
+| | `curiokraft-book prompt show -p P005` | Display single page prompt in terminal |
+| | `curiokraft-book cover prompt` | Display Front and Back cover artwork prompts |
+| | `curiokraft-book ingest` | Binarize and composite user images from `inbox/raw_pages/` |
+| **Stage 2: Review** | `curiokraft-book sample generate` | Generate 1–5 sample master pages for Gate 2 visual approval |
+| **Stage 3: Batch** | `curiokraft-book generate book [--slug]`| Full 110-page batch with automated DB asset reuse |
+| | `curiokraft-book generate special-pages`| Programmatically composite Page 001 (Welcome) and Page 110 (Cert) |
+| | `curiokraft-book cover build` | Composite 17.498×11.250" cover PNG & PDF |
+| | `curiokraft-book cover validate` | Validate KDP cover dimensions, spine, and barcode zone |
+| | `curiokraft-book assemble interior` | Compile 110 master PNGs into print interior PDF |
+| **Stage 4: Quality** | `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight certificate |
+| **Stage 5: Publish** | `curiokraft-book kdp generate` | 4-agent KDP metadata & 1-click copy dashboard |
+| | `curiokraft-book kdp show` | Display formatted KDP submission table in terminal |
+| | `curiokraft-book db sync` | Bi-directional sync with Neon PostgreSQL and Cloudflare R2 |
+| | `curiokraft-book db export-to-fs` | Export complete database state back to `pipeline_state.json` |
+| **Diagnostics** | `curiokraft-book debate show -p P005` | Inspect 4-round agent debate transcript for a page |
 
 ---
 
@@ -292,6 +412,7 @@ curiokraft-book kdp generate --no-open
 
 For detailed mathematical specifications, prompt presets, multi-volume scaling, and multi-agent system internals, consult these focused documents:
 
+* **[Centralized Database & Object Storage Architecture Guide](../architecture/CENTRALIZED_DATABASE_AND_STORAGE_GUIDE.md)** — Relational schema, Neon + Cloudflare R2, offline Docker/SQLite parity, CAS deduplication, and outbox sync.
 * **[Amazon KDP Publishing & Metadata Guide](../workflows/KDP_PUBLISHING_METADATA_GUIDE.md)** — Multi-agent A9 keyword deduplication, HTML description copywriting, 2024/2026 AI disclosure, and 1-click dashboard.
 * **[Google AI Studio Setup & Prompt Presets](../setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md)** — Aspect ratio, temperature, and copy-paste system instruction presets for web generation.
 * **[Amazon KDP Print Specifications & Barcode Rules](../reference/KDP_PRINT_SPECIFICATIONS.md)** — Official geometry tables, cover calculation formulas, spine thickness, safe margins, and barcode box positioning.
@@ -299,3 +420,4 @@ For detailed mathematical specifications, prompt presets, multi-volume scaling, 
 * **[Multi-Agent System & Debate Engine](../architecture/MULTI_AGENT_SYSTEM_AND_DEBATES.md)** — Details on the 10 specialist agents, 4-round debate protocols, red-teaming, and debate log inspection.
 * **[Pre-Publish Checklist](../setup/ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md)** — Step-by-step 15-minute verification checklist before publishing to Amazon.
 * **[Image Inbox Naming Conventions](../../inbox/raw_pages/README.md)** — Drop targets and naming fallback rules (`raw_p002_alphabet_a_to_m.png`, `raw_p006.png`, etc.).
+
