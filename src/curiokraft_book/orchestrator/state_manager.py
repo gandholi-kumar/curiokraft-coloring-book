@@ -171,7 +171,7 @@ class PipelineStateManager:
             "pages": {p_id: p.model_dump() for p_id, p in self.pages.items()},
         }
         # Atomic write: temp file + rename
-        temp_file = self.state_file.with_suffix('.tmp')
+        temp_file = self.state_file.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=2)
         temp_file.replace(self.state_file)  # Atomic on POSIX, replace on Windows
