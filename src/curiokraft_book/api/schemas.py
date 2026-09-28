@@ -152,12 +152,6 @@ class PromptSynthesizeRequest(BaseModel):
     include_special_pages: bool = Field(
         default=True, description="Whether to include Welcome & Certificate prompts"
     )
-    pages_csv_path: str | None = Field(
-        default=None, description="Optional custom CSV manifest path"
-    )
-    book_config_path: str | None = Field(
-        default=None, description="Optional custom book YAML config path"
-    )
 
 
 class PromptManifestResponse(BaseModel):

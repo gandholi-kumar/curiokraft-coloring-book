@@ -761,15 +761,8 @@ async def trigger_prompt_synthesis(
     )
 
     try:
-        safe_manifest: Path | None = None
-        if payload.pages_csv_path:
-            clean_mp = Path(payload.pages_csv_path).name
-            cand_p = Path("manifest") / clean_mp
-            if cand_p.is_file():
-                safe_manifest = cand_p
-
         prompt_items = synthesize_prompts(
-            manifest_path=safe_manifest or DEFAULT_PAGES_MANIFEST,
+            manifest_path=DEFAULT_PAGES_MANIFEST,
             count=count,
         )
 

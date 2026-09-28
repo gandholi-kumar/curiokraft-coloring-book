@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from io import BytesIO
 from pathlib import Path
 
@@ -343,13 +344,232 @@ def test_websocket_broadcasts(test_client: TestClient):
         ws.send_json({"type": "unknown_message_type"})
 
 
-def test_cli_web_status_command():
+def test_cli_web_status_command(monkeypatch):
     """Verify cli_web 'status' and helper commands execute without unhandled exceptions."""
+    from unittest.mock import MagicMock
+
+    import httpx
     from typer.testing import CliRunner
 
-    from curiokraft_book.cli_web import web_app
+    from curiokraft_book.cli_web import _open_browser_delayed, web_app
 
     runner = CliRunner()
     # Test status probe with an invalid port to hit connection exception path
     result = runner.invoke(web_app, ["status", "--port", "1"])
     assert result.exit_code == 0
+
+    # Test status probe when server returns 200 OK
+    mock_resp_200 = MagicMock()
+    mock_resp_200.status_code = 200
+    mock_resp_200.json.return_value = {
+        "status": "ok",
+        "version": "1.0.0",
+        "db_status": "connected",
+        "storage_backend": "local_disk",
+        "timestamp": "2026-09-28T12:00:00Z",
+    }
+    monkeypatch.setattr(httpx, "get", lambda *args, **kwargs: mock_resp_200)
+    result_200 = runner.invoke(web_app, ["status", "--port", "8000"])
+    assert result_200.exit_code == 0
+
+    # Test status probe when server returns 500 error
+    mock_resp_500 = MagicMock()
+    mock_resp_500.status_code = 500
+    mock_resp_500.text = "Internal Server Error"
+    monkeypatch.setattr(httpx, "get", lambda *args, **kwargs: mock_resp_500)
+    result_500 = runner.invoke(web_app, ["status", "--port", "8000"])
+    assert result_500.exit_code == 0
+
+    # Test _open_browser_delayed
+    import webbrowser
+
+    mock_open = MagicMock()
+    monkeypatch.setattr(webbrowser, "open", mock_open)
+    _open_browser_delayed("http://127.0.0.1:8000", delay_seconds=0.01)
+
+    # Test start_web_server command
+    import uvicorn
+
+    monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: None)
+    result_start = runner.invoke(web_app, ["start", "--no-open-browser", "--port", "8999"])
+    assert result_start.exit_code == 0
+
+
+def test_book_update_full_fields(test_client: TestClient):
+    """Verify updating all optional book fields via PATCH."""
+    books = test_client.get("/api/books").json()
+    book_id = books[0]["id"]
+
+    update_payload = {
+        "title": "Comprehensive Title",
+        "subtitle": "A Wonderful Subtitle",
+        "trim_width_in": 8.5,
+        "trim_height_in": 11.0,
+        "page_count": 80,
+        "bleed": True,
+        "layout": "standard_margins",
+        "visual_style": {"style_preset": "thick_vector_outlines"},
+        "target_audience": {"age_range": "toddler"},
+        "status": "in_progress",
+    }
+    resp = test_client.patch(f"/api/books/{book_id}", json=update_payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["title"] == "Comprehensive Title"
+    assert data["subtitle"] == "A Wonderful Subtitle"
+    assert data["page_count"] == 80
+    assert data["spine_width_in"] > 0
+    assert data["bleed"] is True
+
+
+def test_book_production_status_and_prompts_extended(test_client: TestClient):
+    """Verify aggregated production status and prompt listing with presets."""
+    from curiokraft_book.data.base import PromptRecord
+
+    books = test_client.get("/api/books").json()
+    book_id = books[0]["id"]
+
+    # Production status check
+    status_resp = test_client.get(f"/api/books/{book_id}/status")
+    assert status_resp.status_code == 200
+    status_data = status_resp.json()
+    assert "overall_progress" in status_data
+    assert "stages" in status_data
+    assert "page_stats" in status_data
+
+    # Save sample prompts into store and verify listing logic
+    store = test_client.app.state.store  # type: ignore[attr-defined]
+    p_cover = PromptRecord(
+        book_id=book_id,
+        page_id="cover_front",
+        prompt_type="front_cover",
+        positive_prompt="A lovely bear cover",
+        preset_name="CurioKraft - Cover Art Master",
+    )
+    p_interior = PromptRecord(
+        book_id=book_id,
+        page_id="P001",
+        prompt_type="interior_page",
+        positive_prompt="A friendly bear coloring page",
+        preset_name="CurioKraft - Interior Coloring Pages",
+    )
+    store.prompts.save_prompt(p_cover)
+    store.prompts.save_prompt(p_interior)
+
+    prompts_resp = test_client.get(f"/api/books/{book_id}/prompts")
+    assert prompts_resp.status_code == 200
+    prompts_list = prompts_resp.json()
+    assert len(prompts_list) >= 2
+
+
+def test_websocket_manager_error_handling(test_client: TestClient):
+    """Verify connection manager handles dead connections cleanly."""
+    import asyncio
+    from unittest.mock import AsyncMock
+
+    from curiokraft_book.api.websocket_manager import ConnectionManager
+
+    mgr = ConnectionManager()
+    good_conn = AsyncMock()
+    bad_conn = AsyncMock()
+
+    async def _test():
+        await mgr.connect(good_conn)
+        await mgr.connect(bad_conn)
+        assert len(mgr.active_connections) == 2
+
+        # Configure bad_conn to fail on broadcast
+        bad_conn.send_json.side_effect = RuntimeError("Client socket disconnected")
+
+        await mgr.broadcast({"test": "data"})
+        # bad_conn should have been discarded
+        assert len(mgr.active_connections) == 1
+        assert good_conn in mgr.active_connections
+
+        await mgr.broadcast_progress(stage="testing", progress_percentage=100.0, message="Done")
+        await mgr.broadcast_debate_turn(
+            turn_index=2, speaker="Critic", proposal="Fine-tune outlines"
+        )
+        await mgr.disconnect(good_conn)
+        assert len(mgr.active_connections) == 0
+
+    asyncio.run(_test())
+
+    # Test WebSocket client sending client_log and malformed text
+    with test_client.websocket_connect("/ws") as ws:
+        _ = ws.receive_json()  # Handshake ack
+        ws.send_json(
+            {
+                "type": "client_log",
+                "level": "INFO",
+                "message": "Client test log message",
+                "component": "ui",
+                "context": {"key": "val"},
+            }
+        )
+        broadcast_log = ws.receive_json()
+        assert broadcast_log["type"] == "log_event"
+
+        ws.send_text("this is not json")
+        pong = ws.receive_json()
+        assert pong["type"] == "pong"
+
+
+def test_pipeline_state_manager_logic(tmp_path: Path):
+    """Verify PageStateRecord status normalization and PipelineStateManager lifecycle."""
+    from curiokraft_book.orchestrator.state_manager import (
+        PageStateRecord,
+        PageStatus,
+        PipelineStateManager,
+    )
+
+    # Test status normalization
+    rec1 = PageStateRecord(
+        page_id="P001",
+        page_number=1,
+        canonical_object="bear",
+        display_label="BEAR",
+        section="Animals",
+        status="RECEIVED",  # type: ignore[arg-type]
+    )
+    assert rec1.status == PageStatus.GENERATED
+
+    rec2 = PageStateRecord(
+        page_id="P002",
+        page_number=2,
+        canonical_object="fox",
+        display_label="FOX",
+        section="Animals",
+        status="RESCUING",  # type: ignore[arg-type]
+    )
+    assert rec2.status == PageStatus.GENERATING
+
+    rec3 = PageStateRecord(
+        page_id="P003",
+        page_number=3,
+        canonical_object="owl",
+        display_label="OWL",
+        section="Animals",
+        status="PASSED",  # type: ignore[arg-type]
+    )
+    assert rec3.status == PageStatus.TECHNICAL_QA_PASSED
+
+    # Test PipelineStateManager initialization with dummy manifest
+    manifest_file = tmp_path / "manifest.json"
+    state_file = tmp_path / "state.json"
+    manifest_data = {
+        "pages": [
+            {
+                "page_id": "P001",
+                "page_number": 1,
+                "canonical_object": "bear",
+                "display_label": "BEAR",
+                "section": "Animals",
+            }
+        ]
+    }
+    manifest_file.write_text(json.dumps(manifest_data), encoding="utf-8")
+
+    mgr = PipelineStateManager(state_file_path=state_file, manifest_path=manifest_file)
+    assert "P001" in mgr.pages
+    assert mgr.pages["P001"].canonical_object == "bear"
