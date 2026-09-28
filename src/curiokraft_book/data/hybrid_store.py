@@ -224,8 +224,11 @@ class HybridDataStore:
                 try:
                     with open(self.state_file, encoding="utf-8") as f:
                         existing_data = json.load(f)
-                except Exception:
-                    pass
+                except Exception as e:
+                    # Non-fatal: existing legacy state file may be empty or corrupted
+                    logger.warning(
+                        "Could not parse existing legacy state file %s: %s", self.state_file, e
+                    )
 
             pages_dict = existing_data.get("pages", {})
             pages_dict[updated_page.page_id] = {
@@ -288,7 +291,9 @@ class HybridDataStore:
         # Check if asset already indexed
         existing = self.assets.find_by_hash(sha256)
         if existing:
-            logger.info(f"Asset {p.name} identical to existing asset {existing.id} (SHA-256 match).")
+            logger.info(
+                f"Asset {p.name} identical to existing asset {existing.id} (SHA-256 match)."
+            )
             return existing
 
         # Upload to configured storage backend if cloud is enabled

@@ -69,8 +69,11 @@ class SyncEngine:
 
         # Cloudflare R2 / S3 client
         self.remote_storage = remote_storage
+        self._book_id_map: dict[str, str] = {}
         bucket = os.environ.get("S3_BUCKET_NAME", "curiokraft-assets")
-        if not self.remote_storage and (os.environ.get("S3_ENDPOINT_URL") or os.environ.get("S3_ACCESS_KEY_ID")):
+        if not self.remote_storage and (
+            os.environ.get("S3_ENDPOINT_URL") or os.environ.get("S3_ACCESS_KEY_ID")
+        ):
             try:
                 self.remote_storage = S3StorageBackend(bucket_name=bucket)
             except Exception as e:
@@ -81,7 +84,9 @@ class SyncEngine:
         report = SyncReport()
 
         if not self.remote_db_mgr:
-            report.errors.append("Remote database URL not configured or unreachable (REMOTE_DATABASE_URL).")
+            report.errors.append(
+                "Remote database URL not configured or unreachable (REMOTE_DATABASE_URL)."
+            )
             report.success = False
             return report
 
@@ -110,8 +115,28 @@ class SyncEngine:
         )
         return report
 
+    def _resolve_remote_book_id(self, local_book_id: str, remote_s: Any) -> str:
+        """Resolve corresponding remote book ID if local and remote differ."""
+        if local_book_id in self._book_id_map:
+            return self._book_id_map[local_book_id]
+        if remote_s.get(BookModel, local_book_id):
+            self._book_id_map[local_book_id] = local_book_id
+            return local_book_id
+        local_book = self.local_store.books.get_by_id(local_book_id)
+        if local_book and local_book.slug:
+            remote_b = remote_s.scalars(
+                select(BookModel).where(BookModel.slug == local_book.slug)
+            ).first()
+            if remote_b:
+                self._book_id_map[local_book_id] = remote_b.id
+                return remote_b.id
+        return local_book_id
+
     def _push_outbox_events(self, report: SyncReport) -> None:
         """Iterate pending events in local sync_outbox and apply to remote database."""
+        if not self.remote_db_mgr:
+            return
+
         with self.local_store.db_mgr.session() as local_s:
             stmt = select(OutboxEventModel).where(OutboxEventModel.status == "PENDING")
             pending_events = local_s.scalars(stmt).all()
@@ -146,14 +171,23 @@ class SyncEngine:
     def _sync_book_to_remote(self, payload: dict[str, Any], remote_s: Any) -> None:
         b_id = payload["id"]
         remote_m = remote_s.get(BookModel, b_id)
+        if not remote_m and "slug" in payload:
+            remote_m = remote_s.scalars(
+                select(BookModel).where(BookModel.slug == payload["slug"])
+            ).first()
         payload["sync_status"] = SyncStatus.SYNCED.value
         if remote_m:
+            self._book_id_map[b_id] = remote_m.id
             for k, v in payload.items():
-                setattr(remote_m, k, v)
+                if k != "id":
+                    setattr(remote_m, k, v)
         else:
+            self._book_id_map[b_id] = b_id
             remote_s.add(BookModel(**payload))
 
     def _sync_page_to_remote(self, payload: dict[str, Any], remote_s: Any) -> None:
+        if "book_id" in payload:
+            payload["book_id"] = self._resolve_remote_book_id(payload["book_id"], remote_s)
         p_id = payload["id"]
         remote_m = remote_s.get(PageModel, p_id)
         payload["sync_status"] = SyncStatus.SYNCED.value
@@ -168,6 +202,8 @@ class SyncEngine:
             remote_s.add(PageModel(**payload))
 
     def _sync_prompt_to_remote(self, payload: dict[str, Any], remote_s: Any) -> None:
+        if "book_id" in payload:
+            payload["book_id"] = self._resolve_remote_book_id(payload["book_id"], remote_s)
         pr_id = payload["id"]
         remote_m = remote_s.get(PromptModel, pr_id)
         payload["sync_status"] = SyncStatus.SYNCED.value
@@ -179,6 +215,8 @@ class SyncEngine:
             remote_s.add(PromptModel(**payload))
 
     def _sync_asset_to_remote(self, payload: dict[str, Any], remote_s: Any) -> None:
+        if "book_id" in payload:
+            payload["book_id"] = self._resolve_remote_book_id(payload["book_id"], remote_s)
         # If remote storage is available, ensure the binary is uploaded to Cloudflare R2
         storage_key = payload.get("storage_key", "")
         if self.remote_storage and storage_key:
@@ -200,24 +238,39 @@ class SyncEngine:
 
     def _pull_remote_updates(self, report: SyncReport) -> None:
         """Fetch remote page states and pull into local database."""
+        if not self.remote_db_mgr:
+            return
+
         with self.remote_db_mgr.session() as remote_s:
-            book_id = self.local_store.active_book.id
-            stmt = select(PageModel).where(PageModel.book_id == book_id)
+            local_book = self.local_store.active_book
+            stmt_book = select(BookModel).where(
+                (BookModel.id == local_book.id) | (BookModel.slug == local_book.slug)
+            )
+            remote_book = remote_s.scalars(stmt_book).first()
+            if not remote_book:
+                return
+
+            stmt = select(PageModel).where(PageModel.book_id == remote_book.id)
             remote_pages = remote_s.scalars(stmt).all()
 
             with self.local_store.db_mgr.session() as local_s:
                 for rp in remote_pages:
-                    local_p = local_s.get(PageModel, rp.id)
+                    stmt_local_p = select(PageModel).where(
+                        PageModel.book_id == local_book.id, PageModel.page_id == rp.page_id
+                    )
+                    local_p = local_s.scalars(stmt_local_p).first()
                     if not local_p:
                         # Add missing remote page to local
                         data = {col.name: getattr(rp, col.name) for col in rp.__table__.columns}
+                        data["book_id"] = local_book.id
                         data["sync_status"] = SyncStatus.SYNCED.value
                         local_s.add(PageModel(**data))
                         report.pulled_pages += 1
                     elif (rp.updated_at or "") > (local_p.updated_at or ""):
                         # Remote is newer: update local
                         for col in rp.__table__.columns:
-                            setattr(local_p, col.name, getattr(rp, col.name))
+                            if col.name not in ("id", "book_id"):
+                                setattr(local_p, col.name, getattr(rp, col.name))
                         local_p.sync_status = SyncStatus.SYNCED.value
                         report.pulled_pages += 1
                         report.conflicts_resolved += 1

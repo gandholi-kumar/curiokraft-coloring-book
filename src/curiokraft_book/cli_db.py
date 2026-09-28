@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 import yaml
@@ -20,8 +21,6 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-
-load_dotenv()
 
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
@@ -31,6 +30,8 @@ from curiokraft_book.constants import (
 from curiokraft_book.data.base import BookRecord, PageRecord
 from curiokraft_book.data.hybrid_store import get_data_store
 from curiokraft_book.data.sync_engine import SyncEngine
+
+load_dotenv()
 
 db_app = typer.Typer(help="[Data & Cloud] Centralized database and S3/R2 storage operations")
 console = Console(force_terminal=True, legacy_windows=False)
@@ -150,7 +151,9 @@ def db_migrate_from_fs(
 
 @db_app.command("sync-assets")
 def db_sync_assets(
-    directory: Path = typer.Option(Path("output/interior_masters"), "--dir", "-d", help="Directory to scan"),
+    directory: Path = typer.Option(
+        Path("output/interior_masters"), "--dir", "-d", help="Directory to scan"
+    ),
     asset_type: str = typer.Option("composite_master", "--type", "-t"),
 ):
     """Scan directory of images, compute SHA-256 hashes, and index into media_assets."""
@@ -177,20 +180,30 @@ def db_sync_assets(
         except Exception as e:
             console.print(f"[red]Failed indexing {f.name}:[/] {e}")
 
-    console.print(f"[bold green]Indexed {indexed} media assets with SHA-256 content hashes.[/bold green]")
+    console.print(
+        f"[bold green]Indexed {indexed} media assets with SHA-256 content hashes.[/bold green]"
+    )
 
 
 @db_app.command("pull-assets")
 def db_pull_assets(
     directory: Path | None = typer.Option(
-        None, "--dir", "-d", help="Destination folder (default: standard output folders e.g. output/interior_masters/)"
+        None,
+        "--dir",
+        "-d",
+        help="Destination folder (default: standard output folders e.g. output/interior_masters/)",
     ),
     asset_type: str | None = typer.Option(
-        None, "--type", "-t", help="Filter by type (composite_master, interior_pdf, cover_asset, raw_image)"
+        None,
+        "--type",
+        "-t",
+        help="Filter by type (composite_master, interior_pdf, cover_asset, raw_image)",
     ),
     slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
     verify_hash: bool = typer.Option(
-        True, "--verify-hash/--no-verify-hash", help="Verify SHA-256 integrity against database records"
+        True,
+        "--verify-hash/--no-verify-hash",
+        help="Verify SHA-256 integrity against database records",
     ),
 ):
     """Pull assets from database & MinIO down to local machine and verify file integrity."""
@@ -240,7 +253,9 @@ def db_pull_assets(
         dest_file.parent.mkdir(parents=True, exist_ok=True)
         ok = store.storage.download_file(asset.storage_key, str(dest_file))
         if not ok:
-            console.print(f"  [red][FAIL][/red] Failed to download {filename} from {asset.storage_key}")
+            console.print(
+                f"  [red][FAIL][/red] Failed to download {filename} from {asset.storage_key}"
+            )
             failed += 1
             continue
 
@@ -249,9 +264,13 @@ def db_pull_assets(
             local_hash = compute_sha256(dest_file)
             if local_hash == asset.sha256_hash:
                 verified += 1
-                console.print(f"  [green][VERIFIED][/green] {filename} [dim]({dest_file.stat().st_size:,} bytes | SHA-256 match)[/dim]")
+                console.print(
+                    f"  [green][VERIFIED][/green] {filename} [dim]({dest_file.stat().st_size:,} bytes | SHA-256 match)[/dim]"
+                )
             else:
-                console.print(f"  [yellow][MISMATCH][/yellow] {filename} hash does not match DB record!")
+                console.print(
+                    f"  [yellow][MISMATCH][/yellow] {filename} hash does not match DB record!"
+                )
         else:
             console.print(f"  [green][OK][/green] Downloaded {filename} -> {dest_file}")
 
@@ -298,6 +317,7 @@ def db_sync():
                 border_style="red",
             )
         )
+        raise typer.Exit(code=1)
 
 
 @db_app.command("export-to-fs")
@@ -308,8 +328,8 @@ def db_export_to_fs(
     store = get_data_store()
     pages = store.get_all_pages()
 
-    pages_dict = {}
-    summary = {}
+    pages_dict: dict[str, Any] = {}
+    summary: dict[str, int] = {}
     for p in pages:
         summary[p.status] = summary.get(p.status, 0) + 1
         pages_dict[p.page_id] = {
@@ -342,4 +362,6 @@ def db_export_to_fs(
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(export_data, f, indent=2)
 
-    console.print(f"[bold green]Exported {len(pages_dict)} pages from DB to {output_path}![/bold green]")
+    console.print(
+        f"[bold green]Exported {len(pages_dict)} pages from DB to {output_path}![/bold green]"
+    )

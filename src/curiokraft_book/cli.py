@@ -875,11 +875,17 @@ def generate_special_pages(
         if state_mgr.data_store:
             try:
                 if p001_path.exists():
-                    state_mgr.data_store.register_media_asset(p001_path, asset_type="composite_master", page_id="P001")
+                    state_mgr.data_store.register_media_asset(
+                        p001_path, asset_type="composite_master", page_id="P001"
+                    )
                 if cert_path.exists():
-                    state_mgr.data_store.register_media_asset(cert_path, asset_type="composite_master", page_id=cert_pid)
+                    state_mgr.data_store.register_media_asset(
+                        cert_path, asset_type="composite_master", page_id=cert_pid
+                    )
                 if cert_num == 109 and (out_dir / "page_110.png").exists():
-                    state_mgr.data_store.register_media_asset(out_dir / "page_110.png", asset_type="composite_master", page_id="P110")
+                    state_mgr.data_store.register_media_asset(
+                        out_dir / "page_110.png", asset_type="composite_master", page_id="P110"
+                    )
             except Exception as e:
                 logger.debug(f"Special pages media asset auto-register notice: {e}")
     except Exception as e:
@@ -925,7 +931,9 @@ def build_cover():
                 store.register_media_asset(res.output_png_path, asset_type="cover_asset")
             if res.output_cmyk_pdf_path and Path(res.output_cmyk_pdf_path).exists():
                 store.register_media_asset(res.output_cmyk_pdf_path, asset_type="cover_asset")
-            console.print("[bold green][DB][/bold green] Auto-registered cover deliverables into database & storage.")
+            console.print(
+                "[bold green][DB][/bold green] Auto-registered cover deliverables into database & storage."
+            )
         except Exception as e:
             logger.debug(f"Cover auto-register DB notice: {e}")
 
@@ -1079,7 +1087,9 @@ def assemble_interior():
 
             store = get_data_store()
             store.register_media_asset(res.output_pdf_path, asset_type="interior_pdf")
-            console.print("[bold green][DB][/bold green] Auto-registered interior PDF into database & storage.")
+            console.print(
+                "[bold green][DB][/bold green] Auto-registered interior PDF into database & storage."
+            )
         except Exception as e:
             logger.debug(f"Interior PDF auto-register DB notice: {e}")
 
