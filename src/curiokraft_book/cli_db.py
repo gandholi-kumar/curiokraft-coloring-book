@@ -22,13 +22,21 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+import re
+from uuid import uuid4
+
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
     DEFAULT_PAGES_MANIFEST,
     DEFAULT_PIPELINE_STATE_FILE,
 )
-from curiokraft_book.data.base import BookRecord, PageRecord
-from curiokraft_book.data.hybrid_store import get_data_store
+from curiokraft_book.data.base import (
+    BookRecord,
+    MediaAssetRecord,
+    PageRecord,
+    PromptRecord,
+)
+from curiokraft_book.data.hybrid_store import HybridDataStore, get_data_store
 from curiokraft_book.data.sync_engine import SyncEngine
 
 load_dotenv()
@@ -52,10 +60,83 @@ def db_init():
     )
 
 
+def _scan_and_index_all_assets(store: HybridDataStore) -> int:
+    """Scan all standard asset directories, register in DB, and upload to MinIO/S3."""
+    indexed = 0
+
+    # 1. Composite Masters (output/interior_masters/)
+    masters_dir = Path("output/interior_masters")
+    if masters_dir.exists():
+        for f in sorted(masters_dir.glob("page_*.png")):
+            m = re.search(r"(\d+)", f.stem)
+            page_id = f"P{int(m.group(1)):03d}" if m else None
+            try:
+                store.register_media_asset(f, asset_type="composite_master", page_id=page_id)
+                indexed += 1
+            except Exception as e:
+                console.print(f"[red]Failed indexing master {f.name}:[/] {e}")
+
+    # 2. Raw Pages (inbox/raw_pages/ or generated/raw_pages/)
+    raw_dirs = [Path("inbox/raw_pages"), Path("generated/raw_pages")]
+    seen_raw_pages: set[str] = set()
+    for r_dir in raw_dirs:
+        if not r_dir.exists():
+            continue
+        for f in sorted(r_dir.glob("raw_p*.png")):
+            m = re.search(r"p(\d+)", f.stem.lower())
+            if m:
+                page_id = f"P{int(m.group(1)):03d}"
+                if page_id in seen_raw_pages:
+                    continue
+                seen_raw_pages.add(page_id)
+                try:
+                    store.register_media_asset(f, asset_type="raw_image", page_id=page_id)
+                    indexed += 1
+                except Exception as e:
+                    console.print(f"[red]Failed indexing raw page {f.name}:[/] {e}")
+
+    # 3. Cover Assets (output/cover/ and inbox covers)
+    cover_dir = Path("output/cover")
+    if cover_dir.exists():
+        for f in sorted(cover_dir.iterdir()):
+            if f.is_file() and f.suffix.lower() in [".png", ".pdf"]:
+                p_id = "COVER_CMYK_PDF" if f.suffix.lower() == ".pdf" else "COVER_300DPI_PNG"
+                try:
+                    store.register_media_asset(f, asset_type="cover_asset", page_id=p_id)
+                    indexed += 1
+                except Exception as e:
+                    console.print(f"[red]Failed indexing cover {f.name}:[/] {e}")
+
+    for cov_cand, p_id in [
+        (Path("inbox/front_cover.png"), "COVER_FRONT"),
+        (Path("inbox/back_cover.png"), "COVER_BACK"),
+    ]:
+        if cov_cand.exists():
+            try:
+                store.register_media_asset(cov_cand, asset_type="cover_asset", page_id=p_id)
+                indexed += 1
+            except Exception as e:
+                console.print(f"[red]Failed indexing inbox cover {cov_cand.name}:[/] {e}")
+
+    # 4. Interior PDF (output/interior/)
+    interior_dir = Path("output/interior")
+    if interior_dir.exists():
+        for f in sorted(interior_dir.glob("*.pdf")):
+            try:
+                store.register_media_asset(f, asset_type="interior_pdf", page_id=None)
+                indexed += 1
+            except Exception as e:
+                console.print(f"[red]Failed indexing interior PDF {f.name}:[/] {e}")
+
+    return indexed
+
+
 @db_app.command("status")
-def db_status():
+def db_status(
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
+):
     """Display database connection status and entity counts."""
-    store = get_data_store()
+    store = get_data_store(book_slug=slug)
     try:
         books = store.books.list_books()
         pages = store.get_all_pages()
@@ -94,24 +175,96 @@ def db_migrate_from_fs(
     manifest_path: Path = typer.Option(DEFAULT_PAGES_MANIFEST, "--manifest", "-m"),
     config_path: Path = typer.Option(DEFAULT_BOOK_CONFIG, "--config", "-c"),
     state_path: Path = typer.Option(DEFAULT_PIPELINE_STATE_FILE, "--state", "-s"),
+    include_images: bool = typer.Option(
+        True,
+        "--images/--no-images",
+        help="Scan and migrate on-disk images to database and object storage",
+    ),
+    include_prompts: bool = typer.Option(
+        True,
+        "--prompts/--no-prompts",
+        help="Migrate generation prompts from pipeline state into database",
+    ),
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
 ):
-    """Ingest existing filesystem manifests and pipeline_state.json into database."""
-    store = get_data_store()
+    """Ingest existing filesystem manifests, book configs, prompts, and images into database."""
+    store = get_data_store(book_slug=slug)
     console.print(f"[cyan]Migrating book configuration from {config_path}...[/cyan]")
 
     book_title = "Tiny Hands Color & Learn"
+    subtitle = ""
     volume = "vol1"
+    imprint = "CurioKraft Publications"
+    target_audience = {}
+    layout = "single_sided"
+    bleed = False
+    trim_width_in = 8.5
+    trim_height_in = 11.0
+    spine_width_in = 0.248
+    page_count = 110
+    visual_style = {}
+
     if config_path.exists():
         with open(config_path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
         b_cfg = cfg.get("book", {})
         book_title = b_cfg.get("title", book_title)
+        subtitle = b_cfg.get("subtitle", "")
         volume = str(b_cfg.get("volume", volume)).lower()
+        imprint = b_cfg.get("brand", imprint)
+        target_audience = b_cfg.get("target_audience", {})
 
-    slug = f"curiokraft-{volume}"
-    book = store.books.get_by_slug(slug)
-    if not book:
-        book = store.books.save(BookRecord(slug=slug, title=book_title, volume=volume))
+        i_cfg = b_cfg.get("interior", {})
+        page_count = int(i_cfg.get("page_count", page_count))
+        layout = i_cfg.get("layout", layout)
+        bleed = bool(i_cfg.get("bleed", bleed))
+        trim_cfg = i_cfg.get("trim_size", {})
+        trim_width_in = float(trim_cfg.get("width_in", trim_width_in))
+        trim_height_in = float(trim_cfg.get("height_in", trim_height_in))
+
+        c_cfg = b_cfg.get("cover", {})
+        spine_width_in = float(c_cfg.get("spine_width_in", spine_width_in))
+
+        visual_style = b_cfg.get("visual_style", {})
+
+    target_slug = slug or f"curiokraft-{volume}"
+    book = store.books.get_by_slug(target_slug)
+    if book:
+        book.title = book_title
+        book.subtitle = subtitle
+        book.volume = volume
+        book.imprint = imprint
+        book.target_audience = target_audience
+        book.layout = layout
+        book.bleed = bleed
+        book.trim_width_in = trim_width_in
+        book.trim_height_in = trim_height_in
+        book.spine_width_in = spine_width_in
+        book.page_count = page_count
+        book.visual_style = visual_style
+        book.status = "IN_PRODUCTION"
+        book = store.books.save(book)
+    else:
+        book = store.books.save(
+            BookRecord(
+                slug=target_slug,
+                title=book_title,
+                subtitle=subtitle,
+                volume=volume,
+                imprint=imprint,
+                target_audience=target_audience,
+                layout=layout,
+                bleed=bleed,
+                trim_width_in=trim_width_in,
+                trim_height_in=trim_height_in,
+                spine_width_in=spine_width_in,
+                page_count=page_count,
+                visual_style=visual_style,
+                status="IN_PRODUCTION",
+            )
+        )
+
+    store.active_book = book
 
     migrated_pages = 0
     # Ingest manifest definitions
@@ -132,6 +285,7 @@ def db_migrate_from_fs(
             store.pages.save_page(p)
             migrated_pages += 1
 
+    migrated_prompts = 0
     # Ingest pipeline_state.json if present
     if state_path.exists():
         with open(state_path, encoding="utf-8") as f:
@@ -140,37 +294,113 @@ def db_migrate_from_fs(
             clean_kwargs = {k: v for k, v in rec.items() if k != "page_id"}
             store.update_page(p_id, **clean_kwargs)
 
-    console.print(
-        Panel.fit(
-            f"[bold green]Successfully migrated {migrated_pages} pages into database for '{book.title}'![/bold green]",
-            title="[bold green]Migration Complete[/bold green]",
-            border_style="green",
-        )
-    )
+            # Ingest prompt if enabled and prompt is present
+            if include_prompts and rec.get("positive_prompt"):
+                prompt_type = (
+                    "welcome_page"
+                    if p_id == "P001"
+                    else (
+                        "certificate_page" if p_id in ["P109", "P110"] else "interior_page"
+                    )
+                )
+                existing_pr = store.prompts.get_prompt(book.id, p_id, prompt_type)
+                pr_id = existing_pr.id if existing_pr else str(uuid4())
+                pr = PromptRecord(
+                    id=pr_id,
+                    book_id=book.id,
+                    page_id=p_id,
+                    prompt_type=prompt_type,
+                    positive_prompt=rec["positive_prompt"],
+                    negative_prompt=rec.get("negative_prompt", "") or "",
+                    is_locked=True,
+                )
+                store.prompts.save_prompt(pr)
+                migrated_prompts += 1
+
+    # Ingest standalone prompt exports if present (e.g. cover & special assets)
+    prompts_export_file = Path("generated/prompts_export.json")
+    if include_prompts and prompts_export_file.exists():
+        try:
+            with open(prompts_export_file, encoding="utf-8") as f:
+                pe_data = json.load(f)
+            for item in pe_data.get("prompts", []):
+                p_id = item.get("id")
+                p_type = item.get("type", "interior_page")
+                if p_type in ["front_cover", "back_cover", "special_asset"]:
+                    existing_pr = store.prompts.get_prompt(book.id, p_id, p_type)
+                    pr_id = existing_pr.id if existing_pr else str(uuid4())
+                    pr = PromptRecord(
+                        id=pr_id,
+                        book_id=book.id,
+                        page_id=p_id,
+                        prompt_type=p_type,
+                        positive_prompt=item.get("positive_prompt", ""),
+                        negative_prompt=item.get("negative_prompt", "") or "",
+                        temperature=item.get("temperature", 0.9),
+                        top_p=item.get("top_p", 0.95),
+                        aspect_ratio=item.get("aspect_ratio", "3:4"),
+                        preset_name=item.get("preset_name", "CurioKraft - Cover Art Master"),
+                        is_locked=True,
+                    )
+                    store.prompts.save_prompt(pr)
+                    migrated_prompts += 1
+        except Exception as e:
+            logger.debug(f"Notice reading prompts export file: {e}")
+
+    # Ingest images and media assets into DB and S3/MinIO
+    migrated_assets = 0
+    if include_images:
+        console.print("[cyan]Scanning on-disk images and indexing into database & storage...[/cyan]")
+        migrated_assets = _scan_and_index_all_assets(store)
+
+    table = Table(title=f"Migration Complete: {book.title} ({book.slug})")
+    table.add_column("Entity", style="cyan")
+    table.add_column("Migrated Count", style="green")
+    table.add_row("Pages", str(migrated_pages))
+    table.add_row("Prompts", str(migrated_prompts))
+    table.add_row("Media Assets (CAS Indexed)", str(migrated_assets))
+    table.add_row("Storage Backend", store.storage.__class__.__name__)
+    console.print(table)
 
 
 @db_app.command("sync-assets")
 def db_sync_assets(
-    directory: Path = typer.Option(
-        Path("output/interior_masters"), "--dir", "-d", help="Directory to scan"
+    directory: Path | None = typer.Option(
+        None, "--dir", "-d", help="Directory to scan (default: output/interior_masters)"
     ),
     asset_type: str = typer.Option("composite_master", "--type", "-t"),
+    all_assets: bool = typer.Option(
+        False,
+        "--all",
+        "-a",
+        help="Scan and sync all standard directories (masters, raw, covers, pdfs)",
+    ),
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug in database"),
 ):
     """Scan directory of images, compute SHA-256 hashes, and index into media_assets."""
-    store = get_data_store()
-    if not directory.exists():
-        console.print(f"[yellow]Directory {directory} does not exist.[/yellow]")
+    store = get_data_store(book_slug=slug)
+    if all_assets:
+        console.print(
+            f"[cyan]Scanning and indexing ALL asset categories for '{store.active_book.slug}'...[/cyan]"
+        )
+        indexed = _scan_and_index_all_assets(store)
+        console.print(
+            f"[bold green]Indexed {indexed} media assets with SHA-256 content hashes.[/bold green]"
+        )
+        return
+
+    target_dir = directory or Path("output/interior_masters")
+    if not target_dir.exists():
+        console.print(f"[yellow]Directory {target_dir} does not exist.[/yellow]")
         return
 
     valid_exts = {".png", ".jpg", ".jpeg", ".webp", ".pdf"}
-    files = [f for f in directory.iterdir() if f.is_file() and f.suffix.lower() in valid_exts]
+    files = [f for f in target_dir.iterdir() if f.is_file() and f.suffix.lower() in valid_exts]
 
-    console.print(f"[cyan]Indexing {len(files)} files from {directory}...[/cyan]")
+    console.print(f"[cyan]Indexing {len(files)} files from {target_dir}...[/cyan]")
     indexed = 0
     for f in files:
         # Determine page_id from name if possible (e.g. page_001.png -> P001)
-        import re
-
         m = re.search(r"(\d+)", f.stem)
         page_id = f"P{int(m.group(1)):03d}" if m else None
 

@@ -12,6 +12,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
@@ -300,31 +301,79 @@ class HybridDataStore:
         sha256 = compute_sha256(p)
         file_size = p.stat().st_size
 
-        # Check if asset already indexed
-        existing = self.assets.find_by_hash(sha256)
-        if existing:
-            logger.info(
-                f"Asset {p.name} identical to existing asset {existing.id} (SHA-256 match)."
-            )
-            return existing
-
-        # Upload to configured storage backend if cloud is enabled
-        storage_key = f"{self.active_book.slug}/{asset_type}/{p.name}"
-        if not isinstance(self.storage, get_storage_backend(backend_type="local").__class__):
-            uploaded_uri = self.storage.upload_file(str(p), storage_key)
-            backend_name = "s3_r2"
+        # Check if asset already registered for this book and page
+        if page_id:
+            page_assets = self.assets.list_assets_for_page(self.active_book.id, page_id)
+            existing_for_page = next((a for a in page_assets if a.asset_type == asset_type), None)
+            if existing_for_page and existing_for_page.sha256_hash == sha256:
+                logger.info(
+                    f"Asset {p.name} already registered for book {self.active_book.slug} page {page_id}."
+                )
+                return existing_for_page
         else:
-            uploaded_uri = str(p)
-            backend_name = "local_disk"
+            existing_for_page = None
 
+        # Extract image metadata
+        width_px = 2550
+        height_px = 3300
+        dpi = 300
+        color_mode = "L"
+        mime_type = "image/png"
+        suffix = p.suffix.lower()
+
+        if suffix in [".png", ".jpg", ".jpeg", ".webp"]:
+            try:
+                from PIL import Image
+
+                with Image.open(p) as img:
+                    width_px, height_px = img.size
+                    color_mode = img.mode
+                    info_dpi = img.info.get("dpi")
+                    if info_dpi and isinstance(info_dpi, tuple):
+                        dpi = int(info_dpi[0])
+                    mime_type = f"image/{suffix.replace('.', '')}"
+                    if suffix in [".jpg", ".jpeg"]:
+                        mime_type = "image/jpeg"
+            except Exception as e:
+                logger.debug(f"Could not extract PIL metadata for {p}: {e}")
+        elif suffix == ".pdf":
+            mime_type = "application/pdf"
+            color_mode = "CMYK" if "cmyk" in p.name.lower() else "RGB"
+
+        # Check if hash already exists in DB (CAS deduplication)
+        existing_hash = self.assets.find_by_hash(sha256)
+        if existing_hash and existing_hash.storage_key:
+            # CAS: Reuse the existing stored object without re-uploading duplicate bytes
+            uploaded_uri = existing_hash.storage_key
+            backend_name = existing_hash.storage_backend
+            logger.info(
+                f"Asset {p.name} (SHA-256 {sha256[:8]}) reuses storage key: {uploaded_uri}"
+            )
+        else:
+            # Upload to configured storage backend if cloud is enabled
+            storage_key = f"{self.active_book.slug}/{asset_type}/{p.name}"
+            if not isinstance(self.storage, get_storage_backend(backend_type="local").__class__):
+                uploaded_uri = self.storage.upload_file(str(p), storage_key)
+                backend_name = "s3_r2"
+            else:
+                uploaded_uri = str(p)
+                backend_name = "local_disk"
+
+        asset_id = existing_for_page.id if existing_for_page else str(uuid4())
         asset = MediaAssetRecord(
+            id=asset_id,
             book_id=self.active_book.id,
             page_id=page_id,
             asset_type=asset_type,
             storage_backend=backend_name,
             storage_key=uploaded_uri,
             sha256_hash=sha256,
+            width_px=width_px,
+            height_px=height_px,
+            dpi=dpi,
+            color_mode=color_mode,
             file_size_bytes=file_size,
+            mime_type=mime_type,
         )
         return self.assets.save_asset(asset)
 
