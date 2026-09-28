@@ -122,6 +122,75 @@ def test_corrupt_state_file_falls_back_to_the_manifest(tmp_path: Path):
     assert json.loads(state_file.read_text(encoding="utf-8"))["total_pages"] == 3
 
 
+def test_corrupt_state_file_is_logged_but_does_not_crash(tmp_path: Path):
+    """Corrupt state file should be logged as error but system should continue with manifest-based initialization."""
+    state_file = tmp_path / "pipeline_state.json"
+    # Create clearly corrupt JSON
+    state_file.write_text('{"invalid": json content}', encoding="utf-8")
+    manifest = _manifest(tmp_path)
+
+    # Capture log output
+    import logging
+    from io import StringIO
+
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.orchestrator.state_manager")
+    logger.addHandler(handler)
+    logger.setLevel(logging.ERROR)
+
+    try:
+        mgr = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+
+        # Should have logged the corruption error
+        log_output = log_stream.getvalue()
+        assert "Corrupt pipeline state file" in log_output
+        assert str(state_file) in log_output
+
+        # Should still initialize pages from manifest
+        assert sorted(mgr.pages) == ["P005", "P006", "P007"]
+        assert all(p.status == PageStatus.PLANNED for p in mgr.pages.values())
+
+        # On next save, should create valid state file
+        mgr.save()
+        recovered_data = json.loads(state_file.read_text(encoding="utf-8"))
+        assert recovered_data["total_pages"] == 3
+        assert "pages" in recovered_data
+    finally:
+        logger.removeHandler(handler)
+
+
+def test_unexpected_error_loading_state_file_is_logged_and_reraised(tmp_path: Path, monkeypatch):
+    """An unexpected exception during state file load (e.g. PermissionError or OSError) is logged and re-raised."""
+    state_file = tmp_path / "pipeline_state.json"
+    state_file.write_text('{"pages": {}}', encoding="utf-8")
+    manifest = _manifest(tmp_path)
+
+    import logging
+    from io import StringIO
+
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger("curiokraft_book.orchestrator.state_manager")
+    logger.addHandler(handler)
+    logger.setLevel(logging.ERROR)
+
+    def explode(*_args, **_kwargs):
+        raise PermissionError("Simulated filesystem permission denied")
+
+    try:
+        with monkeypatch.context() as m:
+            m.setattr(json, "load", explode)
+            with pytest.raises(PermissionError, match="Simulated filesystem permission denied"):
+                PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+
+        log_output = log_stream.getvalue()
+        assert "Failed to load pipeline state" in log_output
+        assert str(state_file) in log_output
+    finally:
+        logger.removeHandler(handler)
+
+
 def test_update_page_rejects_unknown_page_ids(tmp_path: Path):
     mgr = PipelineStateManager(
         state_file_path=tmp_path / "state.json", manifest_path=_manifest(tmp_path)
@@ -139,3 +208,44 @@ def test_manager_without_a_manifest_starts_empty(tmp_path: Path):
     assert mgr.pages == {}
     assert mgr.get_page("P005") is None
     assert mgr.get_pages_by_status(PageStatus.PLANNED) == []
+
+
+def test_crash_during_write_leaves_the_previous_state_intact(tmp_path: Path, monkeypatch):
+    """A failure partway through save() must not damage the last good state file.
+
+    With a plain truncating write this fails: open(..., "w") empties the file
+    before json.dump raises, so the previous state is destroyed. The atomic
+    temp-file + replace pattern is what keeps the old state readable.
+    """
+    state_file = tmp_path / "pipeline_state.json"
+    manifest = _manifest(tmp_path)
+
+    mgr = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+    mgr.update_page("P005", status=PageStatus.APPROVED, qa_passed=True, qa_score=95.0)
+
+    before = state_file.read_text(encoding="utf-8")
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("simulated crash mid-write")
+
+    # Fail the real save() at the json.dump call, after the temp file is opened.
+    with monkeypatch.context() as m:
+        m.setattr(json, "dump", explode)
+        with pytest.raises(RuntimeError, match="simulated crash mid-write"):
+            mgr.update_page("P006", status=PageStatus.APPROVED)
+
+    # The published state file is byte-for-byte the pre-crash state, and still parses.
+    assert state_file.read_text(encoding="utf-8") == before
+    on_disk = json.loads(state_file.read_text(encoding="utf-8"))
+    assert on_disk["pages"]["P005"]["status"] == PageStatus.APPROVED.value
+
+    # A cold restart sees the pre-crash state; the lost write simply never landed.
+    recovered = PipelineStateManager(state_file_path=state_file, manifest_path=manifest)
+    assert recovered.get_page("P005").status == PageStatus.APPROVED
+    assert recovered.get_page("P005").qa_score == 95.0
+    assert recovered.get_page("P006").status == PageStatus.PLANNED
+
+    # A later healthy write succeeds and leaves no orphaned temp file behind.
+    recovered.update_page("P006", status=PageStatus.APPROVED)
+    assert not state_file.with_suffix(".tmp").exists()
+    assert json.loads(state_file.read_text(encoding="utf-8"))["total_pages"] == 3
