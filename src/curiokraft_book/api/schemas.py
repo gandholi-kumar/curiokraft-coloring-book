@@ -127,34 +127,13 @@ class BookUpdateRequest(BaseModel):
 # Page Schemas
 # ------------------------------------------------------------------------------
 
+from curiokraft_book.data.base import PageRecord
 
-class PageResponse(BaseModel):
+
+class PageResponse(PageRecord):
     """Serialized book page entity."""
 
-    id: str
-    book_id: str
-    page_id: str
-    page_number: int
-    section: str = "General"
-    canonical_object: str
-    display_label: str
-    page_type: str = "coloring_page"
-    cards: list[dict[str, Any]] = Field(default_factory=list)
-    status: str = "planned"
-    attempts: int = 0
-    max_attempts: int = 3
-    qa_score: float = 0.0
-    qa_passed: bool = False
-    violations: list[str] = Field(default_factory=list)
-    positive_prompt: str | None = None
-    negative_prompt: str | None = None
-    raw_image_path: str | None = None
-    rescued_image_path: str | None = None
-    composite_image_path: str | None = None
-    sync_status: str = "pending_upload"
-    version: int = 1
-    created_at: str
-    updated_at: str
+    pass
 
 
 # ------------------------------------------------------------------------------

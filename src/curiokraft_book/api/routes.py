@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
+
+import anyio
 
 from fastapi import (
     APIRouter,
@@ -222,30 +225,7 @@ async def create_book(
         context={"book_id": saved.id, "slug": saved.slug},
     )
 
-    return BookResponse(
-        id=saved.id,
-        tenant_id=saved.tenant_id,
-        slug=saved.slug,
-        title=saved.title,
-        subtitle=saved.subtitle,
-        volume=saved.volume,
-        imprint=saved.imprint,
-        target_audience=saved.target_audience,
-        layout=saved.layout,
-        bleed=saved.bleed,
-        trim_width_in=saved.trim_width_in,
-        trim_height_in=saved.trim_height_in,
-        spine_width_in=saved.spine_width_in,
-        page_count=saved.page_count,
-        visual_style=saved.visual_style,
-        status=saved.status,
-        sync_status=saved.sync_status.value
-        if hasattr(saved.sync_status, "value")
-        else str(saved.sync_status),
-        version=saved.version,
-        created_at=saved.created_at,
-        updated_at=saved.updated_at,
-    )
+    return _format_book_response(saved)
 
 
 @api_router.get("/books/{book_id}", response_model=BookResponse)
@@ -261,30 +241,7 @@ async def get_book(book_id: str, store: HybridDataStore = Depends(get_store)) ->
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"Book not found: {book_id}"
             )
 
-    return BookResponse(
-        id=book.id,
-        tenant_id=book.tenant_id,
-        slug=book.slug,
-        title=book.title,
-        subtitle=book.subtitle,
-        volume=book.volume,
-        imprint=book.imprint,
-        target_audience=book.target_audience,
-        layout=book.layout,
-        bleed=book.bleed,
-        trim_width_in=book.trim_width_in,
-        trim_height_in=book.trim_height_in,
-        spine_width_in=book.spine_width_in,
-        page_count=book.page_count,
-        visual_style=book.visual_style,
-        status=book.status,
-        sync_status=book.sync_status.value
-        if hasattr(book.sync_status, "value")
-        else str(book.sync_status),
-        version=book.version,
-        created_at=book.created_at,
-        updated_at=book.updated_at,
-    )
+    return _format_book_response(book)
 
 
 @api_router.patch("/books/{book_id}", response_model=BookResponse)
@@ -322,30 +279,7 @@ async def update_book(
 
     book.updated_at = datetime.now(timezone.utc).isoformat()
     saved = store.books.save(book)
-    return BookResponse(
-        id=saved.id,
-        tenant_id=saved.tenant_id,
-        slug=saved.slug,
-        title=saved.title,
-        subtitle=saved.subtitle,
-        volume=saved.volume,
-        imprint=saved.imprint,
-        target_audience=saved.target_audience,
-        layout=saved.layout,
-        bleed=saved.bleed,
-        trim_width_in=saved.trim_width_in,
-        trim_height_in=saved.trim_height_in,
-        spine_width_in=saved.spine_width_in,
-        page_count=saved.page_count,
-        visual_style=saved.visual_style,
-        status=saved.status,
-        sync_status=saved.sync_status.value
-        if hasattr(saved.sync_status, "value")
-        else str(saved.sync_status),
-        version=saved.version,
-        created_at=saved.created_at,
-        updated_at=saved.updated_at,
-    )
+    return _format_book_response(saved)
 
 
 # ------------------------------------------------------------------------------
@@ -495,6 +429,31 @@ def _format_page_response(page: PageRecord) -> PageResponse:
         updated_at=page.updated_at,
     )
 
+
+def _format_book_response(book: BookRecord) -> BookResponse:
+    """Format BookRecord to BookResponse."""
+    return BookResponse(
+        id=book.id,
+        tenant_id=book.tenant_id,
+        slug=book.slug,
+        title=book.title,
+        subtitle=book.subtitle,
+        volume=book.volume,
+        imprint=book.imprint,
+        target_audience=book.target_audience,
+        layout=book.layout,
+        bleed=book.bleed,
+        trim_width_in=book.trim_width_in,
+        trim_height_in=book.trim_height_in,
+        spine_width_in=book.spine_width_in,
+        page_count=book.page_count,
+        visual_style=book.visual_style,
+        status=book.status,
+        sync_status=book.sync_status.value if hasattr(book.sync_status, "value") else str(book.sync_status),
+        version=book.version,
+        created_at=book.created_at,
+        updated_at=book.updated_at,
+    )
 
 def _match_file_to_page(file_stem: str, pages: list[PageRecord]) -> PageRecord | None:
     """Match a filename or stem against candidate book pages using page number, id, or canonical object."""

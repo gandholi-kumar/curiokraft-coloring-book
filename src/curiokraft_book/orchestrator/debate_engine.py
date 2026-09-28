@@ -12,6 +12,7 @@ To create a new volume: provide a new manifest with different "cards" arrays —
 import json
 import logging
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -81,23 +82,35 @@ def _safe_resolve_manifest_path(path: str | Path | None) -> Path | None:
     if ".." in raw_p.parts:
         return None
 
+    # Restrict resolution strictly to trusted roots (cwd, pkg_root, system temp)
+    allowed_roots = [
+        Path.cwd().resolve(),
+        Path(__file__).resolve().parent.parent.parent.parent,
+        Path(tempfile.gettempdir()).resolve(),
+    ]
+
     try:
         if raw_p.is_absolute():
             resolved = raw_p.resolve()
-            if resolved.is_file():
-                return resolved
+            for root in allowed_roots:
+                try:
+                    if resolved.is_relative_to(root) and resolved.is_file():
+                        return resolved
+                except (ValueError, OSError):
+                    # Continue checking next allowed root
+                    continue
+            return None
     except (ValueError, OSError):
+        # Ignore resolution failure for malformed paths
         return None
 
-    root = Path.cwd().resolve()
-    pkg_root = Path(__file__).resolve().parent.parent.parent.parent
-    candidates = [root / raw_p, pkg_root / raw_p]
-    for c in candidates:
+    for root in allowed_roots:
         try:
-            res = c.resolve()
-            if (res.is_relative_to(root) or res.is_relative_to(pkg_root)) and res.is_file():
-                return res
+            cand = (root / raw_p).resolve()
+            if cand.is_relative_to(root) and cand.is_file():
+                return cand
         except (ValueError, OSError):
+            # Continue checking next allowed root
             continue
     return None
 
@@ -3416,7 +3429,8 @@ def synthesize_prompts(
                 data = json.load(mf)
                 all_pages = data.get("pages", [])
         except Exception as e:
-            logger.warning("Failed to read manifest %s: %s", resolved_manifest.name, e)
+            clean_err = re.sub(r"[\r\n\t]", " ", str(e))
+            logger.warning("Failed to read manifest file: %s", clean_err)
 
     # 2. Filter target pages
     if selected_pages:

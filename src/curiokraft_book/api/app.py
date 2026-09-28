@@ -117,13 +117,10 @@ def create_app(
         @app.get("/{full_path:path}", include_in_schema=False)
         async def serve_spa(full_path: str) -> FileResponse:
             """Catch-all route returning index.html for SPA client-side routing."""
-            if ".." not in full_path and not full_path.startswith(("/", "\\")):
-                try:
-                    candidate = (resolved_static / full_path).resolve()
-                    if candidate.is_relative_to(resolved_static.resolve()) and candidate.is_file():
-                        return FileResponse(candidate)
-                except (ValueError, OSError):
-                    pass
+            if full_path == "favicon.ico":
+                fav = resolved_static / "favicon.ico"
+                if fav.is_file():
+                    return FileResponse(fav)
             return FileResponse(resolved_static / "index.html")
     else:
 

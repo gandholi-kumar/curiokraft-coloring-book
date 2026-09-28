@@ -42,6 +42,7 @@ def _isolate_database_and_storage(monkeypatch, tmp_path):
 
         reset_global_data_store()
     except ImportError:
+        # Hybrid store might not be available during early test initialization
         pass
     yield
     try:
@@ -49,6 +50,7 @@ def _isolate_database_and_storage(monkeypatch, tmp_path):
 
         reset_global_data_store()
     except ImportError:
+        # Hybrid store might not be available during test teardown
         pass
 
 
