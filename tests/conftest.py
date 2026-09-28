@@ -29,6 +29,29 @@ def _no_live_image_api(monkeypatch):
     assert not hits, f"test reached a live image API: {hits}; pass source_mode='mock'"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_database_and_storage(monkeypatch, tmp_path):
+    """Ensure tests are strictly isolated from production DB and cloud S3."""
+    db_file = tmp_path / "test_suite_isolated.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_file}")
+    monkeypatch.setenv("STORAGE_BACKEND", "local")
+    monkeypatch.delenv("REMOTE_DATABASE_URL", raising=False)
+    monkeypatch.delenv("S3_ENDPOINT_URL", raising=False)
+    try:
+        from curiokraft_book.data.hybrid_store import reset_global_data_store
+
+        reset_global_data_store()
+    except ImportError:
+        pass
+    yield
+    try:
+        from curiokraft_book.data.hybrid_store import reset_global_data_store
+
+        reset_global_data_store()
+    except ImportError:
+        pass
+
+
 @pytest.fixture
 def sandbox_cwd(tmp_path, monkeypatch):
     """Run a test with the process cwd redirected to a temp directory.

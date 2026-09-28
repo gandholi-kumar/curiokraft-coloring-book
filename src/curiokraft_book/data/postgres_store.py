@@ -12,6 +12,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from dotenv import load_dotenv
@@ -57,13 +58,15 @@ class SQLDatabaseManager:
         elif self.db_url.startswith("postgresql://") and "+psycopg" not in self.db_url:
             self.db_url = self.db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
-        connect_args = {}
+        connect_args: dict[str, Any] = {}
         if self.db_url.startswith("sqlite"):
             connect_args = {"check_same_thread": False}
             # Ensure parent directory exists for SQLite file
             db_path = self.db_url.replace("sqlite:///", "")
             if db_path and db_path != ":memory:":
                 Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        elif "postgresql" in self.db_url or "postgres" in self.db_url:
+            connect_args = {"connect_timeout": 3}
 
         self.engine = create_engine(
             self.db_url,

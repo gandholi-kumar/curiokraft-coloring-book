@@ -70,19 +70,42 @@ def _safe_load_yaml(path: str) -> dict:
         return {}
 
 
+def _safe_resolve_manifest_path(path: str | Path | None) -> Path | None:
+    """Safely resolve a manifest or config path within allowed roots.
+
+    Guards against path traversal and uncontrolled path expression exploits.
+    """
+    if not path:
+        return None
+    raw_p = Path(path)
+    if ".." in raw_p.parts:
+        return None
+
+    try:
+        if raw_p.is_absolute():
+            resolved = raw_p.resolve()
+            if resolved.is_file():
+                return resolved
+    except (ValueError, OSError):
+        return None
+
+    root = Path.cwd().resolve()
+    pkg_root = Path(__file__).resolve().parent.parent.parent.parent
+    candidates = [root / raw_p, pkg_root / raw_p]
+    for c in candidates:
+        try:
+            res = c.resolve()
+            if (res.is_relative_to(root) or res.is_relative_to(pkg_root)) and res.is_file():
+                return res
+        except (ValueError, OSError):
+            continue
+    return None
+
+
 def _load_json(path: str) -> dict:
     """Load a JSON manifest file relative to cwd or package root."""
-    p = Path(path)
-    if not p.is_absolute():
-        candidates = [
-            Path.cwd() / path,
-            Path(__file__).parent.parent.parent.parent / path,
-        ]
-        for c in candidates:
-            if c.exists():
-                p = c
-                break
-    if not p.exists():
+    p = _safe_resolve_manifest_path(path)
+    if not p or not p.exists() or not p.is_file():
         return {}
     with open(p, encoding="utf-8") as f:
         return json.load(f) or {}
@@ -1333,17 +1356,8 @@ class DebateEngine:
         # Dynamic page count from manifest
         page_count = 110
         try:
-            m_p = Path(manifest_path)
-            if not m_p.is_absolute():
-                candidates = [
-                    Path.cwd() / manifest_path,
-                    Path(__file__).parent.parent.parent.parent / manifest_path,
-                ]
-                for c in candidates:
-                    if c.exists():
-                        m_p = c
-                        break
-            if m_p.exists():
+            m_p = _safe_resolve_manifest_path(manifest_path)
+            if m_p and m_p.is_file():
                 with open(m_p, encoding="utf-8") as mf:
                     m_data = json.load(mf)
                     page_count = len(m_data.get("pages", [])) or 110
@@ -2793,19 +2807,9 @@ def extract_cover_showcase_cards(
       - category_name: Educational category label
       - description: Clean 2D coloring book line art description
     """
-    m_p = Path(manifest_path)
-    if not m_p.is_absolute():
-        candidates = [
-            Path.cwd() / manifest_path,
-            Path(__file__).parent.parent.parent.parent / manifest_path,
-        ]
-        for c in candidates:
-            if c.exists():
-                m_p = c
-                break
-
+    m_p = _safe_resolve_manifest_path(manifest_path)
     pages = []
-    if m_p.exists():
+    if m_p and m_p.is_file():
         try:
             with open(m_p, encoding="utf-8") as f:
                 data = json.load(f)
@@ -2925,20 +2929,10 @@ def extract_front_cover_ensemble(
     book_config_path: str = str(DEFAULT_BOOK_CONFIG),
 ) -> tuple[str, list[str], int]:
     """Dynamically discover the hero character, companion objects, and page count from active manifest."""
-    m_p = Path(manifest_path)
-    if not m_p.is_absolute():
-        candidates = [
-            Path.cwd() / manifest_path,
-            Path(__file__).parent.parent.parent.parent / manifest_path,
-        ]
-        for c in candidates:
-            if c.exists():
-                m_p = c
-                break
-
+    m_p = _safe_resolve_manifest_path(manifest_path)
     pages = []
     page_count = 110
-    if m_p.exists():
+    if m_p and m_p.is_file():
         try:
             with open(m_p, encoding="utf-8") as f:
                 data = json.load(f)
@@ -3414,25 +3408,15 @@ def synthesize_prompts(
     )
 
     # 1. Resolve manifest path
-    resolved_manifest = Path(manifest_path or DEFAULT_PAGES_MANIFEST)
-    if not resolved_manifest.is_absolute():
-        candidates = [
-            Path.cwd() / resolved_manifest,
-            Path(__file__).parent.parent.parent.parent / resolved_manifest,
-        ]
-        for c in candidates:
-            if c.exists():
-                resolved_manifest = c
-                break
-
+    resolved_manifest = _safe_resolve_manifest_path(manifest_path or DEFAULT_PAGES_MANIFEST)
     all_pages: list[dict[str, Any]] = []
-    if resolved_manifest.exists():
+    if resolved_manifest and resolved_manifest.is_file():
         try:
             with open(resolved_manifest, encoding="utf-8") as mf:
                 data = json.load(mf)
                 all_pages = data.get("pages", [])
         except Exception as e:
-            logger.warning(f"Failed to read manifest {resolved_manifest}: {e}")
+            logger.warning("Failed to read manifest %s: %s", resolved_manifest.name, e)
 
     # 2. Filter target pages
     if selected_pages:

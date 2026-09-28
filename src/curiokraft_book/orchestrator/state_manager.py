@@ -4,8 +4,9 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from curiokraft_book.constants import (
     DEFAULT_PAGES_MANIFEST,
@@ -52,6 +53,24 @@ class PageStateRecord(BaseModel):
     display_label: str
     section: str
     status: PageStatus = PageStatus.PLANNED
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_upper = v.upper()
+            if v_upper in ("RECEIVED", "RECEIVING"):
+                return PageStatus.GENERATED
+            if v_upper in ("RESCUING",):
+                return PageStatus.GENERATING
+            if v_upper in ("PASSED",):
+                return PageStatus.TECHNICAL_QA_PASSED
+            try:
+                return PageStatus(v_upper)
+            except ValueError:
+                pass
+        return v
+
     attempts: int = 0
     max_attempts: int = MAX_RETRY_ATTEMPTS
     positive_prompt: str | None = None
@@ -86,7 +105,10 @@ class PipelineStateManager:
             from curiokraft_book.data.hybrid_store import get_data_store
 
             # Only attach global store if using default production paths or explicit book_slug
-            if Path(state_file_path) == Path(DEFAULT_PIPELINE_STATE_FILE) or book_slug:
+            if (
+                Path(state_file_path) == Path(DEFAULT_PIPELINE_STATE_FILE)
+                and Path(manifest_path) == Path(DEFAULT_PAGES_MANIFEST)
+            ) or book_slug:
                 self.data_store = get_data_store(book_slug=book_slug)
         except Exception as e:
             self.logger.debug(f"HybridDataStore notice: {e}")

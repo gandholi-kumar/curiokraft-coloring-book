@@ -568,7 +568,7 @@ async def upload_book_raw_pages(
         if matched_page:
             raw_rel_path = f"/inbox/raw_pages/{safe_name}"
             rescued_rel_path = matched_page.rescued_image_path
-            new_status = "received"
+            new_status = "GENERATED"
 
             if auto_rescue:
                 canon_str = matched_page.canonical_object or dest_path.stem
@@ -578,7 +578,7 @@ async def upload_book_raw_pages(
                     res = rescue_binarize(input_path=dest_path, output_path=rescued_dest)
                     if res.success and rescued_dest.exists() and rescued_dest.stat().st_size > 0:
                         rescued_rel_path = f"/generated/raw_pages/{rescued_name}"
-                        new_status = "rescued"
+                        new_status = "RESCUED"
                         rescued_count += 1
                 except Exception as e:
                     logger.warning(f"Auto-rescue binarization failed for {dest_path.name}: {e}")
@@ -666,13 +666,13 @@ async def scan_book_inbox_pages(
                         res = rescue_binarize(input_path=file_path, output_path=rescued_dest)
                         if res.success and rescued_dest.exists():
                             rescued_rel_path = f"/generated/raw_pages/{rescued_name}"
-                            new_status = "rescued"
+                            new_status = "RESCUED"
                             rescued_count += 1
                     except Exception as e:
                         logger.warning(f"Rescue failed during scan for {file_path.name}: {e}")
                 else:
                     rescued_rel_path = f"/generated/raw_pages/{rescued_name}"
-                    new_status = "rescued"
+                    new_status = "RESCUED"
                     rescued_count += 1
 
             updated_page = store.update_page(
@@ -851,17 +851,34 @@ async def get_book_production_status(
 
     pages = store.pages.get_pages_for_book(book_id)
     total_pages = len(pages) or target_pages
-    planned = sum(1 for p in pages if p.status == "planned")
+    planned = sum(1 for p in pages if (p.status or "").upper() == "PLANNED")
     inbox_received = sum(
         1
         for p in pages
-        if p.raw_image_path is not None or p.status in ("received", "rescuing", "rescued", "passed")
+        if p.raw_image_path is not None
+        or (p.status or "").upper()
+        in ("RECEIVED", "GENERATED", "RESCUING", "RESCUED", "PASSED", "APPROVED", "COMPOSITED")
     )
     rescued = sum(
-        1 for p in pages if p.rescued_image_path is not None or p.status in ("rescued", "passed")
+        1
+        for p in pages
+        if p.rescued_image_path is not None
+        or (p.status or "").upper()
+        in ("RESCUED", "PASSED", "APPROVED", "COMPOSITED", "TECHNICAL_QA_PASSED")
     )
-    qa_passed = sum(1 for p in pages if p.qa_passed or p.status == "passed")
-    composited = sum(1 for p in pages if p.composite_image_path is not None)
+    qa_passed = sum(
+        1
+        for p in pages
+        if p.qa_passed
+        or (p.status or "").upper()
+        in ("PASSED", "TECHNICAL_QA_PASSED", "VISION_QA_PASSED", "APPROVED", "COMPOSITED")
+    )
+    composited = sum(
+        1
+        for p in pages
+        if p.composite_image_path is not None
+        or (p.status or "").upper() in ("COMPOSITED", "APPROVED")
+    )
 
     prompts = store.prompts.list_prompts_for_book(book_id)
     prompts_count = len(prompts)

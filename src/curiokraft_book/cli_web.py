@@ -31,6 +31,7 @@ def _open_browser_delayed(url: str, delay_seconds: float = 1.2) -> None:
         try:
             webbrowser.open(url)
         except Exception:
+            # Best-effort browser launch; safely ignore failures in headless environments
             pass
 
     threading.Thread(target=_target, daemon=True).start()
