@@ -21,6 +21,7 @@ wheels/
 *.egg
 .pytest_cache/
 dont-delete-alter/
+.mypy_cache/
 
 # Virtual Environments
 .venv/
