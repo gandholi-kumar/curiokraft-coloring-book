@@ -38,6 +38,7 @@ from curiokraft_book.data.base import (
 )
 from curiokraft_book.data.hybrid_store import HybridDataStore, get_data_store
 from curiokraft_book.data.sync_engine import SyncEngine
+from curiokraft_book.data.cloud_promoter import CloudPromoter
 
 load_dotenv()
 
@@ -595,3 +596,96 @@ def db_export_to_fs(
     console.print(
         f"[bold green]Exported {len(pages_dict)} pages from DB to {output_path}![/bold green]"
     )
+
+
+@db_app.command("push-to-cloud")
+def db_push_to_cloud(
+    slug: str | None = typer.Option(None, "--slug", help="Target book slug to promote to cloud"),
+    all_books: bool = typer.Option(False, "--all", "-a", help="Promote all un-promoted books and pending pages"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview promotion without uploading or modifying cloud"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force re-upload of media assets even if hash is present in cloud"),
+):
+    """Incrementally promote local books, pages, prompts, and media assets to Neon & Backblaze B2."""
+    promoter = CloudPromoter()
+    if not promoter.is_cloud_configured():
+        console.print(
+            "[bold red]Cloud configuration missing or unreachable![/bold red]\n"
+            "Ensure CLOUD_DATABASE_URL and cloud storage credentials are set in .env."
+        )
+        raise typer.Exit(code=1)
+
+    target_slug = slug
+    if not target_slug and not all_books:
+        # Default to active book in book_config.yaml
+        target_slug = promoter.local_store.active_book.slug
+        console.print(f"[cyan]No slug specified; defaulting to active volume: '{target_slug}'[/cyan]")
+
+    if all_books:
+        console.print("[cyan]Promoting ALL pending/un-migrated volumes to Neon & Backblaze B2...[/cyan]")
+        reports = promoter.promote_all_pending(dry_run=dry_run, force_upload=force)
+        if not reports:
+            console.print("[bold green]All books are already in sync with the cloud![/bold green]")
+            return
+    else:
+        reports = [promoter.promote_book(slug=target_slug, dry_run=dry_run, force_upload=force)]
+
+    for rep in reports:
+        if rep.success:
+            prefix = "[DRY-RUN] " if rep.dry_run else ""
+            console.print(
+                Panel.fit(
+                    f"[bold green]{prefix}Promotion Succeeded for '{rep.book_title}' ({rep.book_slug})[/bold green]\n\n"
+                    f"• Pushed Books: [bold yellow]{rep.pushed_books}[/bold yellow]\n"
+                    f"• Pushed Pages: [bold yellow]{rep.pushed_pages}[/bold yellow]\n"
+                    f"• Pushed Prompts: [bold yellow]{rep.pushed_prompts}[/bold yellow]\n"
+                    f"• Uploaded Media Assets: [bold yellow]{rep.pushed_assets}[/bold yellow] ({rep.bytes_uploaded / (1024*1024):.2f} MB)\n"
+                    f"• Reused Existing Cloud Assets: [bold green]{rep.skipped_assets_reused}[/bold green]",
+                    title="[bold green]Cloud Promotion Report[/bold green]",
+                    border_style="green",
+                )
+            )
+        else:
+            console.print(
+                Panel.fit(
+                    f"[bold red]Promotion Failed for '{rep.book_slug}':[/bold red]\n" + "\n".join(rep.errors),
+                    title="[bold red]Cloud Promotion Error[/bold red]",
+                    border_style="red",
+                )
+            )
+            raise typer.Exit(code=1)
+
+
+@db_app.command("cloud-status")
+def db_cloud_status():
+    """Compare local database catalog against Neon PostgreSQL cloud catalog."""
+    promoter = CloudPromoter()
+    if not promoter.is_cloud_configured():
+        console.print("[bold red]Cloud target (Neon) not configured in .env.[/bold red]")
+        raise typer.Exit(code=1)
+
+    diff = promoter.get_catalog_diff()
+    table = Table(title="CurioKraft Local vs Cloud Catalog Status")
+    table.add_column("Category", style="cyan")
+    table.add_column("Count", style="green")
+    table.add_column("Details", style="dim")
+
+    table.add_row("Total Local Books", str(diff["local_total"]))
+    table.add_row("Total Cloud Books", str(diff["cloud_total"]))
+    table.add_row(
+        "Fully Synced Books",
+        str(len(diff["in_sync"])),
+        ", ".join(b.slug for b in diff["in_sync"]) if diff["in_sync"] else "None",
+    )
+    table.add_row(
+        "Un-Promoted Books",
+        str(len(diff["unpromoted"])),
+        ", ".join(b.slug for b in diff["unpromoted"]) if diff["unpromoted"] else "None",
+    )
+    table.add_row(
+        "Partially Synced Books",
+        str(len(diff["partial"])),
+        ", ".join(f"{b.slug} (local={l_cnt}, cloud={c_cnt})" for b, l_cnt, c_cnt in diff["partial"]) if diff["partial"] else "None",
+    )
+
+    console.print(table)
+

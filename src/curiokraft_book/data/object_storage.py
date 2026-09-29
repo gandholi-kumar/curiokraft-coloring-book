@@ -2,7 +2,7 @@
 
 Supports:
 1. LocalFileSystemStorage: Zero-dependency local storage for offline development.
-2. S3StorageBackend: S3-compatible cloud storage (Cloudflare R2, MinIO, AWS S3).
+2. S3StorageBackend: S3-compatible cloud storage (Backblaze B2, Cloudflare R2, MinIO, AWS S3).
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ class LocalFileStorageBackend(StorageBackend):
 
 
 class S3StorageBackend(StorageBackend):
-    """S3-compatible object storage adapter (Cloudflare R2, MinIO, AWS S3)."""
+    """S3-compatible object storage adapter (Backblaze B2, Cloudflare R2, MinIO, AWS S3)."""
 
     def __init__(
         self,
@@ -91,6 +91,11 @@ class S3StorageBackend(StorageBackend):
 
         self.bucket_name = bucket_name
         self.endpoint_url = endpoint_url or os.environ.get("S3_ENDPOINT_URL")
+        resolved_region = (
+            region_name
+            if region_name != "auto"
+            else (os.environ.get("S3_REGION") or "auto")
+        )
         key_id = (
             access_key_id
             or os.environ.get("S3_ACCESS_KEY_ID")
@@ -117,7 +122,7 @@ class S3StorageBackend(StorageBackend):
             endpoint_url=self.endpoint_url,
             aws_access_key_id=key_id,
             aws_secret_access_key=secret_key,
-            region_name=region_name,
+            region_name=resolved_region,
             config=config,
         )
         self._ensure_bucket()
@@ -128,7 +133,7 @@ class S3StorageBackend(StorageBackend):
         except Exception:
             try:
                 self.s3_client.create_bucket(Bucket=self.bucket_name)
-                logger.info(f"Created S3/R2 bucket '{self.bucket_name}'.")
+                logger.info(f"Created S3/R2/B2 bucket '{self.bucket_name}'.")
             except Exception as e:
                 logger.debug(f"Bucket check/create notice: {e}")
 
@@ -197,7 +202,7 @@ def get_storage_backend(
         else:
             mode = "local"
 
-    if mode in ["s3", "r2", "minio"]:
+    if mode in ["s3", "r2", "minio", "b2"]:
         try:
             return S3StorageBackend(bucket_name=bucket_name)
         except Exception as e:

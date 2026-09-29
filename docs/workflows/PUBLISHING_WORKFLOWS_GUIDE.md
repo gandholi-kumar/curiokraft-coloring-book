@@ -340,18 +340,28 @@ curiokraft-book db pull-assets --slug curiokraft-aquatic_vol1 --dir output/vol1_
   [VERIFIED] TINY_HANDS_COLOR_AND_LEARN_Cover_300DPI.png (13,954,329 bytes | SHA-256 match)
   ```
 
-### 3. Bi-Directional Cloud Outbox Synchronization
-Synchronize relational database changes and prompt locks with your remote team:
+### 3. One-Command Cloud Promotion & Outbox Sync
+Promote completed or updated book volumes from local Docker to Neon and Backblaze B2:
 ```powershell
-# Push pending outbox events to Neon PostgreSQL and binaries to Cloudflare R2
-curiokraft-book db sync
+# Compare local vs cloud catalog to see pending volumes
+curiokraft-book db cloud-status
 
-# (Optional) Export database state back to filesystem JSON for backup
+# Preview promotion without modifying cloud (Dry Run)
+curiokraft-book db push-to-cloud --slug curiokraft-vol1 --dry-run
+
+# Promote active book to Neon PostgreSQL & Backblaze B2
+curiokraft-book db push-to-cloud --slug curiokraft-vol1
+
+# Or promote ALL pending volumes at once
+curiokraft-book db push-to-cloud --all
+
+# (Optional) Continuous outbox event sync or export to JSON
+curiokraft-book db sync
 curiokraft-book db export-to-fs
 ```
 
-* **Bi-Directional Sync**: Pushes all locally approved pages, prompt locks, and media hashes to the cloud; pulls remote updates with Last-Write-Wins conflict resolution.
-* **$0 Egress Bandwidth**: Leveraging Cloudflare R2 guarantees zero egress fees for large master PDF and PNG uploads.
+* **Zero-S3 Overhead**: Checks Neon hashes before making any Backblaze B2 calls. Already-uploaded assets incur **$0 S3 Class B fees**.
+* **Atomic Promotion**: Book metadata, pages, prompts, and assets are synchronized in a single unified database transaction.
 
 ---
 
@@ -370,6 +380,7 @@ curiokraft-book cover build
 curiokraft-book assemble interior
 curiokraft-book preflight run
 curiokraft-book kdp generate --no-open
+curiokraft-book db push-to-cloud --dry-run
 curiokraft-book db export-to-fs
 ```
 
@@ -402,7 +413,9 @@ curiokraft-book db export-to-fs
 | **Stage 4: Quality** | `curiokraft-book preflight run` | Run official 18-point KDP diagnostic preflight certificate |
 | **Stage 5: Publish** | `curiokraft-book kdp generate` | 4-agent KDP metadata & 1-click copy dashboard |
 | | `curiokraft-book kdp show` | Display formatted KDP submission table in terminal |
-| | `curiokraft-book db sync` | Bi-directional sync with Neon PostgreSQL and Cloudflare R2 |
+| | `curiokraft-book db cloud-status` | Compare local catalog vs Neon cloud catalog |
+| | `curiokraft-book db push-to-cloud` | Promote book volume to Neon & Backblaze B2 with CAS deduplication |
+| | `curiokraft-book db sync` | Bi-directional transactional outbox replication |
 | | `curiokraft-book db export-to-fs` | Export complete database state back to `pipeline_state.json` |
 | **Diagnostics** | `curiokraft-book debate show -p P005` | Inspect 4-round agent debate transcript for a page |
 
