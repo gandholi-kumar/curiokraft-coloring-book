@@ -92,9 +92,7 @@ class S3StorageBackend(StorageBackend):
         self.bucket_name = bucket_name
         self.endpoint_url = endpoint_url or os.environ.get("S3_ENDPOINT_URL")
         resolved_region = (
-            region_name
-            if region_name != "auto"
-            else (os.environ.get("S3_REGION") or "auto")
+            region_name if region_name != "auto" else (os.environ.get("S3_REGION") or "auto")
         )
         key_id = (
             access_key_id

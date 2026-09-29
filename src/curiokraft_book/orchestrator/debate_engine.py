@@ -1650,7 +1650,8 @@ class DebateEngine:
                 )
             else:
                 front_pill = theme.get("front_pill_text") or (
-                    "50+ MAJESTIC SPECIES • 7 MARINE BIOMES" if theme_id == "ocean"
+                    "50+ MAJESTIC SPECIES • 7 MARINE BIOMES"
+                    if theme_id == "ocean"
                     else f"{page_count}+ MAJESTIC ILLUSTRATIONS • EDUCATIONAL EXPEDITION"
                 )
                 pos = (
@@ -2443,7 +2444,10 @@ class DebateEngine:
                 "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, "
                 "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
             )
-        elif any(w in mascot_lower for w in ["bird", "owl", "robin", "parrot", "eagle", "hawk", "penguin"]):
+        elif any(
+            w in mascot_lower
+            for w in ["bird", "owl", "robin", "parrot", "eagle", "hawk", "penguin"]
+        ):
             psych_rationale = (
                 f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
                 f"Must have an endearing chubby baby anatomy, sweet smiling round eyes, joyful rosy blushing cheeks, and a friendly waving wing to encourage immediate bonding."
@@ -3120,9 +3124,7 @@ def extract_front_cover_ensemble(
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "dinosaurs":
-        hero_char = (
-            f"an adorable vibrant baby {mascot_clean} standing proudly in natural species-authentic posture amidst primeval flora with friendly curious eyes"
-        )
+        hero_char = f"an adorable vibrant baby {mascot_clean} standing proudly in natural species-authentic posture amidst primeval flora with friendly curious eyes"
         dynamic_companions = []
         for p in interior_pages:
             canon = str(p.get("canonical_object", "")).lower()
@@ -3138,9 +3140,7 @@ def extract_front_cover_ensemble(
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "vehicles":
-        hero_char = (
-            f"a cheerful vibrant {mascot_clean} cruising smoothly along a scenic roadway in dynamic three-quarter profile with clean shiny contours and friendly round headlights"
-        )
+        hero_char = f"a cheerful vibrant {mascot_clean} cruising smoothly along a scenic roadway in dynamic three-quarter profile with clean shiny contours and friendly round headlights"
         dynamic_companions = []
         for p in interior_pages:
             canon = str(p.get("canonical_object", "")).lower()
@@ -3152,13 +3152,13 @@ def extract_front_cover_ensemble(
                 "a cheerful sports car on a winding hill",
                 "a sturdy utility truck cruising by",
             ]
-        dynamic_companions.append("gentle rolling green hills, puffy white clouds, and motion speed lines")
+        dynamic_companions.append(
+            "gentle rolling green hills, puffy white clouds, and motion speed lines"
+        )
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "space":
-        hero_char = (
-            f"an adorable vibrant {mascot_clean} soaring smoothly through the cosmos in dynamic upward flight with radiant engine glow and gleaming visor"
-        )
+        hero_char = f"an adorable vibrant {mascot_clean} soaring smoothly through the cosmos in dynamic upward flight with radiant engine glow and gleaming visor"
         dynamic_companions = []
         for p in interior_pages:
             canon = str(p.get("canonical_object", "")).lower()
@@ -3170,13 +3170,13 @@ def extract_front_cover_ensemble(
                 "a cheerful astronaut waving from an observation shuttle",
                 "a colorful ringed planet with orbiting moons",
             ]
-        dynamic_companions.append("twinkling constellation stars, cosmic nebulae, and luminous stardust")
+        dynamic_companions.append(
+            "twinkling constellation stars, cosmic nebulae, and luminous stardust"
+        )
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "fantasy":
-        hero_char = (
-            f"an adorable vibrant {mascot_clean} posing gracefully with elegant wings and shimmering magical aura amidst sparkling pixie dust"
-        )
+        hero_char = f"an adorable vibrant {mascot_clean} posing gracefully with elegant wings and shimmering magical aura amidst sparkling pixie dust"
         dynamic_companions = []
         for p in interior_pages:
             canon = str(p.get("canonical_object", "")).lower()
@@ -3188,7 +3188,9 @@ def extract_front_cover_ensemble(
                 "a friendly unicorn near a rainbow waterfall",
                 "a gentle baby dragon peeking from an enchanted castle turret",
             ]
-        dynamic_companions.append("glowing fairy mushrooms, sparkling crystals, and floating pixie dust")
+        dynamic_companions.append(
+            "glowing fairy mushrooms, sparkling crystals, and floating pixie dust"
+        )
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "geometric_mandala":
@@ -3438,7 +3440,7 @@ def generate_welcome_page_prompt(
     mascot_name = str(b_cfg.get("mascot", {}).get("name") or "").strip().lower()
     if not mascot_name:
         try:
-            m_path = b_cfg.get("manifest", str(DEFAULT_MANIFEST_PATH))
+            m_path = b_cfg.get("manifest", str(DEFAULT_PAGES_MANIFEST))
             mascot_name = auto_pick_volume_mascot(m_path, book_config_path).lower()
         except Exception:
             mascot_name = "dolphin"
@@ -3463,7 +3465,13 @@ def generate_welcome_page_prompt(
             hab_name = "DINOSAUR"
             vignette = "natural prehistoric framing with rolling primeval fern leaves, smooth river boulders, and ancient palm fronds arching along outer edges"
             mascot_desc = f"friendly, wide-eyed baby {mascot_display} standing happily with a welcoming gesture"
-        elif "vehicle" in vol or "car" in vol or "transport" in vol or "vehicle" in title or "car" in title:
+        elif (
+            "vehicle" in vol
+            or "car" in vol
+            or "transport" in vol
+            or "vehicle" in title
+            or "car" in title
+        ):
             hab_name = "TRANSPORTATION"
             vignette = "stylish roadway curves, checkered victory flags, and gentle rolling roadside hills arching along outer edges"
             mascot_desc = f"friendly, cheerful smiling cartoon {mascot_display} centered with headlights looking at viewer"
@@ -3478,7 +3486,9 @@ def generate_welcome_page_prompt(
         elif "mandala" in vol or "geometric" in vol or "mandala" in title:
             hab_name = "MINDFULNESS"
             vignette = "intricate symmetrical geometric mandala borders with harmonic petal flourishes along outer edges"
-            mascot_desc = "an elegant central radiating circular mandala emblem with intricate open petals"
+            mascot_desc = (
+                "an elegant central radiating circular mandala emblem with intricate open petals"
+            )
         elif "air" in vol or "sky" in vol or "bird" in vol:
             hab_name = "SKY"
             vignette = "billowing cloud curves, soaring feather outlines, and wind contours arching along outer edges"
@@ -3486,9 +3496,7 @@ def generate_welcome_page_prompt(
         else:
             hab_name = "WILDLIFE"
             vignette = "branching tree boughs, rounded stones, leafy vines, and woodland foliage arching along outer edges"
-            mascot_desc = (
-                f"friendly, wide-eyed baby {mascot_display} centered with a welcoming paw wave gesture"
-            )
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} centered with a welcoming paw wave gesture"
     else:
         hab_name = habitat.upper()
         vignette = (
@@ -3534,7 +3542,7 @@ def generate_certificate_page_prompt(
     mascot_name = str(b_cfg.get("mascot", {}).get("name") or "").strip().lower()
     if not mascot_name:
         try:
-            m_path = b_cfg.get("manifest", str(DEFAULT_MANIFEST_PATH))
+            m_path = b_cfg.get("manifest", str(DEFAULT_PAGES_MANIFEST))
             mascot_name = auto_pick_volume_mascot(m_path, book_config_path).lower()
         except Exception:
             mascot_name = "dolphin"
@@ -3569,9 +3577,17 @@ def generate_certificate_page_prompt(
                 "spiral ammonite shells, and cycad branches arching along the outer margins "
                 "(strictly NO plain empty rectangles, NO simple box lines)"
             )
-            mascot_desc = f"celebratory baby {mascot_display} in active victory pose amidst ancient ferns"
+            mascot_desc = (
+                f"celebratory baby {mascot_display} in active victory pose amidst ancient ferns"
+            )
             gear_desc = "wearing an explorer paleontologist hat and star ribbon medal"
-        elif "vehicle" in vol or "car" in vol or "transport" in vol or "vehicle" in title or "car" in title:
+        elif (
+            "vehicle" in vol
+            or "car" in vol
+            or "transport" in vol
+            or "vehicle" in title
+            or "car" in title
+        ):
             hab_name = "TRANSPORTATION"
             proclamation_realm = "exciting world of transportation and vehicles"
             border_vignette = (
@@ -3599,7 +3615,9 @@ def generate_certificate_page_prompt(
                 "sparkling crystal gems, delicate butterfly or fairy wing flourishes, and glowing stardust "
                 "(strictly NO plain empty rectangles, NO simple box lines)"
             )
-            mascot_desc = f"celebratory baby {mascot_display} posing victoriously with sparkling fairy wings"
+            mascot_desc = (
+                f"celebratory baby {mascot_display} posing victoriously with sparkling fairy wings"
+            )
             gear_desc = "holding a magical sparkling star wand and ribbon medal"
         elif "mandala" in vol or "geometric" in vol or "mandala" in title:
             hab_name = "MINDFULNESS"
@@ -3609,7 +3627,9 @@ def generate_certificate_page_prompt(
                 "concentric ornamental wave ribbons, and delicate kaleidoscopic lace motifs "
                 "(strictly NO plain empty rectangles, NO simple box lines)"
             )
-            mascot_desc = "celebratory radiant starburst mandala centerpiece with balanced symmetrical crest"
+            mascot_desc = (
+                "celebratory radiant starburst mandala centerpiece with balanced symmetrical crest"
+            )
             gear_desc = "adorned with delicate celebratory laurels and excellence ribbon medal"
         elif "air" in vol or "sky" in vol or "bird" in vol:
             hab_name = "SKY"
@@ -3629,7 +3649,9 @@ def generate_certificate_page_prompt(
                 "wildflowers, and charming animal paw-print accents arching along the outer margins "
                 "(strictly NO plain empty rectangles, NO simple box lines)"
             )
-            mascot_desc = f"celebratory baby {mascot_display} in active victory pose with paws raised high"
+            mascot_desc = (
+                f"celebratory baby {mascot_display} in active victory pose with paws raised high"
+            )
             gear_desc = "wearing a field ranger badge, explorer hat, and star ribbon medal"
     else:
         hab_name = habitat.upper()

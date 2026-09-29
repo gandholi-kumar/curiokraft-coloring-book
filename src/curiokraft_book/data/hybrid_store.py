@@ -346,9 +346,7 @@ class HybridDataStore:
             # CAS: Reuse the existing stored object without re-uploading duplicate bytes
             uploaded_uri = existing_hash.storage_key
             backend_name = existing_hash.storage_backend
-            logger.info(
-                f"Asset {p.name} (SHA-256 {sha256[:8]}) reuses storage key: {uploaded_uri}"
-            )
+            logger.info(f"Asset {p.name} (SHA-256 {sha256[:8]}) reuses storage key: {uploaded_uri}")
         else:
             # Upload to configured storage backend if cloud is enabled
             storage_key = f"{self.active_book.slug}/{asset_type}/{p.name}"

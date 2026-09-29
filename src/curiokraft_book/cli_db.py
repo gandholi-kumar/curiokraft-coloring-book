@@ -12,8 +12,11 @@ Commands:
 from __future__ import annotations
 
 import json
+import logging
+import re
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import typer
 import yaml
@@ -22,9 +25,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-import re
-from uuid import uuid4
-
 from curiokraft_book.constants import (
     DEFAULT_BOOK_CONFIG,
     DEFAULT_PAGES_MANIFEST,
@@ -32,14 +32,14 @@ from curiokraft_book.constants import (
 )
 from curiokraft_book.data.base import (
     BookRecord,
-    MediaAssetRecord,
     PageRecord,
     PromptRecord,
 )
+from curiokraft_book.data.cloud_promoter import CloudPromoter
 from curiokraft_book.data.hybrid_store import HybridDataStore, get_data_store
 from curiokraft_book.data.sync_engine import SyncEngine
-from curiokraft_book.data.cloud_promoter import CloudPromoter
 
+logger = logging.getLogger("curiokraft.cli_db")
 load_dotenv()
 
 db_app = typer.Typer(help="[Data & Cloud] Centralized database and S3/R2 storage operations")
@@ -146,7 +146,7 @@ def db_status(
         prompts = store.prompts.list_prompts_for_book(active_b.id)
         assets = store.assets.list_assets_for_book(active_b.id)
 
-        summary = {}
+        summary: dict[str, int] = {}
         for p in pages:
             summary[p.status] = summary.get(p.status, 0) + 1
 
@@ -300,9 +300,7 @@ def db_migrate_from_fs(
                 prompt_type = (
                     "welcome_page"
                     if p_id == "P001"
-                    else (
-                        "certificate_page" if p_id in ["P109", "P110"] else "interior_page"
-                    )
+                    else ("certificate_page" if p_id in ["P109", "P110"] else "interior_page")
                 )
                 existing_pr = store.prompts.get_prompt(book.id, p_id, prompt_type)
                 pr_id = existing_pr.id if existing_pr else str(uuid4())
@@ -351,7 +349,9 @@ def db_migrate_from_fs(
     # Ingest images and media assets into DB and S3/MinIO
     migrated_assets = 0
     if include_images:
-        console.print("[cyan]Scanning on-disk images and indexing into database & storage...[/cyan]")
+        console.print(
+            "[cyan]Scanning on-disk images and indexing into database & storage...[/cyan]"
+        )
         migrated_assets = _scan_and_index_all_assets(store)
 
     table = Table(title=f"Migration Complete: {book.title} ({book.slug})")
@@ -601,9 +601,18 @@ def db_export_to_fs(
 @db_app.command("push-to-cloud")
 def db_push_to_cloud(
     slug: str | None = typer.Option(None, "--slug", help="Target book slug to promote to cloud"),
-    all_books: bool = typer.Option(False, "--all", "-a", help="Promote all un-promoted books and pending pages"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview promotion without uploading or modifying cloud"),
-    force: bool = typer.Option(False, "--force", "-f", help="Force re-upload of media assets even if hash is present in cloud"),
+    all_books: bool = typer.Option(
+        False, "--all", "-a", help="Promote all un-promoted books and pending pages"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview promotion without uploading or modifying cloud"
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Force re-upload of media assets even if hash is present in cloud",
+    ),
 ):
     """Incrementally promote local books, pages, prompts, and media assets to Neon & Backblaze B2."""
     promoter = CloudPromoter()
@@ -618,15 +627,22 @@ def db_push_to_cloud(
     if not target_slug and not all_books:
         # Default to active book in book_config.yaml
         target_slug = promoter.local_store.active_book.slug
-        console.print(f"[cyan]No slug specified; defaulting to active volume: '{target_slug}'[/cyan]")
+        console.print(
+            f"[cyan]No slug specified; defaulting to active volume: '{target_slug}'[/cyan]"
+        )
 
     if all_books:
-        console.print("[cyan]Promoting ALL pending/un-migrated volumes to Neon & Backblaze B2...[/cyan]")
+        console.print(
+            "[cyan]Promoting ALL pending/un-migrated volumes to Neon & Backblaze B2...[/cyan]"
+        )
         reports = promoter.promote_all_pending(dry_run=dry_run, force_upload=force)
         if not reports:
             console.print("[bold green]All books are already in sync with the cloud![/bold green]")
             return
     else:
+        if not target_slug:
+            console.print("[bold red]No slug specified and no active volume found![/bold red]")
+            raise typer.Exit(code=1)
         reports = [promoter.promote_book(slug=target_slug, dry_run=dry_run, force_upload=force)]
 
     for rep in reports:
@@ -638,7 +654,7 @@ def db_push_to_cloud(
                     f"• Pushed Books: [bold yellow]{rep.pushed_books}[/bold yellow]\n"
                     f"• Pushed Pages: [bold yellow]{rep.pushed_pages}[/bold yellow]\n"
                     f"• Pushed Prompts: [bold yellow]{rep.pushed_prompts}[/bold yellow]\n"
-                    f"• Uploaded Media Assets: [bold yellow]{rep.pushed_assets}[/bold yellow] ({rep.bytes_uploaded / (1024*1024):.2f} MB)\n"
+                    f"• Uploaded Media Assets: [bold yellow]{rep.pushed_assets}[/bold yellow] ({rep.bytes_uploaded / (1024 * 1024):.2f} MB)\n"
                     f"• Reused Existing Cloud Assets: [bold green]{rep.skipped_assets_reused}[/bold green]",
                     title="[bold green]Cloud Promotion Report[/bold green]",
                     border_style="green",
@@ -647,7 +663,8 @@ def db_push_to_cloud(
         else:
             console.print(
                 Panel.fit(
-                    f"[bold red]Promotion Failed for '{rep.book_slug}':[/bold red]\n" + "\n".join(rep.errors),
+                    f"[bold red]Promotion Failed for '{rep.book_slug}':[/bold red]\n"
+                    + "\n".join(rep.errors),
                     title="[bold red]Cloud Promotion Error[/bold red]",
                     border_style="red",
                 )
@@ -684,8 +701,9 @@ def db_cloud_status():
     table.add_row(
         "Partially Synced Books",
         str(len(diff["partial"])),
-        ", ".join(f"{b.slug} (local={l_cnt}, cloud={c_cnt})" for b, l_cnt, c_cnt in diff["partial"]) if diff["partial"] else "None",
+        ", ".join(f"{b.slug} (local={l_cnt}, cloud={c_cnt})" for b, l_cnt, c_cnt in diff["partial"])
+        if diff["partial"]
+        else "None",
     )
 
     console.print(table)
-

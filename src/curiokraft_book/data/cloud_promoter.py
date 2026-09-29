@@ -27,7 +27,6 @@ from curiokraft_book.data.hybrid_store import HybridDataStore, get_data_store
 from curiokraft_book.data.models import (
     BookModel,
     MediaAssetModel,
-    OutboxEventModel,
     PageModel,
     PromptModel,
 )
@@ -77,10 +76,14 @@ class CloudPromoter:
 
         # Cloud Object Storage (Backblaze B2)
         self.cloud_storage = cloud_storage
-        bucket = os.environ.get("CLOUD_S3_BUCKET_NAME") or os.environ.get("S3_BUCKET_NAME", "curiokraft-assets")
+        bucket = os.environ.get("CLOUD_S3_BUCKET_NAME") or os.environ.get(
+            "S3_BUCKET_NAME", "curiokraft-assets"
+        )
         endpoint = os.environ.get("CLOUD_S3_ENDPOINT_URL") or os.environ.get("S3_ENDPOINT_URL")
         key_id = os.environ.get("CLOUD_S3_ACCESS_KEY_ID") or os.environ.get("S3_ACCESS_KEY_ID")
-        secret_key = os.environ.get("CLOUD_S3_SECRET_ACCESS_KEY") or os.environ.get("S3_SECRET_ACCESS_KEY")
+        secret_key = os.environ.get("CLOUD_S3_SECRET_ACCESS_KEY") or os.environ.get(
+            "S3_SECRET_ACCESS_KEY"
+        )
         region = os.environ.get("CLOUD_S3_REGION") or os.environ.get("S3_REGION", "us-east-005")
 
         if not self.cloud_storage and (endpoint or key_id):
@@ -112,21 +115,19 @@ class CloudPromoter:
 
         # Batch count local pages per book in a single query
         with self.local_store.db_mgr.session() as local_s:
-            local_page_counts = dict(
-                local_s.execute(
-                    select(PageModel.book_id, func.count(PageModel.id)).group_by(PageModel.book_id)
-                ).all()
-            )
+            rows_local = local_s.execute(
+                select(PageModel.book_id, func.count(PageModel.id)).group_by(PageModel.book_id)
+            ).all()
+            local_page_counts: dict[str, int] = {str(r[0]): int(r[1]) for r in rows_local}
 
         # Batch fetch all cloud books and page counts from Neon in a single session
         with self.cloud_db_mgr.session() as cloud_s:
             cloud_books = cloud_s.scalars(select(BookModel)).all()
             cloud_slug_map = {b.slug: b for b in cloud_books}
-            cloud_page_counts = dict(
-                cloud_s.execute(
-                    select(PageModel.book_id, func.count(PageModel.id)).group_by(PageModel.book_id)
-                ).all()
-            )
+            rows_cloud = cloud_s.execute(
+                select(PageModel.book_id, func.count(PageModel.id)).group_by(PageModel.book_id)
+            ).all()
+            cloud_page_counts: dict[str, int] = {str(r[0]): int(r[1]) for r in rows_cloud}
 
         unpromoted_books = []
         in_sync_books = []
@@ -171,7 +172,9 @@ class CloudPromoter:
             return report
 
         if not self.cloud_storage:
-            report.errors.append("Cloud object storage (Backblaze B2) not configured or unreachable.")
+            report.errors.append(
+                "Cloud object storage (Backblaze B2) not configured or unreachable."
+            )
             report.success = False
             return report
 
@@ -265,7 +268,9 @@ class CloudPromoter:
             existing_remote_by_id = {a.id: a for a in remote_assets}
 
             for a in local_assets:
-                clean_key = a.storage_key.replace(f"s3://{self.cloud_storage.bucket_name}/", "").lstrip("/")
+                clean_key = a.storage_key.replace(
+                    f"s3://{self.cloud_storage.bucket_name}/", ""
+                ).lstrip("/")
 
                 # Fast path: If hash is already known in Neon and not force_upload,
                 # the binary already exists in Backblaze B2. No billable S3 HEAD query needed!
@@ -283,7 +288,9 @@ class CloudPromoter:
                         if raw_bytes:
                             actual_hash = hashlib.sha256(raw_bytes).hexdigest()
                             if a.sha256_hash and actual_hash != a.sha256_hash:
-                                report.errors.append(f"Hash mismatch on {clean_key}: {actual_hash} != {a.sha256_hash}")
+                                report.errors.append(
+                                    f"Hash mismatch on {clean_key}: {actual_hash} != {a.sha256_hash}"
+                                )
                                 continue
 
                             guess_type, _ = mimetypes.guess_type(clean_key)
@@ -330,14 +337,18 @@ class CloudPromoter:
                 cloud_s.execute(
                     text(
                         """
-                        UPDATE sync_outbox 
-                        SET status = 'PROCESSED', processed_at = :now 
+                        UPDATE sync_outbox
+                        SET status = 'PROCESSED', processed_at = :now
                         WHERE status = 'PENDING' AND (
                             entity_id = :book_id OR entity_id LIKE :book_prefix
                         );
                         """
                     ),
-                    {"now": now_iso, "book_id": remote_book_id, "book_prefix": f"{remote_book_id}:%"},
+                    {
+                        "now": now_iso,
+                        "book_id": remote_book_id,
+                        "book_prefix": f"{remote_book_id}:%",
+                    },
                 )
 
         # 6. Mark local database outbox events as PROCESSED
@@ -348,23 +359,40 @@ class CloudPromoter:
                     local_s.execute(
                         text(
                             """
-                            UPDATE sync_outbox 
-                            SET status = 'PROCESSED', processed_at = :now 
+                            UPDATE sync_outbox
+                            SET status = 'PROCESSED', processed_at = :now
                             WHERE status = 'PENDING' AND (
                                 entity_id = :book_id OR entity_id LIKE :book_prefix
                             );
                             """
                         ),
-                        {"now": now_iso, "book_id": local_book.id, "book_prefix": f"{local_book.id}:%"},
+                        {
+                            "now": now_iso,
+                            "book_id": local_book.id,
+                            "book_prefix": f"{local_book.id}:%",
+                        },
+                    )
+                    local_s.execute(
+                        text(
+                            """
+                            UPDATE books
+                            SET sync_status = :status, updated_at = :now
+                            WHERE id = :book_id;
+                            """
+                        ),
+                        {
+                            "status": SyncStatus.SYNCED.value,
+                            "now": now_iso,
+                            "book_id": local_book.id,
+                        },
                     )
                     local_book.sync_status = SyncStatus.SYNCED
-                    self.local_store.books.save(local_book)
             except Exception as e:
                 logger.warning(f"Could not update local outbox (docker may be offline): {e}")
 
         logger.info(
             f"Promotion finished for '{slug}': {report.pushed_pages} pages, "
-            f"{report.pushed_assets} assets ({report.bytes_uploaded / (1024*1024):.1f} MB uploaded). "
+            f"{report.pushed_assets} assets ({report.bytes_uploaded / (1024 * 1024):.1f} MB uploaded). "
             f"Success={report.success}."
         )
         return report
