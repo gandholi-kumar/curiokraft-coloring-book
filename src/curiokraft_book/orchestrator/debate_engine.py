@@ -1649,18 +1649,23 @@ class DebateEngine:
                     "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, joyful friendly Disney Junior and Fisher-Price toddler aesthetic."
                 )
             else:
+                front_pill = theme.get("front_pill_text") or (
+                    "50+ MAJESTIC SPECIES • 7 MARINE BIOMES"
+                    if theme_id == "ocean"
+                    else f"{page_count}+ MAJESTIC ILLUSTRATIONS • EDUCATIONAL EXPEDITION"
+                )
                 pos = (
                     f"Eye-catching vibrant 2D coloring book front cover master illustration for '{title}'. "
-                    f"Generous top safety margin: leave the top 10-12% of the canvas as clean background. Position the top text banner '{brand} Presents' centered cleanly near the top in bold dark navy lettering. "
+                    f"Generous top safety margin: leave the top 10-12% of the canvas as clean open background. Position the subtle text line '{brand} Presents' centered cleanly near the top (floating seamlessly without any dark rectangular box, banner strip, or bar behind the text). "
                     f"Directly below, main title '{title}' rendered in {title_styling}. "
-                    f"Directly underneath the title lockup, clean bold rounded lettering reading '{subtitle}'. "
+                    f"Directly underneath the title lockup, clean bold rounded lettering reading '{subtitle}' (floating directly against the sunlit open background without any dark horizontal strip, bar, ribbon, or rectangular block behind the letters). "
                     f"Central joyful illustration: {hero_char}. "
                     f"Surrounding the hero character is an ensemble of theme-aligned companion elements: {companions_desc}. "
                     "All characters and objects have clean vibrant 2D vector styling with pure white sticker contours (strictly NO dark black cast shadows, NO dark ground shadows, and NO dirty gray shading underneath characters or objects). "
                     f"Background: {primary_bg} with {baseline_style} across the lower 15-20% of the canvas. "
                     "Full-bleed borderless edge-to-edge master illustration extending across all four canvas edges to the very borders. 100% clean flat seamless left margin. Strictly NO border frames, NO corner flourishes, NO scalloped frames, NO vertical margin lines, NO spine shade lines, NO measurement lines, NO dimension arrows, and NO technical text anywhere on the canvas. "
                     f"The entire atmosphere is filled with {atmosphere}. "
-                    f"Bottom layout: a wide clean white rounded pill banner with bold dark navy lettering '50+ MAJESTIC SPECIES • 7 MARINE BIOMES', accompanied on the right by a circular golden-yellow badge reading 'AGES {age_min}-{age_max} YEARS'. "
+                    f"Bottom layout: a wide clean white rounded pill banner with bold dark navy lettering '{front_pill}', accompanied on the right by a circular golden-yellow badge reading 'AGES {age_min}-{age_max} YEARS'. "
                     "Vertical 3:4 portrait orientation, premium commercial publisher print quality, ultra-sharp vector rendering, flat 2D edge-to-edge illustration with 100% uniform borderless lighting across all margins."
                 )
 
@@ -1673,6 +1678,8 @@ class DebateEngine:
                 "dirty shading, muddy shadows, realistic shadows, white letters for color and learn, plain white text, flat title, ",
                 "monochromatic lettering, blurry, pixelated, low resolution, photographic, dark gritty shadows, realistic adult human faces, ",
                 "scary expressions, jagged lines, muddy colors, grey backdrop, horizontal landscape, 16:9, cut off edges, distorted anatomy, ",
+                "horizontal dark banner strip, dark text bar, dark rectangular box behind title, dark dividing stripe behind letters, black rectangle behind text, dark ribbon, dark block behind title, ",
+                "deformed dolphin, extra fins, human teeth on dolphin, human lips on dolphin, split snout, twisted torso, vertical fish tail, ",
                 "barcode on front cover",
             ]
             prohibs = theme.get("hero_prohibitions", [])
@@ -2407,6 +2414,85 @@ class DebateEngine:
 
         rounds: list[DebateRound] = []
 
+        # Species posture and anatomy adaptation
+        mascot_lower = mascot_clean.lower()
+        if any(w in mascot_lower for w in ["dolphin", "whale", "orca", "porpoise", "narwhal"]):
+            psych_rationale = (
+                f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
+                f"It introduces the child on Page 001 ('THIS BOOK BELONGS TO') and celebrates their achievement on Page 110 ('SUPER COLORIST'). "
+                f"Must have an endearing chubby baby anatomy, sweet smiling cetacean melon and snout, joyful round eyes, and a friendly waving front pectoral flipper to encourage immediate bonding."
+            )
+            char_pose = (
+                "Swimming joyfully and hovering in an upright three-quarter profile through the open water, "
+                "waving one friendly front pectoral flipper welcomingly toward the child (authentic cetacean anatomy with dorsal fin and horizontal tail flukes, strictly NO paws, NO human hands, NO legs, NO sitting on ground)."
+            )
+            pos = (
+                f"Ultra-clean 2D coloring book line art illustration of an adorable friendly baby {mascot_clean} for children. "
+                f"Chubby rounded body, sweet gentle smiling cetacean melon and snout, big friendly round eyes, rosy blushing cheeks, "
+                f"swimming joyfully in an upright three-quarter profile and waving one friendly front pectoral flipper welcomingly toward the child, "
+                f"distinct dorsal fin on back and sleek horizontal tail flukes. Thick clean black vector outline, 5pt stroke, wide open coloring areas. "
+                f"Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. "
+                f"Vertical portrait framing with generous empty margin space on all sides. "
+                f"Strictly NO text, NO letters, NO numbers, NO color fills, zero shading, zero grayscale, zero gradients, zero shadows. "
+                f"Pure black and white line art only."
+            )
+            neg = (
+                "paws, human hands, human fingers, legs, feet, walking, sitting on ground, fur, ears, clothes, "
+                "text, letters, numbers, words, watermark, logo, title, label, color, colors, colored, color fills, "
+                "shading, grayscale, gray fills, shadows, drop shadows, gradients, realistic textures, realistic animal, "
+                "photographic, 3d render, complex details, crosshatching, thin lines, broken lines, sketchy lines, dirty lines, "
+                "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, "
+                "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
+            )
+        elif any(
+            w in mascot_lower
+            for w in ["bird", "owl", "robin", "parrot", "eagle", "hawk", "penguin"]
+        ):
+            psych_rationale = (
+                f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
+                f"Must have an endearing chubby baby anatomy, sweet smiling round eyes, joyful rosy blushing cheeks, and a friendly waving wing to encourage immediate bonding."
+            )
+            char_pose = "Standing or perching joyfully in an upright posture, waving one wing welcomingly toward the child."
+            pos = (
+                f"Ultra-clean 2D coloring book line art illustration of an adorable friendly baby {mascot_clean} for children. "
+                f"Adorable chubby rounded body, sweet gentle smiling expression, big friendly round eyes, rosy blushing cheeks, "
+                f"standing joyfully and waving one wing welcomingly toward the child. Thick clean black vector outline, 5pt stroke, wide open coloring areas. "
+                f"Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. "
+                f"Vertical portrait framing with generous empty margin space on all sides. "
+                f"Strictly NO text, NO letters, NO numbers, NO color fills, zero shading, zero grayscale, zero gradients, zero shadows. "
+                f"Pure black and white line art only."
+            )
+            neg = (
+                "text, letters, numbers, words, watermark, logo, title, label, color, colors, colored, color fills, "
+                "shading, grayscale, gray fills, shadows, drop shadows, gradients, realistic textures, realistic animal, "
+                "photographic, 3d render, complex details, crosshatching, thin lines, broken lines, sketchy lines, dirty lines, "
+                "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, clothes, "
+                "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
+            )
+        else:
+            psych_rationale = (
+                f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
+                f"It introduces the child on Page 001 ('THIS BOOK BELONGS TO') and celebrates their achievement on Page 110 ('SUPER COLORIST'). "
+                f"Must have an endearing chubby baby anatomy, sweet smiling round eyes, joyful rosy blushing cheeks, and a friendly waving paw to encourage immediate bonding."
+            )
+            char_pose = "Sitting joyfully in an upright posture, waving one front paw welcomingly toward the child."
+            pos = (
+                f"Ultra-clean 2D preschool toddler coloring book line art illustration of a cute friendly baby {mascot_clean} for ages 1-4. "
+                f"Adorable chubby rounded body, sweet gentle smiling expression, big friendly round eyes, rosy blushing cheeks, "
+                f"sitting joyfully and waving one front paw. Thick clean black vector outline, 5pt stroke, wide open coloring areas. "
+                f"Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. "
+                f"Vertical portrait framing with generous empty margin space on all sides. "
+                f"Strictly NO text, NO letters, NO numbers, NO color fills, zero shading, zero grayscale, zero gradients, zero shadows. "
+                f"Pure black and white line art only."
+            )
+            neg = (
+                "text, letters, numbers, words, watermark, logo, title, label, color, colors, colored, color fills, "
+                "shading, grayscale, gray fills, shadows, drop shadows, gradients, realistic textures, realistic animal, "
+                "photographic, 3d render, complex details, crosshatching, thin lines, broken lines, sketchy lines, dirty lines, "
+                "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, clothes, "
+                "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
+            )
+
         # Round 1: Developmental & Toddler Psychology Specialist
         r1 = DebateRound(
             round_number=1,
@@ -2415,12 +2501,8 @@ class DebateEngine:
                 "AGT-005-EDU": {
                     "age_target": "Ages 1-4 toddler range",
                     "hero_mascot": mascot_title,
-                    "psychology_rationale": (
-                        f"The mascot ({mascot_title}) serves as the child's continuous coloring friend across the entire book. "
-                        f"It introduces the child on Page 001 ('THIS BOOK BELONGS TO') and celebrates their achievement on Page 110 ('SUPER COLORIST'). "
-                        f"Must have an endearing chubby baby anatomy, sweet smiling round eyes, joyful rosy blushing cheeks, and a friendly waving paw to encourage immediate bonding."
-                    ),
-                    "character_pose": "Sitting joyfully in an upright posture, waving one front paw welcomingly toward the child.",
+                    "psychology_rationale": psych_rationale,
+                    "character_pose": char_pose,
                 }
             },
         )
@@ -2463,24 +2545,6 @@ class DebateEngine:
         rounds.append(r3)
 
         # Round 4: Executive Creative Judge & Synthesizer
-        pos = (
-            f"Ultra-clean 2D preschool toddler coloring book line art illustration of a cute friendly baby {mascot_clean} for ages 1-4. "
-            f"Adorable chubby rounded body, sweet gentle smiling expression, big friendly round eyes, rosy blushing cheeks, "
-            f"sitting joyfully and waving one front paw. Thick clean black vector outline, 5pt stroke, wide open coloring areas. "
-            f"Solid pure white background, completely isolated on clean empty white background, NO checkerboard, NO grid, NO grey patterns. "
-            f"Vertical portrait framing with generous empty margin space on all sides. "
-            f"Strictly NO text, NO letters, NO numbers, NO color fills, zero shading, zero grayscale, zero gradients, zero shadows. "
-            f"Pure black and white line art only."
-        )
-
-        neg = (
-            "text, letters, numbers, words, watermark, logo, title, label, color, colors, colored, color fills, "
-            "shading, grayscale, gray fills, shadows, drop shadows, gradients, realistic textures, realistic animal, "
-            "photographic, 3d render, complex details, crosshatching, thin lines, broken lines, sketchy lines, dirty lines, "
-            "checkerboard, grid, transparency grid, grey pattern, background elements, scenery, furniture, clothes, "
-            "complex clothing, scary expressions, sharp teeth, claws, distorted anatomy, low resolution, blurry, pixelated"
-        )
-
         r4 = DebateRound(
             round_number=4,
             round_name="Executive Creative Judge & Synthesizer",
@@ -2950,10 +3014,20 @@ def extract_front_cover_ensemble(
     book_config_path: str = str(DEFAULT_BOOK_CONFIG),
 ) -> tuple[str, list[str], int]:
     """Dynamically discover the hero character, companion objects, and page count from active manifest."""
-    m_p = _safe_resolve_manifest_path(manifest_path)
+    m_p = Path(manifest_path)
+    if not m_p.is_absolute():
+        candidates = [
+            Path.cwd() / manifest_path,
+            Path(__file__).parent.parent.parent.parent / manifest_path,
+        ]
+        for c in candidates:
+            if c.exists():
+                m_p = c
+                break
+
     pages = []
     page_count = 110
-    if m_p and m_p.is_file():
+    if m_p.exists():
         try:
             with open(m_p, encoding="utf-8") as f:
                 data = json.load(f)
@@ -2980,10 +3054,16 @@ def extract_front_cover_ensemble(
     mascot_clean = mascot_name.replace("_", " ").title()
 
     if theme_id == "ocean":
-        hero_char = (
-            f"an adorable vibrant {mascot_clean} swimming gracefully and leaping joyfully through sunlit crystal-clear turquoise waters "
-            f"with natural marine fins and authentic anatomy"
-        )
+        if "dolphin" in mascot_name.lower():
+            hero_char = (
+                f"an adorable vibrant {mascot_clean} swimming gracefully in a clean three-quarter profile through sunlit crystal-clear turquoise waters, "
+                f"with authentic cetacean anatomy, curved smiling melon and snout, distinct dorsal fin on back, rounded pectoral flipper playfully waving, and sleek horizontal tail flukes"
+            )
+        else:
+            hero_char = (
+                f"an adorable vibrant {mascot_clean} swimming gracefully in a clean three-quarter profile through sunlit crystal-clear turquoise waters "
+                f"with natural marine fins and authentic anatomy"
+            )
         # Dynamic ocean companions from interior pages
         dynamic_companions: list[str] = []
         seen_canons = {mascot_name.lower()}
@@ -3041,6 +3121,76 @@ def extract_front_cover_ensemble(
             "a tiny hummingbird gliding by",
             "swirling gentle breeze currents",
         ]
+        return hero_char, dynamic_companions, page_count
+
+    elif theme_id == "dinosaurs":
+        hero_char = f"an adorable vibrant baby {mascot_clean} standing proudly in natural species-authentic posture amidst primeval flora with friendly curious eyes"
+        dynamic_companions = []
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon != mascot_name.lower() and len(dynamic_companions) < 2:
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                dynamic_companions.append(f"a friendly {lbl} near ancient fern boughs")
+        if not dynamic_companions:
+            dynamic_companions = [
+                "a gentle baby triceratops near lush cycad palms",
+                "a friendly pterosaur gliding overhead",
+            ]
+        dynamic_companions.append("primeval mossy river boulders and ancient giant ferns")
+        return hero_char, dynamic_companions, page_count
+
+    elif theme_id == "vehicles":
+        hero_char = f"a cheerful vibrant {mascot_clean} cruising smoothly along a scenic roadway in dynamic three-quarter profile with clean shiny contours and friendly round headlights"
+        dynamic_companions = []
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon != mascot_name.lower() and len(dynamic_companions) < 2:
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                dynamic_companions.append(f"a lively {lbl} on the open road")
+        if not dynamic_companions:
+            dynamic_companions = [
+                "a cheerful sports car on a winding hill",
+                "a sturdy utility truck cruising by",
+            ]
+        dynamic_companions.append(
+            "gentle rolling green hills, puffy white clouds, and motion speed lines"
+        )
+        return hero_char, dynamic_companions, page_count
+
+    elif theme_id == "space":
+        hero_char = f"an adorable vibrant {mascot_clean} soaring smoothly through the cosmos in dynamic upward flight with radiant engine glow and gleaming visor"
+        dynamic_companions = []
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon != mascot_name.lower() and len(dynamic_companions) < 2:
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                dynamic_companions.append(f"a gleaming {lbl} orbiting in the starry distance")
+        if not dynamic_companions:
+            dynamic_companions = [
+                "a cheerful astronaut waving from an observation shuttle",
+                "a colorful ringed planet with orbiting moons",
+            ]
+        dynamic_companions.append(
+            "twinkling constellation stars, cosmic nebulae, and luminous stardust"
+        )
+        return hero_char, dynamic_companions, page_count
+
+    elif theme_id == "fantasy":
+        hero_char = f"an adorable vibrant {mascot_clean} posing gracefully with elegant wings and shimmering magical aura amidst sparkling pixie dust"
+        dynamic_companions = []
+        for p in interior_pages:
+            canon = str(p.get("canonical_object", "")).lower()
+            if canon != mascot_name.lower() and len(dynamic_companions) < 2:
+                lbl = str(p.get("display_label") or canon.replace("_", " ")).lower()
+                dynamic_companions.append(f"a whimsical {lbl} resting near glowing flora")
+        if not dynamic_companions:
+            dynamic_companions = [
+                "a friendly unicorn near a rainbow waterfall",
+                "a gentle baby dragon peeking from an enchanted castle turret",
+            ]
+        dynamic_companions.append(
+            "glowing fairy mushrooms, sparkling crystals, and floating pixie dust"
+        )
         return hero_char, dynamic_companions, page_count
 
     elif theme_id == "geometric_mandala":
@@ -3287,6 +3437,15 @@ def generate_welcome_page_prompt(
     b_cfg = _safe_load_yaml(book_config_path).get("book", {})
     vol = str(b_cfg.get("volume", "")).lower()
     title = str(b_cfg.get("title", DEFAULT_BOOK_TITLE)).lower()
+    mascot_name = str(b_cfg.get("mascot", {}).get("name") or "").strip().lower()
+    if not mascot_name:
+        try:
+            m_path = b_cfg.get("manifest", str(DEFAULT_PAGES_MANIFEST))
+            mascot_name = auto_pick_volume_mascot(m_path, book_config_path).lower()
+        except Exception:
+            mascot_name = "dolphin"
+
+    mascot_display = mascot_name.replace("_", " ")
 
     if habitat is None:
         if (
@@ -3298,23 +3457,55 @@ def generate_welcome_page_prompt(
         ):
             hab_name = "OCEAN"
             vignette = "natural ocean framing with curved sea kelp, playful bubbles, gentle coral formations, and sea anemones arching along outer edges"
-            mascot_desc = "friendly, wide-eyed baby sea otter or dolphin centered with a welcoming wave gesture"
-        elif "air" in vol or "sky" in vol:
+            if "dolphin" in mascot_name:
+                mascot_desc = "friendly, wide-eyed baby dolphin swimming happily in a clean three-quarter profile with authentic cetacean fins, waving one friendly front flipper toward the viewer (strictly NO paws, NO fur, NO ears)"
+            else:
+                mascot_desc = f"friendly, wide-eyed baby {mascot_display} swimming happily with a welcoming wave gesture"
+        elif "dinosaur" in vol or "jurassic" in vol or "dinosaur" in title:
+            hab_name = "DINOSAUR"
+            vignette = "natural prehistoric framing with rolling primeval fern leaves, smooth river boulders, and ancient palm fronds arching along outer edges"
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} standing happily with a welcoming gesture"
+        elif (
+            "vehicle" in vol
+            or "car" in vol
+            or "transport" in vol
+            or "vehicle" in title
+            or "car" in title
+        ):
+            hab_name = "TRANSPORTATION"
+            vignette = "stylish roadway curves, checkered victory flags, and gentle rolling roadside hills arching along outer edges"
+            mascot_desc = f"friendly, cheerful smiling cartoon {mascot_display} centered with headlights looking at viewer"
+        elif "space" in vol or "cosmic" in vol or "space" in title or "galaxy" in title:
+            hab_name = "SPACE"
+            vignette = "curving planetary orbits, crescent moons, constellation star trails, and drifting stardust arching along outer edges"
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} floating joyfully in zero gravity with a welcoming gesture"
+        elif "fantasy" in vol or "fairy" in vol or "magic" in vol or "fantasy" in title:
+            hab_name = "FANTASY"
+            vignette = "enchanted crystal clusters, spiraling fairy vines, glowing mushrooms, and castle turret silhouettes arching along outer edges"
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} with sparkling magical wings and welcoming posture"
+        elif "mandala" in vol or "geometric" in vol or "mandala" in title:
+            hab_name = "MINDFULNESS"
+            vignette = "intricate symmetrical geometric mandala borders with harmonic petal flourishes along outer edges"
+            mascot_desc = (
+                "an elegant central radiating circular mandala emblem with intricate open petals"
+            )
+        elif "air" in vol or "sky" in vol or "bird" in vol:
             hab_name = "SKY"
             vignette = "billowing cloud curves, soaring feather outlines, and wind contours arching along outer edges"
-            mascot_desc = "friendly, wide-eyed baby owl centered with a welcoming wing wave gesture"
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} centered with a welcoming wing wave gesture"
         else:
             hab_name = "WILDLIFE"
             vignette = "branching tree boughs, rounded stones, leafy vines, and woodland foliage arching along outer edges"
-            mascot_desc = (
-                "friendly, wide-eyed baby bear cub centered with a welcoming paw wave gesture"
-            )
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} centered with a welcoming paw wave gesture"
     else:
         hab_name = habitat.upper()
         vignette = (
             f"thematic natural {habitat.lower()} framing vignette arching along outer borders"
         )
-        mascot_desc = f"friendly, wide-eyed baby animal native to {habitat.lower()} centered with a welcoming wave gesture"
+        if "dolphin" in mascot_name and hab_name == "OCEAN":
+            mascot_desc = "friendly, wide-eyed baby dolphin swimming happily in a clean three-quarter profile with authentic cetacean fins, waving one friendly front flipper toward the viewer (strictly NO paws, NO fur, NO ears)"
+        else:
+            mascot_desc = f"friendly, wide-eyed baby {mascot_display} native to {habitat.lower()} centered with a welcoming wave gesture"
 
     positive_prompt = (
         f"Professional children's coloring book full-page introductory logbook page, 8.5x11 inches portrait, "
@@ -3348,6 +3539,15 @@ def generate_certificate_page_prompt(
     b_cfg = _safe_load_yaml(book_config_path).get("book", {})
     vol = str(b_cfg.get("volume", "")).lower()
     title = str(b_cfg.get("title", DEFAULT_BOOK_TITLE)).lower()
+    mascot_name = str(b_cfg.get("mascot", {}).get("name") or "").strip().lower()
+    if not mascot_name:
+        try:
+            m_path = b_cfg.get("manifest", str(DEFAULT_PAGES_MANIFEST))
+            mascot_name = auto_pick_volume_mascot(m_path, book_config_path).lower()
+        except Exception:
+            mascot_name = "dolphin"
+
+    mascot_display = mascot_name.replace("_", " ")
 
     if habitat is None:
         if (
@@ -3359,28 +3559,135 @@ def generate_certificate_page_prompt(
         ):
             hab_name = "OCEAN"
             proclamation_realm = "deep sea and coral reef wonders"
-            mascot_desc = "celebratory baby sea otter or dolphin in active victory pose holding an explorer pennant"
+            border_vignette = (
+                "gorgeous living marine life certificate border framing all four edges with charming baby seahorses at the top corners, "
+                "scallop seashells, textured starfish, and flowing kelp ribbons and coral branches arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            if "dolphin" in mascot_name:
+                mascot_desc = "celebratory baby dolphin leaping joyfully in active victory pose, waving one flipper and holding an explorer ribbon with its snout"
+            else:
+                mascot_desc = f"celebratory baby {mascot_display} in active victory pose holding an explorer pennant"
             gear_desc = "wearing earned milestone snorkeling goggles and star ribbon medal"
-        elif "air" in vol or "sky" in vol:
+        elif "dinosaur" in vol or "jurassic" in vol or "dinosaur" in title:
+            hab_name = "DINOSAUR"
+            proclamation_realm = "prehistoric lands and primeval wonders"
+            border_vignette = (
+                "ornate prehistoric certificate border framing all four edges with primeval fern fronds, ancient palm leaves, "
+                "spiral ammonite shells, and cycad branches arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = (
+                f"celebratory baby {mascot_display} in active victory pose amidst ancient ferns"
+            )
+            gear_desc = "wearing an explorer paleontologist hat and star ribbon medal"
+        elif (
+            "vehicle" in vol
+            or "car" in vol
+            or "transport" in vol
+            or "vehicle" in title
+            or "car" in title
+        ):
+            hab_name = "TRANSPORTATION"
+            proclamation_realm = "exciting world of transportation and vehicles"
+            border_vignette = (
+                "energetic transport-themed certificate border framing all four edges with waving checkered victory flags, "
+                "golden celebration laurels, stylish curved road ribbons, and dynamic speed dash flourishes "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = f"celebratory smiling cartoon {mascot_display} crossing the finish line with checkered flag"
+            gear_desc = "displaying a golden winner's wreath and star medal"
+        elif "space" in vol or "cosmic" in vol or "space" in title or "galaxy" in title:
+            hab_name = "SPACE"
+            proclamation_realm = "cosmic wonders of our solar system and beyond"
+            border_vignette = (
+                "mesmerizing cosmic certificate border framing all four edges with twinkling constellation star ribbons, "
+                "crescent moons, planetary rings, and floating orbital stardust flourishes "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = f"celebratory baby {mascot_display} floating joyfully in zero gravity with a welcoming gesture"
+            gear_desc = "wearing astronaut exploration helmet and star ribbon medal"
+        elif "fantasy" in vol or "fairy" in vol or "magic" in vol or "fantasy" in title:
+            hab_name = "FANTASY"
+            proclamation_realm = "magical realm of enchanted fairy-tale wonders"
+            border_vignette = (
+                "whimsical enchanted fairy-tale certificate border framing all four edges with spiraling ivy vines, "
+                "sparkling crystal gems, delicate butterfly or fairy wing flourishes, and glowing stardust "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = (
+                f"celebratory baby {mascot_display} posing victoriously with sparkling fairy wings"
+            )
+            gear_desc = "holding a magical sparkling star wand and ribbon medal"
+        elif "mandala" in vol or "geometric" in vol or "mandala" in title:
+            hab_name = "MINDFULNESS"
+            proclamation_realm = "harmonious world of mindful geometric coloring"
+            border_vignette = (
+                "intricate symmetrical geometric mandala certificate border framing all four edges with harmonious petal flourishes, "
+                "concentric ornamental wave ribbons, and delicate kaleidoscopic lace motifs "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = (
+                "celebratory radiant starburst mandala centerpiece with balanced symmetrical crest"
+            )
+            gear_desc = "adorned with delicate celebratory laurels and excellence ribbon medal"
+        elif "air" in vol or "sky" in vol or "bird" in vol:
             hab_name = "SKY"
             proclamation_realm = "wonders of the skies and clouds"
-            mascot_desc = "celebratory baby owl in active victory pose holding an explorer ribbon"
+            border_vignette = (
+                "sweeping aerial certificate border framing all four edges with billowing cloud contours, soaring feather motifs, "
+                "and graceful wind current swirls arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = f"celebratory baby {mascot_display} in active victory pose holding an explorer ribbon"
             gear_desc = "wearing flight goggles and star ribbon medal"
         else:
             hab_name = "WILDLIFE"
-            proclamation_realm = "forest and wild habitats"
-            mascot_desc = "celebratory baby bear cub in active victory pose with paws raised high"
+            proclamation_realm = "forest and wild savanna habitats"
+            border_vignette = (
+                "lush wildlife certificate border framing all four edges with leafy jungle vines, acacia branches, "
+                "wildflowers, and charming animal paw-print accents arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+            mascot_desc = (
+                f"celebratory baby {mascot_display} in active victory pose with paws raised high"
+            )
             gear_desc = "wearing a field ranger badge, explorer hat, and star ribbon medal"
     else:
         hab_name = habitat.upper()
         proclamation_realm = f"wonders of the {habitat.lower()}"
-        mascot_desc = f"celebratory baby animal native to {habitat.lower()} in active victory pose"
-        gear_desc = "wearing earned milestone explorer medal and ribbon badge"
+        if hab_name == "OCEAN":
+            border_vignette = (
+                "gorgeous living marine life certificate border framing all four edges with charming baby seahorses at the top corners, "
+                "scallop seashells, textured starfish, and flowing kelp ribbons and coral branches arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+        elif hab_name == "SKY":
+            border_vignette = (
+                "sweeping aerial certificate border framing all four edges with billowing cloud contours, soaring feather motifs, "
+                "and graceful wind current swirls arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+        elif hab_name == "WILDLIFE":
+            border_vignette = (
+                "lush wildlife certificate border framing all four edges with leafy jungle vines, acacia branches, "
+                "wildflowers, and charming animal paw-print accents arching along the outer margins "
+                "(strictly NO plain empty rectangles, NO simple box lines)"
+            )
+        else:
+            border_vignette = f"ornate thematic {habitat.lower()} decorative border framing all four edges with natural thematic botanical and natural flourishes (strictly NO plain empty rectangles, NO simple box lines)"
+
+        if "dolphin" in mascot_name and hab_name == "OCEAN":
+            mascot_desc = "celebratory baby dolphin leaping joyfully in active victory pose, waving one flipper and holding an explorer ribbon with its snout"
+            gear_desc = "wearing earned milestone snorkeling goggles and star ribbon medal"
+        else:
+            mascot_desc = f"celebratory baby {mascot_display} native to {habitat.lower()} in active victory pose"
+            gear_desc = "wearing earned milestone explorer medal and ribbon badge"
 
     positive_prompt = (
         f"Official children's coloring book celebratory completion certificate page, 8.5x11 inches portrait, "
         f"crisp vector-style pure black and white line art keepsake. "
-        f"Elegant thematic outer border with minimum 0.5 inch safe margins. "
+        f"Decorative border framing: {border_vignette}, with minimum 0.5 inch safe margins. "
         f"Award typography hierarchy: "
         f"Header line 1 'CERTIFICATE OF COMPLETION', "
         f"Header line 2 'MASTER {hab_name} COLORIST', "

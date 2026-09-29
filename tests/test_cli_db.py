@@ -19,6 +19,11 @@ def isolate_cli_db_env(monkeypatch):
     monkeypatch.delenv("S3_ACCESS_KEY_ID", raising=False)
     monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
     monkeypatch.delenv("REMOTE_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLOUD_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLOUD_S3_ENDPOINT_URL", raising=False)
+    monkeypatch.delenv("CLOUD_S3_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("CLOUD_S3_SECRET_ACCESS_KEY", raising=False)
+    monkeypatch.delenv("CLOUD_S3_BUCKET_NAME", raising=False)
 
 
 def test_cli_db_init_and_status(tmp_path: Path, monkeypatch):
@@ -116,3 +121,57 @@ def test_cli_db_sync_command(tmp_path: Path, monkeypatch):
         "Sync encountered errors" in result_sync.stdout
         or "Remote database URL not configured" in result_sync.stdout
     )
+
+
+def test_cli_db_cloud_status_unconfigured():
+    """Test 'curiokraft-book db cloud-status' when cloud DB is not configured."""
+    result = runner.invoke(db_app, ["cloud-status"])
+    assert result.exit_code == 1
+    assert (
+        "Cloud target (Neon) not configured" in result.stdout or "not configured" in result.stdout
+    )
+
+
+def test_cli_db_push_to_cloud_unconfigured():
+    """Test 'curiokraft-book db push-to-cloud' when cloud is not configured."""
+    result = runner.invoke(db_app, ["push-to-cloud"])
+    assert result.exit_code == 1
+    assert "Cloud configuration missing or unreachable" in result.stdout
+
+
+def test_cli_db_cloud_status_and_push_configured(tmp_path: Path, monkeypatch):
+    """Test 'cloud-status' and 'push-to-cloud' with isolated local and cloud DBs."""
+    from curiokraft_book.data.postgres_store import SQLDatabaseManager
+
+    local_db = tmp_path / "cli_local.db"
+    cloud_db = tmp_path / "cli_cloud.db"
+
+    # Initialize both databases
+    SQLDatabaseManager(f"sqlite:///{local_db}").init_db()
+    SQLDatabaseManager(f"sqlite:///{cloud_db}").init_db()
+
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{local_db}")
+    monkeypatch.setenv("CLOUD_DATABASE_URL", f"sqlite:///{cloud_db}")
+    monkeypatch.setenv("CLOUD_S3_ENDPOINT_URL", "https://s3.us-east-005.backblazeb2.com")
+    monkeypatch.setenv("CLOUD_S3_ACCESS_KEY_ID", "test_key_id")
+    monkeypatch.setenv("CLOUD_S3_SECRET_ACCESS_KEY", "test_secret")
+    monkeypatch.setenv("CLOUD_S3_BUCKET_NAME", "curiokraft-assets")
+
+    # 1. Test cloud-status
+    res_status = runner.invoke(db_app, ["cloud-status"])
+    assert res_status.exit_code == 0
+    assert "Local vs Cloud Catalog Status" in res_status.stdout
+
+    # 2. Test push-to-cloud dry run with active volume
+    res_push = runner.invoke(db_app, ["push-to-cloud", "--dry-run"])
+    assert res_push.exit_code == 0
+    assert "Promotion Succeeded" in res_push.stdout or "DRY-RUN" in res_push.stdout
+
+    # 3. Test push-to-cloud --all
+    res_push_all = runner.invoke(db_app, ["push-to-cloud", "--all", "--dry-run"])
+    assert res_push_all.exit_code == 0
+
+    # 4. Test push-to-cloud with unknown slug
+    res_push_unknown = runner.invoke(db_app, ["push-to-cloud", "--slug", "non-existent-book"])
+    assert res_push_unknown.exit_code == 1
+    assert "Promotion Failed" in res_push_unknown.stdout

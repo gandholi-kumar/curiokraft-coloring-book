@@ -113,11 +113,12 @@ curiokraft-book assemble interior
 # 7. Run Full 18-Point Deterministic KDP Preflight Diagnostic & Certificate
 curiokraft-book preflight run
 
-# 8. Publishing Metadata, Storage Sync & Local Asset Verification
+# 8. Publishing Metadata, Storage Sync & Cloud Promotion
 curiokraft-book kdp generate
 curiokraft-book db sync-assets --dir output/interior_masters --type composite_master  # Index & push to MinIO/DB
 curiokraft-book db pull-assets --dir output/verified_assets --type interior_pdf       # Pull & verify SHA-256 locally
-curiokraft-book db sync                                                               # Bi-directional cloud sync
+curiokraft-book db cloud-status                                                       # Compare local vs Neon cloud catalog
+curiokraft-book db push-to-cloud --slug curiokraft-vol1                               # Promote book to Neon & Backblaze B2 (0 billable S3 calls)
 curiokraft-book db export-to-fs
 
 # (Optional) Visual Inspection Consoles:

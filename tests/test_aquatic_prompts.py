@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from curiokraft_book.orchestrator.debate_engine import (
     DebateEngine,
     generate_certificate_page_prompt,
@@ -101,3 +103,64 @@ def test_debate_engine_cover_spec():
     assert spec_back.page_id == "COVER_BACK"
     assert spec_back.canonical_object == "back_cover"
     assert spec_back.display_label == "BACK COVER MASTER ARTWORK"
+
+
+def test_welcome_and_certificate_all_themes(tmp_path: Path):
+    """Test all volume and habitat theme branches for welcome and certificate generators."""
+    themes = [
+        ("dinosaur", "DINOSAUR"),
+        ("vehicle", "TRANSPORTATION"),
+        ("space", "SPACE"),
+        ("fantasy", "FANTASY"),
+        ("mandala", "MINDFULNESS"),
+        ("air", "SKY"),
+        ("wildlife", "WILDLIFE"),
+        ("ocean", "OCEAN"),
+    ]
+
+    for vol_key, expected_hab in themes:
+        cfg = tmp_path / f"cfg_{vol_key}.yaml"
+        cfg.write_text(
+            f"book:\n  volume: {vol_key}_vol1\n  title: {vol_key.capitalize()} Adventure\n  mascot:\n    name: buddy_{vol_key}\n",
+            encoding="utf-8",
+        )
+        pos_w, neg_w = generate_welcome_page_prompt(book_config_path=str(cfg))
+        assert expected_hab in pos_w
+        assert len(neg_w) > 0
+
+        pos_c, neg_c = generate_certificate_page_prompt(book_config_path=str(cfg))
+        assert expected_hab in pos_c
+        assert len(neg_c) > 0
+
+    # Test custom habitat border vignette (else branch)
+    pos_c_custom, _ = generate_certificate_page_prompt(habitat="ARCTIC")
+    assert "ARCTIC" in pos_c_custom
+
+    pos_w_custom, _ = generate_welcome_page_prompt(habitat="ARCTIC")
+    assert "ARCTIC" in pos_w_custom
+
+    # Test dolphin mascot specific wording
+    dolphin_cfg = tmp_path / "cfg_dolphin.yaml"
+    dolphin_cfg.write_text(
+        "book:\n  volume: ocean_vol1\n  title: Ocean World\n  mascot:\n    name: baby_dolphin\n",
+        encoding="utf-8",
+    )
+    pos_w_dol, _ = generate_welcome_page_prompt(habitat="OCEAN", book_config_path=str(dolphin_cfg))
+    assert "dolphin" in pos_w_dol.lower()
+
+    pos_c_dol, _ = generate_certificate_page_prompt(
+        habitat="OCEAN", book_config_path=str(dolphin_cfg)
+    )
+    assert "dolphin" in pos_c_dol.lower()
+
+    # Test auto-pick mascot fallback when mascot name is not defined in config
+    no_mascot_cfg = tmp_path / "cfg_no_mascot.yaml"
+    no_mascot_cfg.write_text(
+        "book:\n  volume: aquatic_vol1\n  title: Ocean World\n",
+        encoding="utf-8",
+    )
+    pos_w_nom, _ = generate_welcome_page_prompt(book_config_path=str(no_mascot_cfg))
+    assert len(pos_w_nom) > 0
+
+    pos_c_nom, _ = generate_certificate_page_prompt(book_config_path=str(no_mascot_cfg))
+    assert len(pos_c_nom) > 0
