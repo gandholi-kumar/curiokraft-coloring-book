@@ -14,6 +14,7 @@ first. It separates **Track 1** (free Google AI Studio web workflow) from **Trac
 | Document | Covers |
 |---|---|
 | [FIRST_TIME_USER_ONBOARDING_GUIDE.md](setup/FIRST_TIME_USER_ONBOARDING_GUIDE.md) | **First-Time User Guide.** Step-by-step from cloning, DB init, prompt export, image indexing, to PDF compilation. |
+| [DUAL_LAPTOP_DISTRIBUTION_AND_WORKFLOW_GUIDE.md](setup/DUAL_LAPTOP_DISTRIBUTION_AND_WORKFLOW_GUIDE.md) | **Dual-Laptop Setup & Distribution.** How to build standalone `.whl` on Laptop 1 and run globally via `pipx` on Laptop 2 with no source code. |
 | [ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md](setup/ONE_TIME_SETUP_AND_PREPUBLISH_CHECKLIST.md) | Publisher assets, environment preparation, disaster recovery, PyPI packaging, and the 15-minute pre-publish checklist. |
 | [GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md](setup/GOOGLE_AI_STUDIO_SETUP_AND_PROMPTING_GUIDE.md) | Exact AI Studio sidebar settings (aspect ratio `3:4`, output *Images only*, temperature `0.5`) and copy-paste System Instruction presets. |
 | [GITHUB_PROJECT_MAINTENANCE_GUIDE.md](setup/GITHUB_PROJECT_MAINTENANCE_GUIDE.md) | Maintaining the repository with free GitHub tooling as a solo maintainer. |
